@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>P2 – Mammoth Kill</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+      }
+      #timer {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #0066cc;
+        z-index: 1000;
+      }
+      .shell {
+        display: flex;
+        height: 100vh;
+        width: 100%;
+      }
+      .pane {
+        background: #fff;
+        overflow: auto;
+        padding: 24px;
+      }
+      #left {
+        flex: 0 0 50%;
+        border-right: 1px solid #ddd;
+      }
+      #right {
+        flex: 1 1 auto;
+        background: #fafafa;
+      }
+      #divider {
+        flex: 0 0 5px;
+        background: #ddd;
+        cursor: ew-resize;
+      }
+      #divider:hover {
+        background: #999;
+      }
+      h2,
+      h3,
+      h4 {
+        margin: 0 0 12px;
+        color: #333;
+      }
+      h2 {
+        font-size: 20px;
+      }
+      h3 {
+        font-size: 18px;
+        color: #0066cc;
+      }
+      h4 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-top: 20px;
+      }
+      #left p {
+        margin: 0 0 14px;
+        line-height: 1.7;
+        text-align: justify;
+      }
+      .group {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .group h4 {
+        margin-top: 0;
+        color: #0066cc;
+      }
+      .group p {
+        margin: 8px 0;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .flag-btn {
+        position: absolute;
+        left: 2px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ddd;
+        cursor: pointer;
+        z-index: 10;
+      }
+      .flag-btn:hover {
+        background: #999;
+      }
+      .flag-btn.active {
+        background: #ff5722;
+      }
+      .group ol {
+        margin-left: 20px;
+      }
+      .group ol li {
+        margin: 12px 0;
+        font-size: 14px;
+        line-height: 1.6;
+        position: relative;
+      }
+      .group ol li label {
+        display: inline-block;
+        margin-right: 8px;
+      }
+      input[type="text"] {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 14px;
+        width: 160px;
+        background: #fdfdfd;
+      }
+      input[type="text"]:focus {
+        border-color: #0066cc;
+        outline: none;
+        background: #fff;
+      }
+      .bottom-bar {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      button {
+        padding: 10px 20px;
+        border: 1px solid #999;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover {
+        background: #f0f0f0;
+      }
+      .btn-primary {
+        background: #0066cc;
+        color: #fff;
+        border-color: #0066cc;
+      }
+      .btn-primary:hover {
+        background: #0052a3;
+      }
+      .btn-danger {
+        background: #dc3545;
+        color: #fff;
+        border-color: #dc3545;
+      }
+      .btn-danger:hover {
+        background: #c82333;
+      }
+      .hl {
+        background: #fff59d;
+        cursor: pointer;
+      }
+      .hl:hover {
+        background: #ffeb3b;
+      }
+      .note {
+        background: #b3d9ff;
+        cursor: pointer;
+      }
+      .note:hover {
+        background: #99ccff;
+      }
+      #selbar {
+        position: fixed;
+        display: none;
+        z-index: 2000;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 8px;
+        gap: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        flex-direction: column;
+        min-width: 120px;
+      }
+      #selbar button {
+        background: #fff;
+        color: #666;
+        border: none;
+        padding: 3px 0px;
+        cursor: pointer;
+        font-size: 14px;
+        text-align: center;
+        border-radius: 4px;
+      }
+      #selbar button:hover {
+        background: #f5f5f5;
+        color: #333;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 3000;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal.active {
+        display: flex;
+      }
+      .modal-content {
+        background: #fff;
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+      .modal-header h2 {
+        font-size: 28px;
+        color: #333;
+        margin: 0;
+      }
+      .modal-close {
+        font-size: 32px;
+        cursor: pointer;
+        color: #999;
+        line-height: 1;
+      }
+      .modal-close:hover {
+        color: #333;
+      }
+      .result-summary {
+        text-align: center;
+        padding: 20px;
+        background: #f0f0f0;
+        margin-bottom: 16px;
+        border-radius: 6px;
+      }
+      .result-score {
+        font-size: 36px;
+        font-weight: 600;
+        color: #0066cc;
+      }
+      .result-item {
+        padding: 10px;
+        margin: 8px 0;
+        border-left: 3px solid #ddd;
+        background: #f9f9f9;
+        font-size: 13px;
+      }
+      .result-item.correct {
+        border-left-color: #28a745;
+        background: #e8f5e9;
+      }
+      .result-item.incorrect {
+        border-left-color: #dc3545;
+        background: #ffebee;
+      }
+      .wrong-item {
+        background: #fff3e0;
+        padding: 16px;
+        margin: 8px 0;
+        border-radius: 8px;
+        border-left: 4px solid #ff9800;
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+      }
+      .wrong-item-content {
+        flex: 1;
+      }
+      .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        margin-left: 12px;
+      }
+      .btn-delete:hover {
+        background: #c82333;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .headings-box {
+        background: #f9f9f9;
+        padding: 12px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        margin-bottom: 12px;
+      }
+      .headings-box h5 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="timer">00:00</div>
+    <div class="shell">
+      <section class="pane" id="left">
+        <h2>READING PASSAGE 2</h2>
+        <p>
+          You should spend about 20 minutes on Questions 14–26, which are based
+          on Reading Passage 2 below.
+        </p>
+        <h3>Mammoth Kill</h3>
+        <h4>
+          What Led to the disappearance of the giant mammals? Kate Wong examines
+          the theories
+        </h4>
+        <p>
+          Although it’s hard to imagine in this age of urban sprawl and
+          automobiles, North America once belonged to huge, elephant-like
+          mammoths, camels, bear-sized beavers and other giant beasts,
+          collectively known as ‘megafauna’. Some 11,000 years ago, however,
+          these large-bodied mammals—about 70 species in all—disappeared. Their
+          demise coincided roughly with the arrival of humans on the continent
+          and dramatic climate change—factors that have inspired several
+          theories about the die-off. Yet despite decades of scientific
+          investigation, the exact cause remains a mystery. Now new findings
+          offer support to one of these controversial hypotheses: that human
+          hunting drove these huge megafauna species to extinction.
+        </p>
+        <p>
+          This belief resulted in the overkill model which emerged in the 1960s,
+          when it was put forth by Paul S. Martin of the University of Arizona.
+          Since then, critics have charged that no archaeological remains exist
+          to support the idea that the first Americans hunted to the extent
+          necessary to cause these extinctions, but at the annual meeting of the
+          Society of Vertebrate Paleontology in Mexico City in October 1999,
+          specialist John Alroy of the University of California at Santa Barbara
+          argued that, in fact, hunting-driven extinction is not only plausible,
+          it was unavoidable. He has determined, using a computer simulation,
+          that even a very modest amount of hunting would have wiped out these
+          animals.
+        </p>
+        <p>
+          Assuming an initial human population of 100 people that grew no more
+          than two per cent annually, Alroy determined that, if each band of,
+          say, 50 people killed 15 to 20 large animals a year, humans could have
+          eliminated the animal populations within 1,000 years. Large mammals in
+          particular would have been vulnerable to the pressure because they
+          have longer gestation periods than smaller mammals and their young
+          require extended care.
+        </p>
+        <p>
+          However, not everyone agrees with Alroy’s assessment. For one thing,
+          the results depend on population-size estimates for the extinct
+          animals—estimates that are not necessarily reliable. But a more
+          specific criticism comes from mammal expert Ross D. E. MacPhee of the
+          American Museum of Natural History in New York City, who points out
+          that the relevant archaeological record contains barely a dozen
+          examples of stone points embedded in mammoth bones (and none, it
+          should be noted, are known from other megafaunal remains)—hardly what
+          one might expect if hunting drove these animals to extinction.
+          Furthermore, some of these species had a vast range, covering the
+          whole continent—the Jefferson’s ground sloth, for example, lived as
+          far north as the Yukon and as far south as Mexico—which would have
+          made hunting them in numbers sufficient to cause their extinction
+          rather unlikely, he says.
+        </p>
+        <p>
+          MacPhee agrees that humans most likely brought about these extinctions
+          (as well as others around the world that coincided with human
+          arrival), but not directly. Rather than through hunting, he suggests
+          that people may have introduced a deadly disease, perhaps through
+          their dogs or accompanying vermin, which then spread wildly among the
+          native species because of their low resistance to the new
+          introductions. Repeated outbreaks of a deadly disease could thus
+          quickly drive them to the point of no return. So far, MacPhee does not
+          have empirical evidence for this theory, and it will not be easy to
+          come by: such disease would kill far too quickly to leave its
+          signature on the bones themselves. But he hopes that analyses of
+          tissue and DNA from the most recent animal remains will eventually
+          reveal the microbes responsible.
+        </p>
+        <p>
+          The third explanation for what brought on this North American
+          extinction does not involve human beings. Instead, its proponents
+          blame the loss on the climate. The Pleistocene epoch in question
+          witnessed considerable climate instability, explains Russell W. Graham
+          of the Denver Museum of Nature and Science. As a result, their regular
+          habitats disappeared, and species that had once formed communities
+          split apart. For some animals, this brought opportunity. For much of
+          the megafauna, however, the increasingly uniform terrain left them
+          with shrinking geographical ranges—a death sentence for large animals,
+          which need correspondingly large ranges. Although these creatures
+          managed to maintain viable populations through most of the Pleistocene
+          period, the final major climate fluctuation pushed them over the edge,
+          Graham says.
+        </p>
+        <p>
+          For his part, Alroy is still convinced that human hunters were the
+          destroyers of the giant animals. The overkill model explains
+          everything the disease and climate scenarios explain, he asserts, and
+          in addition makes accurate predictions about which species would
+          eventually become extinct.
+        </p>
+      </section>
+      <div id="divider"></div>
+      <section class="pane" id="right">
+        <h3>Questions</h3>
+        <div class="group">
+          <h4>Questions 14–20</h4>
+          <p>
+            Complete the summary below. Choose
+            <strong>NO MORE THAN TWO WORDS</strong> from the passage for each
+            answer.
+          </p>
+          <div
+            style="
+              background: #f9f9f9;
+              padding: 15px;
+              border-radius: 4px;
+              line-height: 2;
+            "
+          >
+            Three theories have been put forward to explain the disappearance of
+            the different species of large mammals that inhabited
+            <strong>14</strong>
+            <span
+              class="flag-btn"
+              data-q="q14"
+              style="
+                left: inherit;
+                display: inline-block;
+                position: relative;
+                vertical-align: middle;
+                margin-left: 5px;
+              "
+            ></span>
+            <input type="text" name="q14" /> 11,000 years ago. The
+            <strong>15</strong>
+            <span
+              class="flag-btn"
+              data-q="q15"
+              style="
+                left: inherit;
+                display: inline-block;
+                position: relative;
+                vertical-align: middle;
+                margin-left: 5px;
+              "
+            ></span>
+            <input type="text" name="q15" />, proposed around fifty years ago by
+            Paul S. Martin, blames <strong>16</strong>
+            <span
+              class="flag-btn"
+              data-q="q16"
+              style="
+                left: inherit;
+                display: inline-block;
+                position: relative;
+                vertical-align: middle;
+                margin-left: 5px;
+              "
+            ></span>
+            <input type="text" name="q16" /> by people for mass extinction.
+            Computer calculations seem to support this explanation, but critics
+            question the reliability of the figures they are based on.<br /><br />
+            The second theory suggests that humans introduced a
+            <strong>17</strong>
+            <span
+              class="flag-btn"
+              data-q="q17"
+              style="
+                left: inherit;
+                display: inline-block;
+                position: relative;
+                vertical-align: middle;
+                margin-left: 5px;
+              "
+            ></span>
+            <input type="text" name="q17" /> which wiped out the large mammals.
+            However, so far this theory also lacks any <strong>18</strong>
+            <span
+              class="flag-btn"
+              data-q="q18"
+              style="
+                left: inherit;
+                display: inline-block;
+                position: relative;
+                vertical-align: middle;
+                margin-left: 5px;
+              "
+            ></span>
+            <input type="text" name="q18" />.<br /><br />
+            The final theory suggests that this period experienced significant
+            <strong>19</strong>
+            <span
+              class="flag-btn"
+              data-q="q19"
+              style="
+                left: inherit;
+                display: inline-block;
+                position: relative;
+                vertical-align: middle;
+                margin-left: 5px;
+              "
+            ></span>
+            <input type="text" name="q19" />, which eventually led to the loss
+            of habitat and to the division of the <strong>20</strong>
+            <span
+              class="flag-btn"
+              data-q="q20"
+              style="
+                left: inherit;
+                display: inline-block;
+                position: relative;
+                vertical-align: middle;
+                margin-left: 5px;
+              "
+            ></span>
+            <input type="text" name="q20" /> that some of the large mammals had
+            organized.
+          </div>
+        </div>
+        <div class="group">
+          <h4>Questions 21–26</h4>
+          <p>
+            Match each statement with the correct person,
+            <strong>A, B or C</strong>.
+          </p>
+          <div class="headings-box">
+            <h5>List of People</h5>
+            <div style="margin-left: 10px">
+              <strong>A</strong> John Alroy<br />
+              <strong>B</strong> Ross D. E. MacPhee<br />
+              <strong>C</strong> Russell W. Graham
+            </div>
+          </div>
+          <ol start="21">
+            <li>
+              <span class="flag-btn" data-q="q21" style="left: -20px"></span>Too
+              little evidence exists to support the hunting theory.<br />
+              <label><input type="radio" name="q21" value="A" /> A</label>
+              <label><input type="radio" name="q21" value="B" /> B</label>
+              <label><input type="radio" name="q21" value="C" /> C</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q22" style="left: -20px"></span>The
+              bigger the animal, the bigger the territory it requires for
+              survival.<br />
+              <label><input type="radio" name="q22" value="A" /> A</label>
+              <label><input type="radio" name="q22" value="B" /> B</label>
+              <label><input type="radio" name="q22" value="C" /> C</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q23" style="left: -20px"></span
+              >Globally, humans have been indirectly responsible for the
+              elimination of many species.<br />
+              <label><input type="radio" name="q23" value="A" /> A</label>
+              <label><input type="radio" name="q23" value="B" /> B</label>
+              <label><input type="radio" name="q23" value="C" /> C</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q24" style="left: -20px"></span
+              >Population estimates can be used to understand how large mammals
+              became extinct.<br />
+              <label><input type="radio" name="q24" value="A" /> A</label>
+              <label><input type="radio" name="q24" value="B" /> B</label>
+              <label><input type="radio" name="q24" value="C" /> C</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q25" style="left: -20px"></span
+              >Scientific examination of fossil remains may provide some proof
+              for one of the theories.<br />
+              <label><input type="radio" name="q25" value="A" /> A</label>
+              <label><input type="radio" name="q25" value="B" /> B</label>
+              <label><input type="radio" name="q25" value="C" /> C</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q26" style="left: -20px"></span
+              >Environmental changes negatively affected the social groupings of
+              some large species.<br />
+              <label><input type="radio" name="q26" value="A" /> A</label>
+              <label><input type="radio" name="q26" value="B" /> B</label>
+              <label><input type="radio" name="q26" value="C" /> C</label>
+            </li>
+          </ol>
+        </div>
+        <div class="bottom-bar">
+          <button class="btn-primary" onclick="submitAnswers()">提交</button>
+          <button onclick="resetForm()">重置</button>
+          <button onclick="openWrongBook()">本篇错题</button>
+        </div>
+      </section>
+    </div>
+    <div id="selbar">
+      <button id="btnNote">Note</button>
+      <button id="btnHL">Highlight</button>
+      <button id="btnUH" style="display: none">Clear Highlight</button>
+    </div>
+    <div class="modal" id="resultModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>成绩</h2>
+          <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+        </div>
+        <div id="resultContent"></div>
+        <button
+          class="btn-primary"
+          style="width: 100%; margin-top: 16px"
+          onclick="addWrongToBook()"
+        >
+          加入错题本
+        </button>
+      </div>
+    </div>
+    <div class="modal" id="wrongBookModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>本篇错题</h2>
+          <span class="modal-close" onclick="closeModal('wrongBookModal')"
+            >×</span
+          >
+        </div>
+        <div id="wrongBookContent"></div>
+      </div>
+    </div>
+    <div class="modal" id="resetModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>重置练习</h2>
+          <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+        </div>
+        <div style="margin: 16px 0">
+          <label style="display: block; margin-bottom: 10px"
+            ><input type="radio" name="resetType" value="answers" checked />
+            只清空答案</label
+          >
+          <label style="display: block"
+            ><input type="radio" name="resetType" value="all" />
+            清空答案和标记</label
+          >
+        </div>
+        <button
+          class="btn-primary"
+          style="width: 100%"
+          onclick="confirmReset()"
+        >
+          确定
+        </button>
+      </div>
+    </div>
+    <script>
+      const PAPER_ID = "P2_MAMMOTH_KILL";
+      let t = 0;
+      const timerEl = document.getElementById("timer");
+      setInterval(() => {
+        t++;
+        timerEl.textContent =
+          String(Math.floor(t / 60)).padStart(2, "0") +
+          ":" +
+          String(t % 60).padStart(2, "0");
+      }, 1000);
+      const divider = document.getElementById("divider"),
+        left = document.getElementById("left"),
+        right = document.getElementById("right");
+      let dragging = false;
+      divider.onmousedown = () => {
+        dragging = true;
+        document.body.style.cursor = "ew-resize";
+      };
+      window.onmousemove = (e) => {
+        if (!dragging) return;
+        const c = document.querySelector(".shell").getBoundingClientRect();
+        let x = e.clientX - c.left;
+        x = Math.max(280, Math.min(c.width - 280, x));
+        left.style.flex = "0 0 " + x + "px";
+        right.style.flex = "1 1 auto";
+      };
+      window.onmouseup = () => {
+        dragging = false;
+        document.body.style.cursor = "";
+      };
+      const selbar = document.getElementById("selbar"),
+        btnHL = document.getElementById("btnHL"),
+        btnUH = document.getElementById("btnUH"),
+        btnNote = document.getElementById("btnNote");
+      let lastRange = null,
+        currentHlNode = null;
+      function posSelbar(r) {
+        selbar.style.display = "flex";
+        const t = window.scrollY + r.top - selbar.offsetHeight - 8;
+        const l =
+          window.scrollX + r.left + r.width / 2 - selbar.offsetWidth / 2;
+        selbar.style.top = (t > 0 ? t : window.scrollY + r.bottom + 8) + "px";
+        selbar.style.left = Math.max(8, l) + "px";
+      }
+      function updSel() {
+        const s = window.getSelection();
+        if (!s || s.rangeCount === 0 || s.isCollapsed) {
+          if (!currentHlNode) selbar.style.display = "none";
+          return;
+        }
+        const r = s.getRangeAt(0);
+        lastRange = r.cloneRange();
+        currentHlNode = null;
+        btnNote.style.display = "block";
+        btnHL.style.display = "block";
+        btnUH.style.display = "none";
+        posSelbar(r.getBoundingClientRect());
+      }
+      left.onmouseup = updSel;
+      right.onmouseup = updSel;
+      document.onselectionchange = () => {
+        const s = window.getSelection();
+        if ((!s || s.rangeCount === 0 || s.isCollapsed) && !currentHlNode)
+          selbar.style.display = "none";
+      };
+      document.addEventListener(
+        "click",
+        (e) => {
+          if (
+            e.target.classList &&
+            (e.target.classList.contains("hl") ||
+              e.target.classList.contains("note"))
+          ) {
+            currentHlNode = e.target;
+            lastRange = null;
+            btnNote.style.display = "none";
+            btnHL.style.display = "none";
+            btnUH.style.display = "block";
+            posSelbar(e.target.getBoundingClientRect());
+            const s = window.getSelection();
+            if (s) s.removeAllRanges();
+          }
+        },
+        true
+      );
+      btnHL.onclick = () => {
+        if (currentHlNode || !lastRange || lastRange.collapsed) return;
+        const s = document.createElement("span");
+        s.className = "hl";
+        try {
+          lastRange.surroundContents(s);
+        } catch (e) {
+          const w = document.createElement("span");
+          w.className = "hl";
+          w.appendChild(lastRange.cloneContents());
+          lastRange.deleteContents();
+          lastRange.insertNode(w);
+        }
+        selbar.style.display = "none";
+        saveHighlights();
+      };
+      btnNote.onclick = () => {
+        if (currentHlNode || !lastRange || lastRange.collapsed) return;
+        const s = document.createElement("span");
+        s.className = "note";
+        try {
+          lastRange.surroundContents(s);
+        } catch (e) {
+          const w = document.createElement("span");
+          w.className = "note";
+          w.appendChild(lastRange.cloneContents());
+          lastRange.deleteContents();
+          lastRange.insertNode(w);
+        }
+        selbar.style.display = "none";
+        saveHighlights();
+      };
+      btnUH.onclick = () => {
+        if (currentHlNode) {
+          const p = currentHlNode.parentNode;
+          while (currentHlNode.firstChild)
+            p.insertBefore(currentHlNode.firstChild, currentHlNode);
+          p.removeChild(currentHlNode);
+          p.normalize();
+          currentHlNode = null;
+          selbar.style.display = "none";
+          saveHighlights();
+        } else if (lastRange) {
+          const sR = lastRange.getBoundingClientRect();
+          const w = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_ELEMENT
+          );
+          const tr = [];
+          while (w.nextNode()) {
+            const n = w.currentNode;
+            if (
+              n.classList &&
+              (n.classList.contains("hl") || n.classList.contains("note"))
+            ) {
+              const r = n.getBoundingClientRect();
+              if (
+                !(
+                  r.right < sR.left ||
+                  r.left > sR.right ||
+                  r.bottom < sR.top ||
+                  r.top > sR.bottom
+                )
+              )
+                tr.push(n);
+            }
+          }
+          tr.forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          selbar.style.display = "none";
+          saveHighlights();
+        }
+      };
+      document.querySelectorAll(".flag-btn").forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          btn.classList.toggle("active");
+          saveFlags();
+        };
+      });
+      const answerKey = {
+        q14: "North America",
+        q15: "overkill model",
+        q16: "hunting",
+        q17: "deadly disease",
+        q18: "empirical evidence",
+        q19: "climate instability",
+        q20: "communities",
+        q21: "B",
+        q22: "C",
+        q23: "B",
+        q24: "A",
+        q25: "B",
+        q26: "C",
+      };
+      let lastResults = [];
+      function saveAnswers() {
+        const data = {};
+        Object.keys(answerKey).forEach((q) => {
+          const radio = document.querySelector(
+            `input[name="${q}"][type="radio"]:checked`
+          );
+          const text = document.querySelector(
+            `input[name="${q}"][type="text"]`
+          );
+          if (radio) data[q] = radio.value;
+          else if (text) data[q] = text.value;
+        });
+        localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+      }
+      function loadAnswers() {
+        const data = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_answers`) || "{}"
+        );
+        Object.keys(data).forEach((q) => {
+          const radio = document.querySelector(
+            `input[name="${q}"][value="${data[q]}"]`
+          );
+          const text = document.querySelector(
+            `input[name="${q}"][type="text"]`
+          );
+          if (radio) radio.checked = true;
+          else if (text) text.value = data[q];
+        });
+      }
+      function saveFlags() {
+        const flags = [...document.querySelectorAll(".flag-btn.active")].map(
+          (b) => b.dataset.q
+        );
+        localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+      }
+      function loadFlags() {
+        const flags = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_flags`) || "[]"
+        );
+        flags.forEach((q) =>
+          document.querySelector(`[data-q="${q}"]`)?.classList.add("active")
+        );
+      }
+      function saveHighlights() {
+        const highlights = { left: [], right: [] };
+        document
+          .querySelectorAll("#left .hl, #left .note")
+          .forEach((el, idx) => {
+            highlights.left.push({
+              type: el.classList.contains("hl") ? "hl" : "note",
+              text: el.textContent,
+              index: idx,
+            });
+          });
+        document
+          .querySelectorAll("#right .hl, #right .note")
+          .forEach((el, idx) => {
+            highlights.right.push({
+              type: el.classList.contains("hl") ? "hl" : "note",
+              text: el.textContent,
+              index: idx,
+            });
+          });
+        localStorage.setItem(
+          `${PAPER_ID}_highlights`,
+          JSON.stringify(highlights)
+        );
+      }
+      function loadHighlights() {
+        const data = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_highlights`) ||
+            '{"left":[],"right":[]}'
+        );
+        const restore = (pane, items) => {
+          if (!items || items.length === 0) return;
+          items.forEach((item) => {
+            const walker = document.createTreeWalker(
+              pane,
+              NodeFilter.SHOW_TEXT
+            );
+            let node;
+            while ((node = walker.nextNode())) {
+              if (node.textContent.includes(item.text)) {
+                const span = document.createElement("span");
+                span.className = item.type;
+                const parent = node.parentNode;
+                const text = node.textContent;
+                const idx = text.indexOf(item.text);
+                if (idx >= 0) {
+                  const before = text.substring(0, idx);
+                  const match = text.substring(idx, idx + item.text.length);
+                  const after = text.substring(idx + item.text.length);
+                  parent.insertBefore(document.createTextNode(before), node);
+                  span.textContent = match;
+                  parent.insertBefore(span, node);
+                  parent.insertBefore(document.createTextNode(after), node);
+                  parent.removeChild(node);
+                  break;
+                }
+              }
+            }
+          });
+        };
+        restore(left, data.left);
+        restore(right, data.right);
+      }
+      document.querySelectorAll("input").forEach((inp) => {
+        inp.addEventListener("change", saveAnswers);
+        if (inp.type === "text") inp.addEventListener("input", saveAnswers);
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+        loadAnswers();
+        loadFlags();
+        loadHighlights();
+      });
+      function submitAnswers() {
+        const res = [];
+        let cor = 0;
+        Object.keys(answerKey).forEach((q) => {
+          let uA = "";
+          const radio = document.querySelector(
+            `input[name="${q}"][type="radio"]:checked`
+          );
+          const text = document.querySelector(
+            `input[name="${q}"][type="text"]`
+          );
+          if (radio) uA = radio.value;
+          else if (text) uA = text.value.trim();
+          const cA = answerKey[q];
+          const iC = uA.toLowerCase() === cA.toLowerCase();
+          if (iC) cor++;
+          res.push({ id: q, userAns: uA, correctAns: cA, isCorrect: iC });
+        });
+        lastResults = res;
+        const tot = Object.keys(answerKey).length;
+        const pct = ((cor / tot) * 100).toFixed(1);
+        localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+        document.getElementById(
+          "resultContent"
+        ).innerHTML = `<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res
+          .map(
+            (r) =>
+              `<div class="result-item ${
+                r.isCorrect ? "correct" : "incorrect"
+              }"><div><strong>${r.id}</strong> ${
+                r.isCorrect ? "✓" : "✗"
+              }</div><div>你的答案: ${r.userAns || "(未作答)"}</div>${
+                !r.isCorrect ? `<div>正确答案: ${r.correctAns}</div>` : ""
+              }</div>`
+          )
+          .join("")}`;
+        document.getElementById("resultModal").classList.add("active");
+      }
+      function resetForm() {
+        document.getElementById("resetModal").classList.add("active");
+      }
+      function confirmReset() {
+        const tp = document.querySelector(
+          'input[name="resetType"]:checked'
+        ).value;
+        document.querySelectorAll("input").forEach((i) => {
+          if (i.type === "radio") i.checked = false;
+          if (i.type === "text") i.value = "";
+        });
+        localStorage.removeItem(`${PAPER_ID}_answers`);
+        if (tp === "all") {
+          document.querySelectorAll(".hl").forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          document.querySelectorAll(".note").forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          document
+            .querySelectorAll(".flag-btn")
+            .forEach((b) => b.classList.remove("active"));
+          localStorage.removeItem(`${PAPER_ID}_highlights`);
+          localStorage.removeItem(`${PAPER_ID}_flags`);
+        }
+        closeModal("resetModal");
+      }
+      function addWrongToBook() {
+        const wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        const wr = lastResults.filter((r) => !r.isCorrect);
+        wr.forEach((r) => {
+          const en = {
+            paperId: PAPER_ID,
+            title: "Mammoth Kill",
+            questionId: r.id,
+            correctAnswer: r.correctAns,
+            myAnswer: r.userAns || "(未作答)",
+            date: new Date().toISOString().split("T")[0],
+          };
+          const ix = wb.findIndex(
+            (i) => i.paperId === en.paperId && i.questionId === en.questionId
+          );
+          if (ix >= 0) wb[ix] = en;
+          else wb.push(en);
+        });
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        alert(`已添加 ${wr.length} 道错题`);
+        closeModal("resultModal");
+      }
+      function deleteWrongItem(pId, qId) {
+        if (!confirm("确定删除这道错题？")) return;
+        let wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        wb = wb.filter((i) => !(i.paperId === pId && i.questionId === qId));
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        openWrongBook();
+      }
+      function clearCurrentWrongBook() {
+        if (!confirm("确定清空本篇所有错题？")) return;
+        let wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        wb = wb.filter((i) => i.paperId !== PAPER_ID);
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        openWrongBook();
+      }
+      function openWrongBook() {
+        const wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        const cu = wb.filter((i) => i.paperId === PAPER_ID);
+        const ct = document.getElementById("wrongBookContent");
+        if (cu.length === 0)
+          ct.innerHTML =
+            '<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>';
+        else
+          ct.innerHTML = `<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" stylewidth:100%;">🗑️ 清空本篇错题</button></div>${cu
+            .map(
+              (i) =>
+                `<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`
+            )
+            .join("")}`;
+        document.getElementById("wrongBookModal").classList.add("active");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("active");
+      }
+    </script>
+  </body>
+</html>

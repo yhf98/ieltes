@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>P2 – The Power of Smell</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+      }
+      #timer {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #0066cc;
+        z-index: 1000;
+      }
+      .shell {
+        display: flex;
+        height: 100vh;
+        width: 100%;
+      }
+      .pane {
+        background: #fff;
+        overflow: auto;
+        padding: 24px;
+      }
+      #left {
+        flex: 0 0 50%;
+        border-right: 1px solid #ddd;
+      }
+      #right {
+        flex: 1 1 auto;
+        background: #fafafa;
+      }
+      #divider {
+        flex: 0 0 5px;
+        background: #ddd;
+        cursor: ew-resize;
+      }
+      #divider:hover {
+        background: #999;
+      }
+      h2,
+      h3,
+      h4 {
+        margin: 0 0 12px;
+        color: #333;
+      }
+      h2 {
+        font-size: 20px;
+      }
+      h3 {
+        font-size: 18px;
+        color: #0066cc;
+      }
+      h4 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-top: 20px;
+      }
+      #left p {
+        margin: 0 0 14px;
+        line-height: 1.7;
+        text-align: justify;
+      }
+      .group {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .group h4 {
+        margin-top: 0;
+        color: #0066cc;
+      }
+      .group p {
+        margin: 8px 0;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .flag-btn {
+        position: absolute;
+        left: 2px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ddd;
+        cursor: pointer;
+        z-index: 10;
+      }
+      .flag-btn:hover {
+        background: #999;
+      }
+      .flag-btn.active {
+        background: #ff5722;
+      }
+      .group ol {
+        margin-left: 20px;
+      }
+      .group ol li {
+        margin: 12px 0;
+        font-size: 14px;
+        line-height: 1.6;
+        position: relative;
+      }
+      .group ol li label {
+        display: inline-block;
+        margin-right: 8px;
+      }
+      input[type="text"] {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 14px;
+        width: 160px;
+        background: #fdfdfd;
+      }
+      input[type="text"]:focus {
+        border-color: #0066cc;
+        outline: none;
+        background: #fff;
+      }
+      .bottom-bar {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      button {
+        padding: 10px 20px;
+        border: 1px solid #999;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover {
+        background: #f0f0f0;
+      }
+      .btn-primary {
+        background: #0066cc;
+        color: #fff;
+        border-color: #0066cc;
+      }
+      .btn-primary:hover {
+        background: #0052a3;
+      }
+      .btn-danger {
+        background: #dc3545;
+        color: #fff;
+        border-color: #dc3545;
+      }
+      .btn-danger:hover {
+        background: #c82333;
+      }
+      .hl {
+        background: #fff59d;
+        cursor: pointer;
+      }
+      .hl:hover {
+        background: #ffeb3b;
+      }
+      .note {
+        background: #b3d9ff;
+        cursor: pointer;
+      }
+      .note:hover {
+        background: #99ccff;
+      }
+      #selbar {
+        position: fixed;
+        display: none;
+        z-index: 2000;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 8px;
+        gap: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        flex-direction: column;
+        min-width: 120px;
+      }
+      #selbar button {
+        background: #fff;
+        color: #666;
+        border: none;
+        padding: 3px 0px;
+        cursor: pointer;
+        font-size: 14px;
+        text-align: center;
+        border-radius: 4px;
+      }
+      #selbar button:hover {
+        background: #f5f5f5;
+        color: #333;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 3000;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal.active {
+        display: flex;
+      }
+      .modal-content {
+        background: #fff;
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+      .modal-header h2 {
+        font-size: 28px;
+        color: #333;
+        margin: 0;
+      }
+      .modal-close {
+        font-size: 32px;
+        cursor: pointer;
+        color: #999;
+        line-height: 1;
+      }
+      .modal-close:hover {
+        color: #333;
+      }
+      .result-summary {
+        text-align: center;
+        padding: 20px;
+        background: #f0f0f0;
+        margin-bottom: 16px;
+        border-radius: 6px;
+      }
+      .result-score {
+        font-size: 36px;
+        font-weight: 600;
+        color: #0066cc;
+      }
+      .result-item {
+        padding: 10px;
+        margin: 8px 0;
+        border-left: 3px solid #ddd;
+        background: #f9f9f9;
+        font-size: 13px;
+      }
+      .result-item.correct {
+        border-left-color: #28a745;
+        background: #e8f5e9;
+      }
+      .result-item.incorrect {
+        border-left-color: #dc3545;
+        background: #ffebee;
+      }
+      .wrong-item {
+        background: #fff3e0;
+        padding: 16px;
+        margin: 8px 0;
+        border-radius: 8px;
+        border-left: 4px solid #ff9800;
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+      }
+      .wrong-item-content {
+        flex: 1;
+      }
+      .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        margin-left: 12px;
+      }
+      .btn-delete:hover {
+        background: #c82333;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .headings-box {
+        background: #f9f9f9;
+        padding: 12px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        margin-bottom: 12px;
+      }
+      .headings-box h5 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: #333;
+      }
+      .headings-box ol {
+        margin-left: 20px;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="timer">00:00</div>
+    <div class="shell">
+      <section class="pane" id="left">
+        <h2>READING PASSAGE 2</h2>
+        <p>
+          You should spend about 20 minutes on Questions 14–26, which are based
+          on Reading Passage 2 below.
+        </p>
+        <h3>The Power of Smell</h3>
+        <h4>
+          Research shows that our olfactory sense is more influential than we
+          realise
+        </h4>
+        <p>
+          <strong>A</strong> Dogs’ noses are renowned for sensitivity to smells,
+          while human noses are thought to be poor by comparison, yet that might
+          be a misconception. According to recent studies, our noses are in fact
+          acutely sensitive instruments that guide our everyday lives to a
+          surprising extent. Subtle smells can change your mood, behaviour and
+          the choices you make, often without you realising it. Our own odours,
+          meanwhile, indicate emotional states such as fear or sadness to those
+          around us. The big mystery is why we aren’t more aware of our nasal
+          activity. Noses have certainly never been at the forefront of sensory
+          research, and were pushed aside until recently in favour of the
+          seemingly more vital senses of vision and hearing. ‘There has been a
+          lot of prejudice that people are not that influenced by olfactory
+          stimuli, especially compared to other mammals,’ says Lilianne
+          Mujica-Parodi, who studies the neurobiology of human stress at Stony
+          Brook University in New York, in the United States.
+        </p>
+        <p>
+          <strong>B</strong> One of the first people to assert the relative
+          unimportance of human smelling was Pierre Paul Broca, an influential
+          19th-century anatomist. After comparing the proportion of the brain
+          devoted to smell in different animals, he suggested that mammals can
+          be classed into two broad groups: macrosmatic mammals, such as dogs,
+          have a finely tuned sense of smell which they rely on to perceive the
+          world, while we, along with other primates and the marine mammals, are
+          microsmatic – we have small olfactory organs that we only rely on to a
+          small extent. That idea seemed to fit with more recent studies which
+          found that the majority of mammals have genes coding for about 1000
+          different types of smell receptor. Most of these genes aren’t
+          expressed in humans, giving our noses just 400 different types of
+          receptor.
+        </p>
+        <p>
+          <strong>C</strong> Yet these findings may have been misleading. Brain
+          scans now show that more of the brain is devoted to smell processing
+          than Broca’s anatomical studies suggested. And although we may have
+          fewer types of receptor than other mammals, Charles Greer at Yale
+          University in the United States has shown that the human nose and
+          brain are unusually well connected, with each group of receptors
+          linking to many more neural regions than is the case in other animals.
+          That should give us a good ability to process incoming scents. Once
+          researchers began looking, they found the nose to be far more
+          sensitive than its reputation suggested. One study, for example, found
+          that we can detect certain chemicals diluted in water to less than one
+          part per billion. That means that a person can detect just a few drops
+          of a strong smell like ethyl mercaptan in an Olympic-sized pool.
+        </p>
+        <p>
+          <strong>D</strong> ‘We are also exceptionally gifted at telling smells
+          apart, even in the case of two molecules whose only difference is that
+          their structures are mirror images of one another. That is fantastic
+          sensitivity,’ says George Dodd, a perfumer and researcher at the
+          olfaction group of the University of Warwick, in the United Kingdom.
+          What’s more, it’s becoming clear that the brain’s olfactory centres
+          are intimately linked to its limbic system, which is involved in
+          emotion, fear and memory. That suggests a link between smell and the
+          way we think.
+        </p>
+        <p>
+          <strong>E</strong> The power of smell will be no news to estate
+          agents, who often advocate the smell of baking bread or brewing coffee
+          to promote the sale of a house. But there are more subtle and
+          surprising effects too. When Hendrik Schifferstein and colleagues,
+          from Delft University of Technology in the Netherlands, pumped the
+          smell of orange, seawater or peppermint into a nightclub, the
+          revellers danced more, rated their night as more enjoyable, and even
+          thought the music was better than when there was no added scent.
+          Meanwhile, Rob Holland, of the University of Utrecht in the
+          Netherlands, found that the hint of aroma wafting out of a hidden
+          bucket of citrus-scented cleaner was enough to persuade students in a
+          hostel to clean up after themselves.
+        </p>
+        <p>
+          <strong>F</strong> Other work has found that scent can influence our
+          cognitive skills. A study by William Overman and colleagues at the
+          University of North Carolina in the United States found that when men
+          were subjected to a novel smell – either good or bad – during a task
+          used to test decision-making skills, they performed significantly
+          worse than normal. The researchers conclude the scent stimulated brain
+          areas connected with emotion, making their decisions emotional rather
+          than rational.
+        </p>
+        <p>
+          <strong>G</strong> Smells are especially good memory evokers, but it
+          is actually a myth that odours trigger more detailed memories than
+          other stimuli. ‘The memory is not more accurate and you don’t remember
+          more details,’ says Yaara Yeshurun at the Weizmann Institute of
+          Science in Rehovot, Israel, ‘but it is unique in that it is more
+          emotional.’ This isn’t surprising when you consider that there are
+          certain brain areas dedicated to both emotion and olfaction, such as
+          the amygdala, and there is a strong link between emotion and memory.
+          In 2009, Yeshurun found that the link between a memory and a smell is
+          stronger if the smell is unpleasant rather than pleasant. She also
+          discovered that the very first time we attach a smell to an object, it
+          evokes a much greater response in our brains than for any subsequent
+          encounter with the smell or object, laying down stronger foundations
+          for the memory. That doesn’t happen with any other sense. Since those
+          first encounters with a smell would have happened at a young age, this
+          explains why smells often transport us back to our childhood.
+        </p>
+      </section>
+      <div id="divider"></div>
+      <section class="pane" id="right">
+        <h3>Questions</h3>
+        <div class="group">
+          <h4>Questions 14–19</h4>
+          <p>Reading Passage 2 has seven paragraphs, A–G.</p>
+          <p>Which paragraph contains the following information?</p>
+          <ol start="14">
+            <li>
+              <span class="flag-btn" data-q="q14" style="left: -20px"></span>a
+              finding that humans can distinguish between two extremely similar
+              substances<br />
+              <label><input type="radio" name="q14" value="A" /> A</label>
+              <label><input type="radio" name="q14" value="B" /> B</label>
+              <label><input type="radio" name="q14" value="C" /> C</label>
+              <label><input type="radio" name="q14" value="D" /> D</label>
+              <label><input type="radio" name="q14" value="E" /> E</label>
+              <label><input type="radio" name="q14" value="F" /> F</label>
+              <label><input type="radio" name="q14" value="G" /> G</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q15" style="left: -20px"></span>a
+              categorisation of species according to their sensitivity to
+              smell<br />
+              <label><input type="radio" name="q15" value="A" /> A</label>
+              <label><input type="radio" name="q15" value="B" /> B</label>
+              <label><input type="radio" name="q15" value="C" /> C</label>
+              <label><input type="radio" name="q15" value="D" /> D</label>
+              <label><input type="radio" name="q15" value="E" /> E</label>
+              <label><input type="radio" name="q15" value="F" /> F</label>
+              <label><input type="radio" name="q15" value="G" /> G</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q16" style="left: -20px"></span>an
+              instance where smell negatively affected people’s ability to make
+              choices<br />
+              <label><input type="radio" name="q16" value="A" /> A</label>
+              <label><input type="radio" name="q16" value="B" /> B</label>
+              <label><input type="radio" name="q16" value="C" /> C</label>
+              <label><input type="radio" name="q16" value="D" /> D</label>
+              <label><input type="radio" name="q16" value="E" /> E</label>
+              <label><input type="radio" name="q16" value="F" /> F</label>
+              <label><input type="radio" name="q16" value="G" /> G</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q17" style="left: -20px"></span>a
+              study that proved humans could perceive a tiny quantity of a
+              substance<br />
+              <label><input type="radio" name="q17" value="A" /> A</label>
+              <label><input type="radio" name="q17" value="B" /> B</label>
+              <label><input type="radio" name="q17" value="C" /> C</label>
+              <label><input type="radio" name="q17" value="D" /> D</label>
+              <label><input type="radio" name="q17" value="E" /> E</label>
+              <label><input type="radio" name="q17" value="F" /> F</label>
+              <label><input type="radio" name="q17" value="G" /> G</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q18" style="left: -20px"></span>an
+              observation that studies of the sense of smell have been
+              undervalued<br />
+              <label><input type="radio" name="q18" value="A" /> A</label>
+              <label><input type="radio" name="q18" value="B" /> B</label>
+              <label><input type="radio" name="q18" value="C" /> C</label>
+              <label><input type="radio" name="q18" value="D" /> D</label>
+              <label><input type="radio" name="q18" value="E" /> E</label>
+              <label><input type="radio" name="q18" value="F" /> F</label>
+              <label><input type="radio" name="q18" value="G" /> G</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q19" style="left: -20px"></span>an
+              example of using smell to prompt people to buy something<br />
+              <label><input type="radio" name="q19" value="A" /> A</label>
+              <label><input type="radio" name="q19" value="B" /> B</label>
+              <label><input type="radio" name="q19" value="C" /> C</label>
+              <label><input type="radio" name="q19" value="D" /> D</label>
+              <label><input type="radio" name="q19" value="E" /> E</label>
+              <label><input type="radio" name="q19" value="F" /> F</label>
+              <label><input type="radio" name="q19" value="G" /> G</label>
+            </li>
+          </ol>
+        </div>
+        <div class="group">
+          <h4>Questions 20–23</h4>
+          <p>
+            Match each statement with the correct person, <strong>A–F</strong>.
+          </p>
+          <div class="headings-box">
+            <h5>List of People</h5>
+            <div style="margin-left: 10px">
+              <strong>A</strong> Lilianne Mujica-Parodi<br />
+              <strong>B</strong> Pierre Paul Broca<br />
+              <strong>C</strong> Charles Greer<br />
+              <strong>D</strong> Hendrik Schifferstein and colleagues<br />
+              <strong>E</strong> Rob Holland<br />
+              <strong>F</strong> William Overman and colleagues
+            </div>
+          </div>
+          <ol start="20">
+            <li>
+              <span class="flag-btn" data-q="q20" style="left: -20px"></span>A
+              faint smell could motivate people to do household chores<br />
+              <label><input type="radio" name="q20" value="A" /> A</label>
+              <label><input type="radio" name="q20" value="B" /> B</label>
+              <label><input type="radio" name="q20" value="C" /> C</label>
+              <label><input type="radio" name="q20" value="D" /> D</label>
+              <label><input type="radio" name="q20" value="E" /> E</label>
+              <label><input type="radio" name="q20" value="F" /> F</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q21" style="left: -20px"></span
+              >Humans are better equipped to interpret smell than other species
+              are<br />
+              <label><input type="radio" name="q21" value="A" /> A</label>
+              <label><input type="radio" name="q21" value="B" /> B</label>
+              <label><input type="radio" name="q21" value="C" /> C</label>
+              <label><input type="radio" name="q21" value="D" /> D</label>
+              <label><input type="radio" name="q21" value="E" /> E</label>
+              <label><input type="radio" name="q21" value="F" /> F</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q22" style="left: -20px"></span
+              >Smell is associated with feelings, rather than the logical part
+              of the brain<br />
+              <label><input type="radio" name="q22" value="A" /> A</label>
+              <label><input type="radio" name="q22" value="B" /> B</label>
+              <label><input type="radio" name="q22" value="C" /> C</label>
+              <label><input type="radio" name="q22" value="D" /> D</label>
+              <label><input type="radio" name="q22" value="E" /> E</label>
+              <label><input type="radio" name="q22" value="F" /> F</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q23" style="left: -20px"></span
+              >Humans do not require a sophisticated ability to smell<br />
+              <label><input type="radio" name="q23" value="A" /> A</label>
+              <label><input type="radio" name="q23" value="B" /> B</label>
+              <label><input type="radio" name="q23" value="C" /> C</label>
+              <label><input type="radio" name="q23" value="D" /> D</label>
+              <label><input type="radio" name="q23" value="E" /> E</label>
+              <label><input type="radio" name="q23" value="F" /> F</label>
+            </li>
+          </ol>
+        </div>
+        <div class="group">
+          <h4>Questions 24–26</h4>
+          <p>
+            Complete the sentences below. Choose
+            <strong>ONE WORD ONLY</strong> from the passage for each answer.
+          </p>
+          <ol start="24">
+            <li>
+              <span class="flag-btn" data-q="q24" style="left: -20px"></span>The
+              <input type="text" name="q24" /> is a part of the brain that deals
+              with feelings and smell.
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q25" style="left: -20px"></span
+              ><input type="text" name="q25" /> smells create especially
+              powerful associations with memories.
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q26" style="left: -20px"></span>Of
+              all the senses, smell has the capacity to prompt memories of
+              <input type="text" name="q26" />.
+            </li>
+          </ol>
+        </div>
+        <div class="bottom-bar">
+          <button class="btn-primary" onclick="submitAnswers()">提交</button>
+          <button onclick="resetForm()">重置</button>
+          <button onclick="openWrongBook()">本篇错题</button>
+        </div>
+      </section>
+    </div>
+    <div id="selbar">
+      <button id="btnNote">Note</button>
+      <button id="btnHL">Highlight</button>
+      <button id="btnUH" style="display: none">Clear Highlight</button>
+    </div>
+    <div class="modal" id="resultModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>成绩</h2>
+          <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+        </div>
+        <div id="resultContent"></div>
+        <button
+          class="btn-primary"
+          style="width: 100%; margin-top: 16px"
+          onclick="addWrongToBook()"
+        >
+          加入错题本
+        </button>
+      </div>
+    </div>
+    <div class="modal" id="wrongBookModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>本篇错题</h2>
+          <span class="modal-close" onclick="closeModal('wrongBookModal')"
+            >×</span
+          >
+        </div>
+        <div id="wrongBookContent"></div>
+      </div>
+    </div>
+    <div class="modal" id="resetModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>重置练习</h2>
+          <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+        </div>
+        <div style="margin: 16px 0">
+          <label style="display: block; margin-bottom: 10px"
+            ><input type="radio" name="resetType" value="answers" checked />
+            只清空答案</label
+          >
+          <label style="display: block"
+            ><input type="radio" name="resetType" value="all" />
+            清空答案和标记</label
+          >
+        </div>
+        <button
+          class="btn-primary"
+          style="width: 100%"
+          onclick="confirmReset()"
+        >
+          确定
+        </button>
+      </div>
+    </div>
+    <script>
+      const PAPER_ID = "P2_POWER_OF_SMELL";
+      let t = 0;
+      const timerEl = document.getElementById("timer");
+      setInterval(() => {
+        t++;
+        timerEl.textContent =
+          String(Math.floor(t / 60)).padStart(2, "0") +
+          ":" +
+          String(t % 60).padStart(2, "0");
+      }, 1000);
+      const divider = document.getElementById("divider"),
+        left = document.getElementById("left"),
+        right = document.getElementById("right");
+      let dragging = false;
+      divider.onmousedown = () => {
+        dragging = true;
+        document.body.style.cursor = "ew-resize";
+      };
+      window.onmousemove = (e) => {
+        if (!dragging) return;
+        const c = document.querySelector(".shell").getBoundingClientRect();
+        let x = e.clientX - c.left;
+        x = Math.max(280, Math.min(c.width - 280, x));
+        left.style.flex = "0 0 " + x + "px";
+        right.style.flex = "1 1 auto";
+      };
+      window.onmouseup = () => {
+        dragging = false;
+        document.body.style.cursor = "";
+      };
+      const selbar = document.getElementById("selbar"),
+        btnHL = document.getElementById("btnHL"),
+        btnUH = document.getElementById("btnUH"),
+        btnNote = document.getElementById("btnNote");
+      let lastRange = null,
+        currentHlNode = null;
+      function posSelbar(r) {
+        selbar.style.display = "flex";
+        const t = window.scrollY + r.top - selbar.offsetHeight - 8;
+        const l =
+          window.scrollX + r.left + r.width / 2 - selbar.offsetWidth / 2;
+        selbar.style.top = (t > 0 ? t : window.scrollY + r.bottom + 8) + "px";
+        selbar.style.left = Math.max(8, l) + "px";
+      }
+      function updSel() {
+        const s = window.getSelection();
+        if (!s || s.rangeCount === 0 || s.isCollapsed) {
+          if (!currentHlNode) selbar.style.display = "none";
+          return;
+        }
+        const r = s.getRangeAt(0);
+        lastRange = r.cloneRange();
+        currentHlNode = null;
+        btnNote.style.display = "block";
+        btnHL.style.display = "block";
+        btnUH.style.display = "none";
+        posSelbar(r.getBoundingClientRect());
+      }
+      left.onmouseup = updSel;
+      right.onmouseup = updSel;
+      document.onselectionchange = () => {
+        const s = window.getSelection();
+        if ((!s || s.rangeCount === 0 || s.isCollapsed) && !currentHlNode)
+          selbar.style.display = "none";
+      };
+      document.addEventListener(
+        "click",
+        (e) => {
+          if (
+            e.target.classList &&
+            (e.target.classList.contains("hl") ||
+              e.target.classList.contains("note"))
+          ) {
+            currentHlNode = e.target;
+            lastRange = null;
+            btnNote.style.display = "none";
+            btnHL.style.display = "none";
+            btnUH.style.display = "block";
+            posSelbar(e.target.getBoundingClientRect());
+            const s = window.getSelection();
+            if (s) s.removeAllRanges();
+          }
+        },
+        true
+      );
+      btnHL.onclick = () => {
+        if (currentHlNode || !lastRange || lastRange.collapsed) return;
+        const s = document.createElement("span");
+        s.className = "hl";
+        try {
+          lastRange.surroundContents(s);
+        } catch (e) {
+          const w = document.createElement("span");
+          w.className = "hl";
+          w.appendChild(lastRange.cloneContents());
+          lastRange.deleteContents();
+          lastRange.insertNode(w);
+        }
+        selbar.style.display = "none";
+        saveHighlights();
+      };
+      btnNote.onclick = () => {
+        if (currentHlNode || !lastRange || lastRange.collapsed) return;
+        const s = document.createElement("span");
+        s.className = "note";
+        try {
+          lastRange.surroundContents(s);
+        } catch (e) {
+          const w = document.createElement("span");
+          w.className = "note";
+          w.appendChild(lastRange.cloneContents());
+          lastRange.deleteContents();
+          lastRange.insertNode(w);
+        }
+        selbar.style.display = "none";
+        saveHighlights();
+      };
+      btnUH.onclick = () => {
+        if (currentHlNode) {
+          const p = currentHlNode.parentNode;
+          while (currentHlNode.firstChild)
+            p.insertBefore(currentHlNode.firstChild, currentHlNode);
+          p.removeChild(currentHlNode);
+          p.normalize();
+          currentHlNode = null;
+          selbar.style.display = "none";
+          saveHighlights();
+        } else if (lastRange) {
+          const sR = lastRange.getBoundingClientRect();
+          const w = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_ELEMENT
+          );
+          const tr = [];
+          while (w.nextNode()) {
+            const n = w.currentNode;
+            if (
+              n.classList &&
+              (n.classList.contains("hl") || n.classList.contains("note"))
+            ) {
+              const r = n.getBoundingClientRect();
+              if (
+                !(
+                  r.right < sR.left ||
+                  r.left > sR.right ||
+                  r.bottom < sR.top ||
+                  r.top > sR.bottom
+                )
+              )
+                tr.push(n);
+            }
+          }
+          tr.forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          selbar.style.display = "none";
+          saveHighlights();
+        }
+      };
+      document.querySelectorAll(".flag-btn").forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          btn.classList.toggle("active");
+          saveFlags();
+        };
+      });
+      const answerKey = {
+        q14: "D",
+        q15: "B",
+        q16: "F",
+        q17: "C",
+        q18: "A",
+        q19: "E",
+        q20: "E",
+        q21: "C",
+        q22: "F",
+        q23: "B",
+        q24: "amygdala",
+        q25: "unpleasant",
+        q26: "childhood",
+      };
+      let lastResults = [];
+      function saveAnswers() {
+        const data = {};
+        Object.keys(answerKey).forEach((q) => {
+          const radio = document.querySelector(
+            `input[name="${q}"][type="radio"]:checked`
+          );
+          const text = document.querySelector(
+            `input[name="${q}"][type="text"]`
+          );
+          if (radio) data[q] = radio.value;
+          else if (text) data[q] = text.value;
+        });
+        localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+      }
+      function loadAnswers() {
+        const data = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_answers`) || "{}"
+        );
+        Object.keys(data).forEach((q) => {
+          const radio = document.querySelector(
+            `input[name="${q}"][value="${data[q]}"]`
+          );
+          const text = document.querySelector(
+            `input[name="${q}"][type="text"]`
+          );
+          if (radio) radio.checked = true;
+          else if (text) text.value = data[q];
+        });
+      }
+      function saveFlags() {
+        const flags = [...document.querySelectorAll(".flag-btn.active")].map(
+          (b) => b.dataset.q
+        );
+        localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+      }
+      function loadFlags() {
+        const flags = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_flags`) || "[]"
+        );
+        flags.forEach((q) =>
+          document.querySelector(`[data-q="${q}"]`)?.classList.add("active")
+        );
+      }
+      function saveHighlights() {
+        const highlights = { left: [], right: [] };
+        document
+          .querySelectorAll("#left .hl, #left .note")
+          .forEach((el, idx) => {
+            highlights.left.push({
+              type: el.classList.contains("hl") ? "hl" : "note",
+              text: el.textContent,
+              index: idx,
+            });
+          });
+        document
+          .querySelectorAll("#right .hl, #right .note")
+          .forEach((el, idx) => {
+            highlights.right.push({
+              type: el.classList.contains("hl") ? "hl" : "note",
+              text: el.textContent,
+              index: idx,
+            });
+          });
+        localStorage.setItem(
+          `${PAPER_ID}_highlights`,
+          JSON.stringify(highlights)
+        );
+      }
+      function loadHighlights() {
+        const data = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_highlights`) ||
+            '{"left":[],"right":[]}'
+        );
+        const restore = (pane, items) => {
+          if (!items || items.length === 0) return;
+          items.forEach((item) => {
+            const walker = document.createTreeWalker(
+              pane,
+              NodeFilter.SHOW_TEXT
+            );
+            let node;
+            while ((node = walker.nextNode())) {
+              if (node.textContent.includes(item.text)) {
+                const span = document.createElement("span");
+                span.className = item.type;
+                const parent = node.parentNode;
+                const text = node.textContent;
+                const idx = text.indexOf(item.text);
+                if (idx >= 0) {
+                  const before = text.substring(0, idx);
+                  const match = text.substring(idx, idx + item.text.length);
+                  const after = text.substring(idx + item.text.length);
+                  parent.insertBefore(document.createTextNode(before), node);
+                  span.textContent = match;
+                  parent.insertBefore(span, node);
+                  parent.insertBefore(document.createTextNode(after), node);
+                  parent.removeChild(node);
+                  break;
+                }
+              }
+            }
+          });
+        };
+        restore(left, data.left);
+        restore(right, data.right);
+      }
+      document.querySelectorAll("input").forEach((inp) => {
+        inp.addEventListener("change", saveAnswers);
+        if (inp.type === "text") inp.addEventListener("input", saveAnswers);
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+        loadAnswers();
+        loadFlags();
+        loadHighlights();
+      });
+      function submitAnswers() {
+        const res = [];
+        let cor = 0;
+        Object.keys(answerKey).forEach((q) => {
+          let uA = "";
+          const radio = document.querySelector(
+            `input[name="${q}"][type="radio"]:checked`
+          );
+          const text = document.querySelector(
+            `input[name="${q}"][type="text"]`
+          );
+          if (radio) uA = radio.value;
+          else if (text) uA = text.value.trim();
+          const cA = answerKey[q];
+          const iC = uA.toLowerCase() === cA.toLowerCase();
+          if (iC) cor++;
+          res.push({ id: q, userAns: uA, correctAns: cA, isCorrect: iC });
+        });
+        lastResults = res;
+        const tot = Object.keys(answerKey).length;
+        const pct = ((cor / tot) * 100).toFixed(1);
+        localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+        document.getElementById(
+          "resultContent"
+        ).innerHTML = `<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res
+          .map(
+            (r) =>
+              `<div class="result-item ${
+                r.isCorrect ? "correct" : "incorrect"
+              }"><div><strong>${r.id}</strong> ${
+                r.isCorrect ? "✓" : "✗"
+              }</div><div>你的答案: ${r.userAns || "(未作答)"}</div>${
+                !r.isCorrect ? `<div>正确答案: ${r.correctAns}</div>` : ""
+              }</div>`
+          )
+          .join("")}`;
+        document.getElementById("resultModal").classList.add("active");
+      }
+      function resetForm() {
+        document.getElementById("resetModal").classList.add("active");
+      }
+      function confirmReset() {
+        const tp = document.querySelector(
+          'input[name="resetType"]:checked'
+        ).value;
+        document.querySelectorAll("input").forEach((i) => {
+          if (i.type === "radio") i.checked = false;
+          if (i.type === "text") i.value = "";
+        });
+        localStorage.removeItem(`${PAPER_ID}_answers`);
+        if (tp === "all") {
+          document.querySelectorAll(".hl").forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          document.querySelectorAll(".note").forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          document
+            .querySelectorAll(".flag-btn")
+            .forEach((b) => b.classList.remove("active"));
+          localStorage.removeItem(`${PAPER_ID}_highlights`);
+          localStorage.removeItem(`${PAPER_ID}_flags`);
+        }
+        closeModal("resetModal");
+      }
+      function addWrongToBook() {
+        const wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        const wr = lastResults.filter((r) => !r.isCorrect);
+        wr.forEach((r) => {
+          const en = {
+            paperId: PAPER_ID,
+            title: "The Power of Smell",
+            questionId: r.id,
+            correctAnswer: r.correctAns,
+            myAnswer: r.userAns || "(未作答)",
+            date: new Date().toISOString().split("T")[0],
+          };
+          const ix = wb.findIndex(
+            (i) => i.paperId === en.paperId && i.questionId === en.questionId
+          );
+          if (ix >= 0) wb[ix] = en;
+          else wb.push(en);
+        });
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        alert(`已添加 ${wr.length} 道错题`);
+        closeModal("resultModal");
+      }
+      function deleteWrongItem(pId, qId) {
+        if (!confirm("确定删除这道错题？")) return;
+        let wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        wb = wb.filter((i) => !(i.paperId === pId && i.questionId === qId));
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        openWrongBook();
+      }
+      function clearCurrentWrongBook() {
+        if (!confirm("确定清空本篇所有错题？")) return;
+        let wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        wb = wb.filter((i) => i.paperId !== PAPER_ID);
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        openWrongBook();
+      }
+      function openWrongBook() {
+        const wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        const cu = wb.filter((i) => i.paperId === PAPER_ID);
+        const ct = document.getElementById("wrongBookContent");
+        if (cu.length === 0)
+          ct.innerHTML =
+            '<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>';
+        else
+          ct.innerHTML = `<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" stylewidth:100%;">🗑️ 清空本篇错题</button></div>${cu
+            .map(
+              (i) =>
+                `<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`
+            )
+            .join("")}`;
+        document.getElementById("wrongBookModal").classList.add("active");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("active");
+      }
+    </script>
+  </body>
+</html>

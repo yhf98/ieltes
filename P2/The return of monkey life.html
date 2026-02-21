@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – The Return of Monkey Life</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+ * { box-sizing: border-box; margin:0; padding:0; }
+ html,body { height:100%; }
+ body { font-family: Arial, sans-serif; background:#f5f5f5; }
+ 
+ #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+ 
+ .shell { display:flex; height:100vh; width:100%; }
+ .pane { background:#fff; overflow:auto; padding:24px; }
+ #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+ #right { flex: 1 1 auto; background:#fafafa; }
+ #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+ #divider:hover { background:#999; }
+ 
+ h2,h3,h4 { margin:0 0 12px; color:#333; }
+ h2 { font-size:20px; }
+ h3 { font-size:18px; color:#0066cc; }
+ h4 { font-size:15px; font-weight:600; margin-top:20px; }
+ 
+ #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+ 
+ .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+ .group h4 { margin-top:0; color:#0066cc; }
+ .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+ 
+ .gap-fill { margin:12px 0; line-height:2; }
+ .gap-fill input { width:120px; padding:4px 8px; border:1px solid #999; border-radius:4px; margin:0 4px; }
+ 
+ .group ol { margin-left:20px; }
+ .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+ .group ol li label { display:inline-block; margin-right:8px; }
+ 
+ .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+ button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+ button:hover { background:#f0f0f0; }
+ .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+ .btn-primary:hover { background:#0052a3; }
+ .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+ .btn-danger:hover { background:#c82333; }
+ 
+ .flag-btn { 
+   position:absolute; 
+   left:-20px; 
+   top:50%;
+   transform:translateY(-50%);
+   width:8px;
+   height:8px;
+   border-radius:50%;
+   background:#ddd;
+   cursor:pointer;
+   z-index:10;
+ }
+ .flag-btn:hover { background:#999; }
+ .flag-btn.active { background:#ff5722; }
+ 
+ .hl { background:#fff59d; cursor:pointer; }
+ .hl:hover { background:#ffeb3b; }
+ .note { background:#b3d9ff; cursor:pointer; }
+ .note:hover { background:#99ccff; }
+ 
+ #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+ #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+ #selbar button:hover { background:#f5f5f5; color:#333; }
+ 
+ .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+ .modal.active { display:flex; }
+ .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+ 
+ .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+ .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+ .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+ .modal-close:hover { color: #333; }
+ 
+ .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+ .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+ .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+ .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+ .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+ 
+ .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+ .wrong-item-content { flex:1; }
+ .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+ .btn-delete:hover { background:#c82333; }
+ .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+ <section class="pane" id="left">
+   
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>The Return of Monkey Life</h3>
+<p style="font-style:italic; margin-bottom:20px;">Rain-forest trees growing anew on Central American farmland are helping scientists find ways for monkey and agriculture to benefit one another.</p>
+
+<h4>Paragraph A</h4>
+<p>Hacienda La Pacifica, a remote working cattle ranch in Guanacaste Province of northern Costa Rica, has for decades been home to a community of mantled howler monkeys. Other native primates—white-faced capuchin monkeys and spider monkeys—were once common in this area too, but vanished after the Pan-American Highway was built nearby in the 1950s and most of the surrounding land was cleared for cattle-raising. At Hacienda La Pacifica, however, an enlightened ranch owner chose to leave some strips of native trees growing. He used these as windbreaks to protect both cattle and their food crops from dry-season winds. In the process, the farmer unwittingly founded a unique laboratory for the study of monkeys.</p>
+
+<h4>Paragraph B</h4>
+<p>Ken Glander, a primatologist from Duke University in the USA, is studying La Pacifica's monkeys in an effort to understand the relationship between howlers and regenerating forests at the edges of grazing lands. Studying such disturbed woodlands is increasingly important because throughout much of the New World Tropics, these are the only forests left. In the 18th century, tropical dry forests once covered most of Central America, but by the 1980s less than two percent remained undisturbed, and less than one percent was protected.</p>
+
+<h4>Paragraph C</h4>
+<p>Howlers persist at La Pacifica, Glander explains, because they are leaf-eaters. They eat fruit when it is available but, unlike capuchin and spider monkeys, do not depend on large areas of fruiting trees. Glander is particularly interested in howlers' ability to thrive on leaves loaded with toxins—poisonous substances designed to protect the plants. For leaf-eaters, long-term exposure to a specific plant toxin can increase their ability to neutralise the poisonous substances and absorb the leaf nutrients. Watching generations of howlers at La Pacifica has shown Glander that the monkeys keep their systems primed by sampling a variety of plants and then focusing on a small number of the most nutritious food items. The leaves that grow in regenerating forests, like those at La Pacifica, are actually more howler-friendly than those produced by the centuries-old trees that survive farther south. In younger forests, trees put most of their limited energy into growing wood, leaves and fruit, so they produce much lower levels of toxin than do well-established, old-growth trees.</p>
+
+<h4>Paragraph D</h4>
+<p>The value of maturing forests to primates is also a subject of study at Santa Rosa National Park, about 35 miles northwest of La Pacifica. Large areas of Santa Rosa's forests had at one time been burnt to make space for cattle ranching and coffee farming, thereby devastating local monkey habitat. But in 1971 the government protected the area by designating it a national park, and species of indigenous trees which had been absent for decades began to invade the abandoned pastures. Capuchins were the first to begin using the reborn forests, followed by howlers. Eventually, even spider monkeys, fruit-eaters that need large areas of continuous forest, returned. In the first 28 years following protection of the area, the capuchin population doubled, while the number of howlers increased seven-fold.</p>
+
+<h4>Paragraph E</h4>
+<p>Some of the same traits that allow howlers to survive at La Pacifica also explain their population boom in Santa Rosa. Howler reproduction is faster than that of other native monkey species. They give birth for the first time at about 3.5 years of age, compared with seven years for capuchins, and eight or more for spider monkeys. Also, while a female spider monkey will have a baby about once every four years, well-fed howlers can produce an infant every two years. Another factor is diet. Howlers are very adaptable feeders and need only a comparatively small home range. Spider monkeys, on the other hand, need to occupy a huge home range. Also crucial is the fact that the leaves howlers eat hold plenty of water, so the monkeys can survive away from open streams and water-holes. This ability gives them a real advantage over capuchin and spider monkeys, which have suffered during the long, ongoing drought in the area.</p>
+
+<h4>Paragraph F</h4>
+<p>Alejandro Estrada, an ecologist at Estación de Biología Los Tuxtlas in Veracruz, Mexico, has been studying the ecology of a group of howler monkeys that thrive in a habitat totally altered by humans: a cacao plantation in Tabasco State, Mexico. Cacao plants need shade to grow, so 40 years ago the owners of Cholula Cacao Farm planted figs, monkey-pod and other tall trees to form a protective canopy over their crop. The howlers moved in about 25 years ago after nearby forests were cut. This strange habitat seems to support about as many monkeys as would a same-sized patch of wild forest. The howlers eat the leaves and fruit of the shade trees, leaving the valuable cacao pods alone.</p>
+
+<h4>Paragraph G</h4>
+<p>Estrada believes the monkeys bring under-appreciated benefits to such plantations, dispersing the seeds of fruits such as fig and other shade trees, and fertilising the soil. Spider monkeys also forage for fruit here, though they need nearby areas of forest to survive in the long term. He hopes that farmers will begin to see the advantages of associating with wild monkeys, which could include potential ecotourism projects. 'Conservation is usually viewed as a conflict between farming practices and the need to preserve nature,' Estrada says. 'We're moving away from that vision and beginning to consider ways in which commercial activities may become a tool for the conservation of primates in human-modified landscapes.'</p>
+
+ </section>
+
+ <div id="divider" title="Drag to resize"></div>
+
+ <section class="pane" id="right">
+   <h3>Questions</h3>
+
+   <div class="group">
+     <h4>Questions 14–17</h4>
+     <p>Reading Passage 2 has seven paragraphs, <strong>A–G</strong>.</p>
+     <p>Which paragraph contains the following information?</p>
+     <p>Write the correct letter <strong>A–G</strong> in boxes <strong>14–17</strong> on your answer sheet.</p>
+     <p><strong>NB</strong> You may use any letter more than once.</p>
+
+     <ol start="14">
+       <li><span class="flag-btn" data-q="q14"></span>a reason why newer forests provide howlers with better feeding opportunities than older forests<br>
+         <label><input type="radio" name="q14" value="A"> A</label>
+         <label><input type="radio" name="q14" value="B"> B</label>
+         <label><input type="radio" name="q14" value="C"> C</label>
+         <label><input type="radio" name="q14" value="D"> D</label>
+         <label><input type="radio" name="q14" value="E"> E</label>
+         <label><input type="radio" name="q14" value="F"> F</label>
+         <label><input type="radio" name="q14" value="G"> G</label>
+       </li>
+       <li><span class="flag-btn" data-q="q15"></span>a reference to a change in farmers' attitudes towards wildlife<br>
+         <label><input type="radio" name="q15" value="A"> A</label>
+         <label><input type="radio" name="q15" value="B"> B</label>
+         <label><input type="radio" name="q15" value="C"> C</label>
+         <label><input type="radio" name="q15" value="D"> D</label>
+         <label><input type="radio" name="q15" value="E"> E</label>
+         <label><input type="radio" name="q15" value="F"> F</label>
+         <label><input type="radio" name="q15" value="G"> G</label>
+       </li>
+       <li><span class="flag-btn" data-q="q16"></span>a description of the means by which howlers select the best available diet for themselves<br>
+         <label><input type="radio" name="q16" value="A"> A</label>
+         <label><input type="radio" name="q16" value="B"> B</label>
+         <label><input type="radio" name="q16" value="C"> C</label>
+         <label><input type="radio" name="q16" value="D"> D</label>
+         <label><input type="radio" name="q16" value="E"> E</label>
+         <label><input type="radio" name="q16" value="F"> F</label>
+         <label><input type="radio" name="q16" value="G"> G</label>
+       </li>
+       <li><span class="flag-btn" data-q="q17"></span>figures relating to the reduction of natural wildlife habitat over a period of time<br>
+         <label><input type="radio" name="q17" value="A"> A</label>
+         <label><input type="radio" name="q17" value="B"> B</label>
+         <label><input type="radio" name="q17" value="C"> C</label>
+         <label><input type="radio" name="q17" value="D"> D</label>
+         <label><input type="radio" name="q17" value="E"> E</label>
+         <label><input type="radio" name="q17" value="F"> F</label>
+         <label><input type="radio" name="q17" value="G"> G</label>
+       </li>
+     </ol>
+   </div>
+
+   <div class="group">
+     <h4>Questions 18–21</h4>
+     <p>Complete the summary below.</p>
+     <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+     <p>Write your answers in boxes <strong>18–21</strong> on your answer sheet.</p>
+     
+     <h4 style="margin-top:20px;">Why do howlers have an advantage over other Central American monkeys?</h4>
+     <div class="gap-fill">
+       <p>Howler monkeys have a more rapid rate of <span class="flag-btn" data-q="q18"></span><input type="text" name="q18" placeholder="18"> than either capuchin or spider monkeys. Unlike the other local monkey species, howlers can survive without eating <span class="flag-btn" data-q="q19"></span><input type="text" name="q19" placeholder="19"> and so can live inside a relatively small habitat area. Their diet is more flexible, and they are able to tolerate leaves with high levels of <span class="flag-btn" data-q="q20"></span><input type="text" name="q20" placeholder="20">. Howlers can also survive periods of <span class="flag-btn" data-q="q21"></span><input type="text" name="q21" placeholder="21"> better than the other monkey species can.</p>
+     </div>
+   </div>
+
+   <div class="group">
+     <h4>Questions 22–26</h4>
+     <p>Look at the following features (Questions 22–26) and the list of locations below.</p>
+     <p>Match each feature with the correct location, <strong>A, B or C</strong>.</p>
+     <p>Write the correct letter, <strong>A, B or C</strong>, in boxes <strong>22–26</strong> on your answer sheet.</p>
+     <p><strong>NB</strong> You may use any letter more than once.</p>
+
+     <ol start="22">
+       <li><span class="flag-btn" data-q="q22"></span>It has seen the return of native tree species.<br>
+         <label><input type="radio" name="q22" value="A"> A</label>
+         <label><input type="radio" name="q22" value="B"> B</label>
+         <label><input type="radio" name="q22" value="C"> C</label>
+       </li>
+       <li><span class="flag-btn" data-q="q23"></span>It supports only one species of native monkey.<br>
+         <label><input type="radio" name="q23" value="A"> A</label>
+         <label><input type="radio" name="q23" value="B"> B</label>
+         <label><input type="radio" name="q23" value="C"> C</label>
+       </li>
+       <li><span class="flag-btn" data-q="q24"></span>Its monkey population helps the agriculture of the area.<br>
+         <label><input type="radio" name="q24" value="A"> A</label>
+         <label><input type="radio" name="q24" value="B"> B</label>
+         <label><input type="radio" name="q24" value="C"> C</label>
+       </li>
+       <li><span class="flag-btn" data-q="q25"></span>It is home to populations of all three local monkey species.<br>
+         <label><input type="radio" name="q25" value="A"> A</label>
+         <label><input type="radio" name="q25" value="B"> B</label>
+         <label><input type="radio" name="q25" value="C"> C</label>
+       </li>
+       <li><span class="flag-btn" data-q="q26"></span>Its landscape was altered by the construction of a transport link.<br>
+         <label><input type="radio" name="q26" value="A"> A</label>
+         <label><input type="radio" name="q26" value="B"> B</label>
+         <label><input type="radio" name="q26" value="C"> C</label>
+       </li>
+     </ol>
+
+     <div style="margin-top:20px; background:#f9f9f9; padding:12px; border-radius:6px;">
+       <h4 style="margin:0 0 8px;">List of Locations</h4>
+       <div style="font-size:14px; line-height:1.8;">
+         <strong>A</strong> Hacienda La Pacifica<br>
+         <strong>B</strong> Santa Rosa National Park<br>
+         <strong>C</strong> Cholula Cacao Farm
+       </div>
+     </div>
+   </div>
+
+   <div class="bottom-bar">
+     <button class="btn-primary" onclick="submitAnswers()">提交</button>
+     <button onclick="resetForm()">重置</button>
+     <button onclick="openWrongBook()">本篇错题</button>
+   </div>
+ </section>
+</div>
+
+<div id="selbar">
+ <button id="btnNote">Note</button>
+ <button id="btnHL">Highlight</button>
+ <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+ <div class="modal-content">
+   <div class="modal-header">
+     <h2>成绩</h2>
+     <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+   </div>
+   <div id="resultContent"></div>
+   <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+ </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+ <div class="modal-content">
+   <div class="modal-header">
+     <h2>本篇错题</h2>
+     <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+   </div>
+   <div id="wrongBookContent"></div>
+ </div>
+</div>
+
+<div class="modal" id="resetModal">
+ <div class="modal-content">
+   <div class="modal-header">
+     <h2>重置练习</h2>
+     <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+   </div>
+   <div style="margin:16px 0;">
+     <label style="display:block; margin-bottom:10px;">
+       <input type="radio" name="resetType" value="answers" checked>
+       只清空答案
+     </label>
+     <label style="display:block;">
+       <input type="radio" name="resetType" value="all">
+       清空答案和标记
+     </label>
+   </div>
+   <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+ </div>
+</div>
+
+<script>
+const PAPER_ID='P2_MONKEY';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+ btn.onclick = e => {
+   e.stopPropagation();
+   btn.classList.toggle('active');
+   saveFlags();
+ };
+});
+
+function normalizeAnswer(ans) {
+ return ans.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+const answerKey={
+ q14:"C",q15:"G",q16:"C",q17:"B",
+ q18:"reproduction",q19:"fruit",q20:"toxins",q21:"drought",
+ q22:"B",q23:"A",q24:"C",q25:"B",q26:"A"
+};
+
+let lastResults=[];
+
+function saveAnswers() {
+ const data = {};
+ Object.keys(answerKey).forEach(q => {
+   const input = document.querySelector(`input[name="${q}"]`);
+   if(input && input.type === 'text') {
+     data[q] = input.value;
+   } else {
+     const ch = document.querySelector(`input[name="${q}"]:checked`);
+     if(ch) data[q] = ch.value;
+   }
+ });
+ localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+ const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+ Object.keys(data).forEach(q => {
+   const input = document.querySelector(`input[name="${q}"]`);
+   if(input && input.type === 'text') {
+     input.value = data[q];
+   } else {
+     const radio = document.querySelector(`input[name="${q}"][value="${data[q]}"]`);
+     if(radio) radio.checked = true;
+   }
+ });
+}
+
+function saveFlags() {
+ const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+ localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+ const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+ flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  // 恢复左侧高亮
+  if(data.left && data.left.length > 0) {
+    data.left.forEach(item => {
+      const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+  
+  // 恢复右侧高亮
+  if(data.right && data.right.length > 0) {
+    data.right.forEach(item => {
+      const walker = document.createTreeWalker(right, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ const res=[]; let cor=0; Object.keys(answerKey).forEach(q=>{ const ch=document.querySelector('input[name="'+q+'"]:checked'); const uA=ch?ch.value:""; const cA=answerKey[q]; const iC=uA===cA; if(iC)cor++; res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); }); lastResults=res; const tot=Object.keys(answerKey).length; const pct=((cor/tot)*100).toFixed(1); localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; document.getElementById('resultModal').classList.add('active'); }
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false); 
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const wr=lastResults.filter(r=>!r.isCorrect); wr.forEach(r=>{ const en={paperId:PAPER_ID,title:'How are deserts formed',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); if(ix>=0)wb[ix]=en; else wb.push(en); }); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); alert(`已添加 ${wr.length} 道错题`); closeModal('resultModal'); }
+
+function deleteWrongItem(pId,qId){ if(!confirm('确定删除这道错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function clearCurrentWrongBook(){ if(!confirm('确定清空本篇所有错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>i.paperId!==PAPER_ID); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function openWrongBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const cu=wb.filter(i=>i.paperId===PAPER_ID); const ct=document.getElementById('wrongBookContent'); if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; document.getElementById('wrongBookModal').classList.add('active'); }
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

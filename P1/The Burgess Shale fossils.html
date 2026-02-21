@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P1 – The Burgess Shale fossils</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  table { border-collapse: collapse; width:100%; margin:12px 0; }
+  th, td { border:1px solid #ddd; padding:6px; text-align:left; font-size:13px; position:relative; }
+  th { background:#f5f5f5; font-weight:600; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .question-item { padding:12px 0; border-top:1px dashed #ddd; position:relative; padding-left:20px; }
+  .question-item:first-child { border-top:none; }
+  
+  input.blank { 
+    border:none;
+    border-bottom:1px solid #666;
+    padding:4px 8px;
+    margin:0 4px;
+    min-width:150px;
+    font-size:14px;
+  }
+  input.blank:focus { outline:none; border-bottom:2px solid #0066cc; }
+  
+  .answer-option { display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; }
+  .answer-option label { cursor:pointer; display:flex; align-items:center; gap:4px; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+  
+  .note-section { background:#f9f9f9; padding:12px; margin:12px 0; border-left:3px solid #0066cc; }
+  .note-section ul { margin-left:20px; margin-top:8px; }
+  .note-section li { margin:6px 0; line-height:1.6; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 1</h2>
+<p>You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.</p>
+<h3>The Burgess Shale fossils</h3>
+<h4 style="font-style:italic; font-weight:normal; color:#666;">Fauna vanished with a whimper, not a bang</h4>
+
+<p>Some discoveries are so unusual it takes decades and sometimes even centuries to understand their full significance. One such discovery is the fossil bed known as the Burgess Shale, which contains a record of bizarre creatures that lived 505 million years ago. It was discovered in the Canadian Rockies over a century ago, and was popularized in 1989 in a book, Wonderful Life, by Stephen Jay Gould, an American paleontologist.</p>
+
+<p>The Burgess Shale fossils were created at a time when the future Canadian land mass was situated near the Earth's equator. The creatures were preserved when an entire marine ecosystem was buried in mud that eventually hardened and became exposed hundreds of millions of years later in an outcrop of the Rocky Mountains. American paleontologist Charles Walcott, following reports of fabulous fossil finds by construction workers on a Canadian railway who were digging in the mountains in the late 19th century, is said to have tripped over a block of shale in 1909 that revealed the area's remarkable supply of specimens. It has long been believed that the curious fauna that lived there vanished in a series of extinctions because the fossil record ends abruptly. But that no longer appears to be the case.</p>
+
+<p>The Burgess Shale began to form soon after a period known as the Cambrian explosion, when most major groups of complex animals arose over a surprisingly short period. Before 560 million years ago, most living things were either individual cells or simple colonies of cells. Then, and for reasons that remain a mystery, life massively diversified and became ever more complex as the rate of evolution increased. An unusual feature of the Burgess Shale is that it is one of the earliest fossil beds to contain impressions of soft body parts alongside the remains of bones and shells, which is highly unusual.</p>
+
+<p>Although the fossil bed was discovered on a mountain, these animals originally existed below an ocean, the bed of which was later pushed up to create the Rockies. Nobody knows exactly why they were so well preserved. One possibility is that the creatures were buried quickly and in conditions that were hostile to the bacteria that cause decomposition of soft body parts.</p>
+
+<p>Those who first worked on the Burgess Shale, unearthing 65,000 specimens over a 14-year period up to 1924, assumed that the fossils came from extinct members of groups of animals in existence today. This turned out to be misleading because many of the creatures are so unusual that they are still difficult to classify.</p>
+
+<p>One such example is Opabinia, a creature that grew to about 8 cm (3 inches), had five eyes, a body that was a series of lobes, a tail in the shape of a fan, and that ate using a proboscis.</p>
+
+<p>The proboscis had a set of grasping claws on the end, with which it grabbed food and stuffed it into its mouth. Nectocaris, meanwhile, could be mistaken for a leech, but with fins and tentacles. Weirdest of all was Hallucigenia, described by paleontologist Simon Conway Morris, when he re-examined Walcott's specimens in 1979. With its multiplicity of spines and tentacles, little about Hallucigenia made sense, but scientists hypothesized that the spines were legs that helped it move and the tentacles were for feeding. Like an abstract painting, its orientation is a mystery at first, making it difficult to work out which way up it went, which hole food went into, and which hole food came out of.</p>
+
+<p>Paleontologists had long thought that many of the Burgess Shale animals were examples of experiments in evolution. In other words, entirely new forms of life that did not survive or lead to other groups or species. Hallucigenia, ironically, turned out to be the exception that proved the rule. It is now thought to be an ancestor of the modern group of arthropods, which includes everything from flies and butterflies to centipedes and crabs.</p>
+
+<p>Now another misconception has been quashed. Writing in Nature recently, Peter Van Roy of Yale University in the United States and his colleagues suggest that the sudden absence of such crazy soft-bodied fossils does not indicate a mass extinction, but merely an end to the unusual local circumstances that caused the creatures to be preserved. In an area of the Atlas Mountains of Morocco, Van Roy's team of researchers has found another diverse (and sometimes bizarre) assemblage of soft-bodied organisms from a period after the Burgess Shale was formed. One discovery includes something that may be a stalked barnacle. This suggests that the evolution of such complex life went on uninterrupted. For its part, the Burgess Shale continues to produce an astonishing array of indefinable creatures faster than paleontologists can examine them. The world still has plenty to learn about this wonderful life.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 1–5</h4>
+      <p>Do the following statements agree with the information given in Reading Passage 1?</p>
+      <p>In boxes 1–5 on your answer sheet, write</p>
+
+      <table style="margin:12px 0;">
+        <tr>
+          <th>TRUE</th>
+          <td>if the statement agrees with the information</td>
+        </tr>
+        <tr>
+          <th>FALSE</th>
+          <td>if the statement contradicts the information</td>
+        </tr>
+        <tr>
+          <th>NOT GIVEN</th>
+          <td>if there is no information on this</td>
+        </tr>
+      </table>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q1"></span>
+        <p><strong>1.</strong> The Burgess Shale became widely known to the public because of Gould's book.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q1" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q1" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q1" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q2"></span>
+        <p><strong>2.</strong> Charles Walcott had to get permission from Canadian authorities to gain access to the fossil site.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q2" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q2" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q2" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q3"></span>
+        <p><strong>3.</strong> The Burgess Shale includes impressions of soft and hard body parts.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q3" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q3" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q3" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q4"></span>
+        <p><strong>4.</strong> The Burgess Shale creatures were land animals.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q4" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q4" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q4" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q5"></span>
+        <p><strong>5.</strong> Researchers now believe that Hallucigenia is unrelated to any modern creature.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q5" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q5" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q5" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 6–9</h4>
+      <p>Complete the notes below.</p>
+      <p>Choose <strong>NO MORE THAN TWO WORDS AND/OR A NUMBER</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes 6–9 on your answer sheet.</p>
+
+      <h4 style="margin-top:16px;">Burgess Shale</h4>
+      
+      <div class="note-section">
+        <strong>Formation</strong>
+        <ul>
+          <li>Burgess Shale was formed following a time called the <span class="flag-btn" data-q="q6" style="position:relative; display:inline-block; vertical-align:middle;"></span> 6. <input type="text" class="blank" id="q6"></li>
+        </ul>
+      </div>
+
+      <div class="note-section">
+        <strong>Discovery and investigation in the twentieth century</strong>
+        <ul>
+          <li>Discovered in 1909</li>
+          <li>Charles Walcott learnt of the fossil finds from people building a <span class="flag-btn" data-q="q7" style="position:relative; display:inline-block; vertical-align:middle;"></span> 7. <input type="text" class="blank" id="q7"></li>
+          <li>The first work on Burgess Shale was undertaken at the start of the century</li>
+          <li>A researcher looked at Burgess Shale findings again in <span class="flag-btn" data-q="q8" style="position:relative; display:inline-block; vertical-align:middle;"></span> 8. <input type="text" class="blank" id="q8"></li>
+        </ul>
+      </div>
+
+      <div class="note-section">
+        <strong>Recent theories</strong>
+        <ul>
+          <li>Peter Van Roy</li>
+          <li style="list-style:none; margin-left:20px;">– Believes that discoveries in Morocco show that the <span class="flag-btn" data-q="q9" style="position:relative; display:inline-block; vertical-align:middle;"></span> 9. <input type="text" class="blank" id="q9"> of complex life forms continued</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 10–13</h4>
+      <p>Complete the notes below.</p>
+      <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes 10–13 on your answer sheet.</p>
+
+      <h4 style="margin-top:16px;">Burgess Shale Creatures</h4>
+
+      <table style="margin-top:12px;">
+        <tr>
+          <th style="width:25%;">Name</th>
+          <th>Feature</th>
+        </tr>
+        <tr>
+          <td><strong>Opabinia</strong></td>
+          <td>
+            • Five eyes<br>
+            • Tail resembling a <span class="flag-btn" data-q="q10" style="position:relative; display:inline-block; vertical-align:middle;"></span> 10. <input type="text" class="blank" id="q10" style="min-width:100px;"><br>
+            • Claws used to hold <span class="flag-btn" data-q="q11" style="position:relative; display:inline-block; vertical-align:middle;"></span> 11. <input type="text" class="blank" id="q11" style="min-width:100px;">
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Nectocaris</strong></td>
+          <td>
+            • Looked like a <span class="flag-btn" data-q="q12" style="position:relative; display:inline-block; vertical-align:middle;"></span> 12. <input type="text" class="blank" id="q12" style="min-width:100px;"><br>
+            • Fins<br>
+            • Tentacles
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Hallucigenia</strong></td>
+          <td>
+            • Spines used to <span class="flag-btn" data-q="q13" style="position:relative; display:inline-block; vertical-align:middle;"></span> 13. <input type="text" class="blank" id="q13" style="min-width:100px;"><br>
+            • Tentacles
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P1_BURGESS';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey={
+  q1:"TRUE",q2:"NOT GIVEN",q3:"TRUE",q4:"FALSE",q5:"FALSE",
+  q6:"Cambrian explosion",q7:"railway",q8:"1979",q9:"evolution",
+  q10:"fan",q11:"food",q12:"leech",q13:"move"
+};
+let lastResults=[];
+
+function saveAnswers() {
+  const data = {};
+  for(let i=1; i<=5; i++) {
+    const ch = document.querySelector(`input[name="q${i}"]:checked`);
+    if(ch) data['q'+i] = ch.value;
+  }
+  for(let i=6; i<=13; i++) {
+    const input = document.getElementById('q'+i);
+    if(input && input.value.trim()) data['q'+i] = input.value.trim();
+  }
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+
+  Object.keys(data).forEach(q => {
+    // ✅ 只匹配 q1~q5（完整匹配）
+    if (/^q[1-5]$/.test(q)) {
+      const radio = document.querySelector(`input[name="${q}"][value="${data[q]}"]`);
+      if (radio) radio.checked = true;
+    } else {
+      // ✅ q6~q13 走文本框
+      const input = document.getElementById(q);
+      if (input) input.value = data[q];
+    }
+  });
+}
+
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = [];
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '[]');
+  if(data.length === 0) return;
+  
+  data.forEach(item => {
+    const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+    let node;
+    while(node = walker.nextNode()) {
+      if(node.textContent.includes(item.text)) {
+        const span = document.createElement('span');
+        span.className = item.type;
+        const parent = node.parentNode;
+        const text = node.textContent;
+        const idx = text.indexOf(item.text);
+        if(idx >= 0) {
+          const before = text.substring(0, idx);
+          const match = text.substring(idx, idx + item.text.length);
+          const after = text.substring(idx + item.text.length);
+          
+          parent.insertBefore(document.createTextNode(before), node);
+          span.textContent = match;
+          parent.insertBefore(span, node);
+          parent.insertBefore(document.createTextNode(after), node);
+          parent.removeChild(node);
+          break;
+        }
+      }
+    }
+  });
+}
+
+document.querySelectorAll('input[type="text"]').forEach(input => {
+  input.addEventListener('input', saveAnswers);
+});
+
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; 
+  let cor=0; 
+  
+  for(let i=1; i<=5; i++) {
+    const ch = document.querySelector(`input[name="q${i}"]:checked`);
+    const uA = ch ? ch.value : "";
+    const cA = answerKey['q'+i];
+    const iC = uA === cA;
+    if(iC) cor++;
+    res.push({id:'q'+i, userAns:uA||'(未作答)', correctAns:cA, isCorrect:iC});
+  }
+  
+  for(let i=6; i<=13; i++) {
+    const input = document.getElementById('q'+i);
+    const uA = input ? input.value.trim().toLowerCase() : "";
+    const cA = answerKey['q'+i].toLowerCase();
+    const iC = uA === cA;
+    if(iC) cor++;
+    res.push({id:'q'+i, userAns:uA||'(未作答)', correctAns:answerKey['q'+i], isCorrect:iC});
+  }
+  
+  lastResults=res; 
+  const tot=13;
+  const pct=((cor/tot)*100).toFixed(1);
+   localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`); 
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  
+  for(let i=1; i<=5; i++) {
+    document.querySelectorAll(`input[name="q${i}"]`).forEach(r=>r.checked=false);
+  }
+  for(let i=6; i<=13; i++) {
+    const input = document.getElementById('q'+i);
+    if(input) input.value = '';
+  }
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const wr=lastResults.filter(r=>!r.isCorrect); 
+  wr.forEach(r=>{ 
+    const en={
+      paperId:PAPER_ID,
+      title:'The Burgess Shale fossils',
+      questionId:r.id,
+      correctAnswer:r.correctAns,
+      myAnswer:r.userAns,
+      date:new Date().toISOString().split('T')[0]
+    }; 
+    const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); 
+    if(ix>=0)wb[ix]=en; 
+    else wb.push(en); 
+  }); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  alert(`已添加 ${wr.length} 道错题`); 
+  closeModal('resultModal'); 
+}
+
+function deleteWrongItem(pId,qId){ 
+  if(!confirm('确定删除这道错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function clearCurrentWrongBook(){ 
+  if(!confirm('确定清空本篇所有错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>i.paperId!==PAPER_ID); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function openWrongBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const cu=wb.filter(i=>i.paperId===PAPER_ID); 
+  const ct=document.getElementById('wrongBookContent'); 
+  if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; 
+  else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; 
+  document.getElementById('wrongBookModal').classList.add('active'); 
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

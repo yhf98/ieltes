@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P3 – The Fruit Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .group ol { margin-left:20px; }
+  .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+  .group ol li label { display:inline-block; margin-right:8px; }
+  .group ol li input[type="text"] { width:200px; padding:4px; margin-left:8px; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:-20px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:8px 12px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 3</h2>
+<p>You should spend about 20 minutes on Questions 27–40, which are based on Reading Passage 3 below.</p>
+<h3>The Fruit Book</h3>
+<p style="font-style:italic; margin-bottom:20px;">It's not every scientist who writes books for people who can't read. And how many scientists want their books to look as dog-eared as possible? But Patricia Shanley, an ethnobotanist, wanted to give something back. After the poorest people of the Amazon allowed her to study their land and its ecology, she turned her research findings into a picture book that tells the local people how to get a good return from their trees without succumbing to the lure of a quick buck from a logging company. It has proved a big success.</p>
+
+<h4>Paragraph A</h4>
+<p>The book is called Fruit Trees and Useful Plants in the Lives of Amazonians, but is better known simply as the "fruit book". The second edition was produced at the request of politicians in western Amazonia. Its blend of hard science and local knowledge on the use and trade of 35 native forest species has been so well received (and well used) that no less a dignitary than Brazil's environment minister, Marina Silva, has written the foreword. "There is nothing else like the Shanley book," says Adalberto Veríssimo, director of the Institute of People and the Environment of the Amazon. "It gives science back to the poor, to the people who really need it."</p>
+
+<h4>Paragraph B</h4>
+<p>Shanley's work on the book began a decade ago, with a plea for help from the Rural Workers' Union of Paragominas, a Brazilian town whose prosperity is based on exploitation of timber. The union realised that logging companies would soon be knocking on the doors of the caboclos, peasant farmers living on the Rio Capim, an Amazon tributary in the Brazilian state of Pará. Isolated and illiterate, the caboclos would have little concept of the true value of their trees; communities downstream had already sold off large blocks of forest for a pittance. "What they wanted to know was how valuable the forests were," recalls Shanley, then a researcher in the area for the Massachusetts-based Woods Hole Research Centre.</p>
+
+<h4>Paragraph C</h4>
+<p>The Rural Workers' Union wanted to know whether harvesting wild fruits would make economic sense in the Rio Capim. "There was a lot of interest in trading non-timber forest products (NTFPs)," Shanley says. At the time, environmental groups and green-minded businesses were promoting the idea. This was the view presented in a seminal paper, Valuation of an Amazonian Rainforest, published in Nature in 1989. The researchers had calculated that revenues from the sale of fruits could far exceed those from a one-off sale of trees to loggers. "The union was keen to discover whether it made more sense conserving the forest for subsistence use and the possible sale of fruit, game and medicinal plants, than selling trees for timber," says Shanley. Whether it would work for the caboclos was far from clear.</p>
+
+<h4>Paragraph D</h4>
+<p>Although Shanley had been invited to work in the Rio Capim, some caboclos were suspicious. "When Patricia asked if she could study my forest," says Joao Fernando Moreira Brito, "my neighbours said she was a foreigner who'd come to rob me of my trees." In the end, Moreira Brito, or Mangueira as he is known, welcomed Shanley and worked on her study. His land, an hour's walk from the Rio Capim, is almost entirely covered with primary forest. A study of this and other tracts of forest selected by the communities enabled Shanley to identify three trees, found throughout the Amazon, whose fruit was much favoured by the caboclos: bacuri (Platonia insignis), uxi (Endopleura uchi) and piquia (Caryocar villosum). The caboclos used their fruits, extracted oils, and knew what sort of wildlife they attracted. But, in the face of aggressive tactics from the logging companies, they had no measure of the trees' financial worth. The only way to find out, Shanley decided, was to start from scratch with a scientific study. "From a scientific point of view, hardly anything was known about these trees," she says. But six years of field research yielded a mass of data on their flowering and fruiting behaviour. During 1993 and 1994, 30 families weighed everything they used from the forest – game, fruit, fibre, medicinal plants – and documented its source.</p>
+
+<h4>Paragraph E</h4>
+<p>After three logging sales and a major fire in 1997, the researchers were also able to study the ecosystem's reaction to logging and disturbance. They carried out a similar, though less exhaustive, study in 1999, this time with 15 families. The changes were striking. Average annual household consumption of forest fruit had fallen from 89 to 28 kilograms between 1993 and 1999. "What we found," says Shanley, "was that fruit collection could coexist with a certain amount of logging, but after the forest fire, it dropped dramatically." Over the same period, fibre use also dropped from around 20 to 4 kilograms. The fire and logging also changed the nature of the caboclo diet. In 1993 most households ate game two or three times a month. By 1999 some were fortunate if they ate game more than two or three times a year.</p>
+
+<h4>Paragraph F</h4>
+<p>The loss of certain species of tree was especially significant. Shanley's team persuaded local hunters to weigh their catch, noting the trees under which the animals were caught. Over the year, they trapped five species of game averaging 232 kilogrammes under piquia trees. Under copaiba, they caught just two species averaging 63 kilogrammes; and under uxi, four species weighing 38 kilogrammes. At last, the team was getting a handle on which trees were worth keeping, and which could reasonably be sold. "This showed that selling piquia trees to loggers for a few dollars made little sense," explains Shanley. "Their local value lies in providing a prized fruit, as well as flowers which attract more game than any other species."</p>
+
+<h4>Paragraph G</h4>
+<p>As a result of these studies, Shanley had to tell the Rural Workers' Union of Paragominas that the Nature thesis could not be applied wholesale to their community – harvesting NTFPs would not always yield more than timber sales. Fruiting patterns of trees such as uxi were unpredictable, for example. In 1994, one household collected 3,654 uxi fruits; the following year, none at all.</p>
+
+<h4>Paragraph H</h4>
+<p>This is not to say that wild fruit trees were unimportant. On the contrary, argues Shanley, they are critical for subsistence, something that is often ignored in much of the current research on NTFPs, which tends to focus on their commercial potential. Geography was another factor preventing the Rio Capim caboclos from establishing a serious trade in wild fruit: villagers in remote areas could not compete with communities collecting NTFPs close to urban markets, although they could sell them to passing river boats.</p>
+
+<h4>Paragraph I</h4>
+<p>But Shanley and her colleagues decided to do more than just report their results to the union. Together with two of her research colleagues, Shanley wrote the fruit book. This, the Bible and a publication on medicinal plants co-authored by Shanley and designed for people with minimal literacy skills are about the only books you will see along this stretch of the Rio Capim. The first print run was only 3,000 copies, but the fruit book has been remarkably influential, and is used by colleges, peasant unions, industries and the caboclos themselves. Its success is largely due to the fact that people with poor literacy skills can understand much of the information it contains about the non-timber forest products, thanks to its illustrations, anecdotes, stories and songs. "The book doesn't tell people what to do," says Shanley, "but it does provide them with choices." The caboclos who have used the book now have a much better understanding of which trees to sell to the loggers, and which to protect.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 27–32</h4>
+      <p>Reading Passage 3 has nine paragraphs, <strong>A–I</strong>.</p>
+      <p>Which paragraph contains the following information?</p>
+      <p>Write the correct letter, <strong>A–I</strong>, in boxes <strong>27–32</strong> on your answer sheet.</p>
+
+      <ol start="27">
+        <li><span class="flag-btn" data-q="q27"></span>A description of Shanley's initial data collection
+          <select name="q27" style="margin-left:10px; padding:4px;">
+            <option value="">--Select--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+            <option value="H">H</option>
+            <option value="I">I</option>
+          </select>
+        </li>
+        <li><span class="flag-btn" data-q="q28"></span>Why a government official also contributes to the book
+          <select name="q28" style="margin-left:10px; padding:4px;">
+            <option value="">--Select--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+            <option value="H">H</option>
+            <option value="I">I</option>
+          </select>
+        </li>
+        <li><span class="flag-btn" data-q="q29"></span>Reasons why the community asked Shanley to conduct the research
+          <select name="q29" style="margin-left:10px; padding:4px;">
+            <option value="">--Select--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+            <option value="H">H</option>
+            <option value="I">I</option>
+          </select>
+        </li>
+        <li><span class="flag-btn" data-q="q30"></span>Reference to the starting point of her research
+          <select name="q30" style="margin-left:10px; padding:4px;">
+            <option value="">--Select--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+            <option value="H">H</option>
+            <option value="I">I</option>
+          </select>
+        </li>
+        <li><span class="flag-btn" data-q="q31"></span>Two factors that alter food consumption patterns
+          <select name="q31" style="margin-left:10px; padding:4px;">
+            <option value="">--Select--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+            <option value="H">H</option>
+            <option value="I">I</option>
+          </select>
+        </li>
+        <li><span class="flag-btn" data-q="q32"></span>Why the book is successful
+          <select name="q32" style="margin-left:10px; padding:4px;">
+            <option value="">--Select--</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+            <option value="H">H</option>
+            <option value="I">I</option>
+          </select>
+        </li>
+      </ol>
+    </div>
+
+    <div class="group">
+      <h4>Questions 33–40</h4>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>NO MORE THAN THREE WORDS</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>33–40</strong> on your answer sheet.</p>
+
+      <div style="background:#f9f9f9; padding:16px; border-radius:6px; margin-top:12px;">
+        <p style="font-weight:600; margin-bottom:12px;">Summary:</p>
+        
+        <p style="margin:8px 0;">Forest fire has caused local villagers to consume less:</p>
+        <ul style="margin-left:20px;">
+          <li style="margin:8px 0;"><strong>33</strong> <input type="text" name="q33" placeholder="Your answer"></li>
+          <li style="margin:8px 0;"><strong>34</strong> <input type="text" name="q34" placeholder="Your answer"></li>
+          <li style="margin:8px 0;">game</li>
+        </ul>
+
+        <p style="margin:16px 0 8px;">There is the least amount of game hunted under <strong>35</strong> <input type="text" name="q35" placeholder="Your answer">; yield is also <strong>36</strong> <input type="text" name="q36" placeholder="Your answer">.</p>
+
+        <p style="margin:16px 0 8px;">Thus, it is more reasonable to keep <strong>37</strong> <input type="text" name="q37" placeholder="Your answer">.</p>
+
+        <p style="margin:16px 0 8px;">All the trees can also be used for <strong>38</strong> <input type="text" name="q38" placeholder="Your answer"> besides selling them to loggers. But this is often ignored, because most research usually focuses on the <strong>39</strong> <input type="text" name="q39" placeholder="Your answer"> of the trees.</p>
+
+        <p style="margin:16px 0 8px;"><strong>The purpose of the book:</strong></p>
+        <ul style="margin-left:20px;">
+          <li style="margin:8px 0;">To give information about <strong>40</strong> <input type="text" name="q40" placeholder="Your answer">.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P3_FRUIT_BOOK';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+function normalizeAnswer(str) {
+  return str.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+const answerKey={
+  q27:"D",q28:"A",q29:"C",q30:"B",q31:"E",q32:"I",
+  q33:["forest fruit","fruit"],
+  q34:"fibre",
+  q35:["uxi","uxi (trees)"],
+  q36:"unpredictable",
+  q37:["piquia trees","piquia"],
+  q38:["subsistence","subsistence (use)"],
+  q39:["commercial potential"],
+  q40:["non-timber forest products","NTFPs"]
+};
+
+let lastResults=[];
+
+function saveAnswers() {
+  const data = {};
+  Object.keys(answerKey).forEach(q => {
+    const select = document.querySelector(`select[name="${q}"]`);
+    const input = document.querySelector(`input[name="${q}"]`);
+    if(select) data[q] = select.value;
+    else if(input) data[q] = input.value;
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const select = document.querySelector(`select[name="${q}"]`);
+    const input = document.querySelector(`input[name="${q}"]`);
+    if(select) select.value = data[q];
+    else if(input) input.value = data[q];
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  if(data.left && data.left.length > 0) {
+    data.left.forEach(item => {
+      const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+  
+  if(data.right && data.right.length > 0) {
+    data.right.forEach(item => {
+      const walker = document.createTreeWalker(right, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+document.querySelectorAll('select').forEach(select => {
+  select.addEventListener('change', saveAnswers);
+});
+
+document.querySelectorAll('input[type="text"]').forEach(input => {
+  input.addEventListener('input', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; 
+  let cor=0; 
+  Object.keys(answerKey).forEach(q=>{ 
+    const select = document.querySelector(`select[name="${q}"]`);
+    const input = document.querySelector(`input[name="${q}"]`);
+    const uA = select ? select.value : (input ? input.value.trim() : "");
+    const cA = answerKey[q];
+    let iC = false;
+    
+    if(Array.isArray(cA)) {
+      iC = cA.some(ans => normalizeAnswer(uA) === normalizeAnswer(ans));
+    } else {
+      iC = normalizeAnswer(uA) === normalizeAnswer(cA);
+    }
+    
+    if(iC)cor++; 
+    const correctDisplay = Array.isArray(cA) ? cA[0] : cA;
+    res.push({id:q,userAns:uA,correctAns:correctDisplay,isCorrect:iC}); 
+  }); 
+  lastResults=res; 
+  const tot=Object.keys(answerKey).length; 
+  const pct=((cor/tot)*100).toFixed(1); 
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('select').forEach(s=>s.value="");
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value="");
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const wr=lastResults.filter(r=>!r.isCorrect); 
+  wr.forEach(r=>{ 
+    const en={paperId:PAPER_ID,title:'The Fruit Book',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; 
+    const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); 
+    if(ix>=0)wb[ix]=en; 
+    else wb.push(en); 
+  }); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  alert(`已添加 ${wr.length} 道错题`); 
+  closeModal('resultModal'); 
+}
+
+function deleteWrongItem(pId,qId){ 
+  if(!confirm('确定删除这道错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function clearCurrentWrongBook(){ 
+  if(!confirm('确定清空本篇所有错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>i.paperId!==PAPER_ID); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function openWrongBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const cu=wb.filter(i=>i.paperId===PAPER_ID); 
+  const ct=document.getElementById('wrongBookContent'); 
+  if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; 
+  else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; 
+  document.getElementById('wrongBookModal').classList.add('active'); 
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

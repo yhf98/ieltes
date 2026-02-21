@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – Surviving city life</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .drop-zone { min-height:40px; border:2px dashed #ccc; border-radius:6px; padding:8px; margin:8px 0; background:#f9f9f9; }
+  .drop-zone.over { border-color:#0066cc; background:#e3f2fd; }
+  .drop-item { display:inline-block; padding:6px 12px; margin:4px; background:#0066cc; color:#fff; border-radius:4px; cursor:move; user-select:none; }
+  .drop-item.placed { background:#666; }
+  
+  .options-pool { display:flex; flex-wrap:wrap; gap:8px; padding:12px; background:#fff; border:1px solid #ddd; border-radius:6px; margin:12px 0; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .question-item { position:relative; padding-left:16px; margin:16px 0; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:8px 16px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+  
+  input[type="text"] { width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>Surviving city life</h3>
+
+<p>Although the colonisation of Australia profoundly affected the continent's natural environment, many plants and animals have actually flourished since European settlement. Some even thrive in the concrete jungle of Australia's biggest city, Sydney.</p>
+
+<h4>Paragraph A</h4>
+<p>Ecologists often prefer to study plants and animals in exotic locations, but a growing number have turned their attention to the complex interactions of the wildlife that inhabits concrete jungles. Inner-city Sydney is the laboratory of choice for a number of ecologists, and their research is timely. More than half the world's human population resides in cities, and urban development continues to increase all over the world. By 2030, the United Nations projects five billion people will live in cities. Associate Professor Dieter Hochuli, a biologist at the University of Sydney, believes that 'we need to understand how cities are changing the ecology of the systems they are built on, and how plants and animals are adapting to them'.</p>
+
+<h4>Paragraph B</h4>
+<p>If any species has learnt to thrive in an urban environment, it's the native white ibis. A strange long-legged bird with a bow-shaped beak, it is known as the 'garbage turkey'. The bird's reputation for digging through inner-city bins and scavenging street garbage has not endeared it to the public. The white ibis began its move to the city in the 1970s, when large parts of its natural habitat of inland wetlands became degraded due to years of low rainfall. 'The species is a wetland forager,' wildlife officer John Martin from Sydney's Royal Botanic Gardens says. 'Now it happily forages in city parks and landfill.' During the peak of its spring breeding season, there are more than 9,000 of these birds in Sydney.</p>
+
+<h4>Paragraph C</h4>
+<p>Specimens at Sydney's Australian Museum show that the city's overall bird life has changed dramatically over the two centuries since colonisation. Prior to urban development, Sydney's native bushland was populated by large numbers of small insect-eating birds, such as the superb fairy-wren and the eastern yellow robin. Today, homeowners prefer to landscape their backyards with tall trees and manicured lawns—an environment that provides little protection for small birds. But one bird's trash is another's treasure. Gardens filled with flowering plants and fruit trees favour omnivorous birds such as currawongs, bowerbirds and the city's most despised resident – the noisy miner. 'They're a real winner in cities,' Australian Museum ornithologist Richard Major says. 'The predominant driver in the decline of small birds is that we've made a suitable environment for native noisy miners.'</p>
+
+<h4>Paragraph D</h4>
+<p>Many invertebrates, such as the golden orb-weaver spider and the blue triangle butterfly, also relish living in the city. The golden orb spiders in Sydney are fatter and fitter than species found elsewhere, and Professor Hochuli and his team are trying to understand why. 'We're trying to determine whether it's more food or the urban heat – as it's up to four degrees warmer in the city.' Hochuli has also found some varieties of ant more at home in the city. 'The green ant, known for its painful bite, will build a nest where there is space and food, regardless of whether it's a backyard or a sports oval.' 'It's remarkable how many things persist in city environments,' he says. The decline in birds that eat small invertebrates means these populations grow unchecked, allowing them to chew their way through the foliage of the city's trees.</p>
+
+<h4>Paragraph E</h4>
+<p>While some species can survive in relatively small areas, mammals have been confined to patches of bushland scattered around Sydney and its nearby national parks. However, the rabbit-sized, long-nosed bandicoot has discovered the advantages of venturing out to grassy suburban backyards and gardens. 'They forage for invertebrates in the grass and like the surrounding habitat to nest and escape from predators,' Catherine Price, a research associate at the University of Sydney, says. Dr Price is trying to understand what encourages the little mammal into urban environments. 'We don't know if it's an overflow from the park, or if they've got particular survival traits that allow them to evade dogs and cats, and use the urban habitat that benefits them,' she says.</p>
+
+<h4>Paragraph F</h4>
+<p>It's not just native wildlife that has sought comfort in city living. Non-native species such as black rodents, cockroaches and foxes have developed survival strategies too. But weeds are the pest that has gained the most advantage. 'In residential Sydney there would not be a single area of remnant bushland not infested by introduced plant life,' Michelle Leishman, a Macquarie University plant biologist, says. Over 20 years, Leishman and her colleagues have shown how Sydney's huge stretches of impermeable concrete, together with the storm-water system, have helped weeds infiltrate the few remaining pockets of bushland. As rain washes over backyards and roadways, it collects chemicals which enter the storm-water system, where they are piped to the edges of bushland. The nutrient-rich water seeps into the earth, favouring the many exotic species that 'live fast and die young,' Leishman says. Indigenous plants prefer low-fertility soil and struggle to cope with one that is more fertile.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–19</h4>
+      <p>Reading Passage 2 has six paragraphs, A–F.</p>
+      <p>Choose the correct heading for each paragraph from the list of headings below.</p>
+      <p>Write the correct number, <strong>i–vii</strong>, in boxes <strong>14–19</strong> on your answer sheet.</p>
+      
+      <div style="background:#f0f0f0; padding:12px; border-radius:6px; margin:12px 0;">
+        <strong>List of Headings</strong>
+        <div style="margin-left:20px; margin-top:8px; font-size:13px;">
+          <div><strong>i</strong> The behaviour of a small animal expanding its territory</div>
+          <div><strong>ii</strong> The urban environment encouraging the spread of imported flora and fauna</div>
+          <div><strong>iii</strong> Insects that thrive in urban areas</div>
+          <div><strong>iv</strong> A creature which likes rubbish</div>
+          <div><strong>v</strong> Creatures which change their shape and colour</div>
+          <div><strong>vi</strong> Why natural scientists are interested in studying urban areas</div>
+          <div><strong>vii</strong> Changes in the urban built environments encourage particular species</div>
+        </div>
+      </div>
+
+      <div class="options-pool" id="headingsPool"></div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q14"></span>
+        <strong>14</strong> Paragraph A
+        <div class="drop-zone" data-question="q14"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q15"></span>
+        <strong>15</strong> Paragraph B
+        <div class="drop-zone" data-question="q15"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q16"></span>
+        <strong>16</strong> Paragraph C
+        <div class="drop-zone" data-question="q16"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q17"></span>
+        <strong>17</strong> Paragraph D
+        <div class="drop-zone" data-question="q17"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q18"></span>
+        <strong>18</strong> Paragraph E
+        <div class="drop-zone" data-question="q18"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q19"></span>
+        <strong>19</strong> Paragraph F
+        <div class="drop-zone" data-question="q19"></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 20–23</h4>
+      <p>Look at the following statements (Questions 20–23) and the list of researchers below.</p>
+      <p>Match each statement with the correct researcher, <strong>A, B, C or D</strong>.</p>
+      <p>Write the correct letter, <strong>A, B, C or D</strong>, in boxes <strong>20–23</strong> on your answer sheet.</p>
+      <p><strong>NB</strong> You may use any letter more than once.</p>
+
+      <div style="background:#f0f0f0; padding:12px; border-radius:6px; margin:12px 0;">
+        <strong>List of Researchers</strong>
+        <div style="margin-left:20px; margin-top:8px; font-size:13px;">
+          <div><strong>A</strong> Dieter Hochuli</div>
+          <div><strong>B</strong> John Martin</div>
+          <div><strong>C</strong> Richard Major</div>
+          <div><strong>D</strong> Catherine Price</div>
+        </div>
+      </div>
+
+      <div class="options-pool" id="researchersPool"></div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q20"></span>
+        <strong>20</strong> It is not clear why one small animal is moving from its natural environment.
+        <div class="drop-zone" data-question="q20"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q21"></span>
+        <strong>21</strong> Hot weather might positively affect the health of a species.
+        <div class="drop-zone" data-question="q21"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q22"></span>
+        <strong>22</strong> Sydney's residential gardens suit some species better than others.
+        <div class="drop-zone" data-question="q22"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q23"></span>
+        <strong>23</strong> Research into the natural world's responses to urban settings is vital.
+        <div class="drop-zone" data-question="q23"></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 24–26</h4>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>24–26</strong> on your answer sheet.</p>
+
+      <div style="background:#f9f9f9; padding:16px; margin-top:12px; line-height:2;">
+        <h4 style="margin-top:0;">Seeking comfort in city living</h4>
+        <p>It's not only native plants and animals that are adapting to city life; non-native plants and animals are also adapting. Examples of successful 'city dwellers' include small, non-native rats and non-native insects such as <span class="question-item" style="display:inline-block; padding:0;"><span class="flag-btn" data-q="q24" style="position:relative; display:inline-block; left:0; top:0; transform:none; margin-right:4px;"></span><strong>24</strong> <input type="text" name="q24" style="width:150px; display:inline-block;"></span>. However, what causes most problems in the city is weeds. Michelle Leishman, a scientist from Macquarie University, has proven that Sydney's large areas of <span class="question-item" style="display:inline-block; padding:0;"><span class="flag-btn" data-q="q25" style="position:relative; display:inline-block; left:0; top:0; transform:none; margin-right:4px;"></span><strong>25</strong> <input type="text" name="q25" style="width:150px; display:inline-block;"></span> and its drainage network favour the growth of weeds. Water gathers <span class="question-item" style="display:inline-block; padding:0;"><span class="flag-btn" data-q="q26" style="position:relative; display:inline-block; left:0; top:0; transform:none; margin-right:4px;"></span><strong>26</strong> <input type="text" name="q26" style="width:150px; display:inline-block;"></span> as it passes from gardens and streets into the city drainage network. This, in turn, creates very good soil for several varieties of rapidly growing non-native plants.</p>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_SURVIVING_CITY_LIFE';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey={
+  q14:"vi",q15:"iv",q16:"vii",q17:"iii",q18:"i",q19:"ii",
+  q20:"D",q21:"A",q22:"C",q23:"A",
+  q24:"cockroaches",q25:"concrete",q26:"chemicals"
+};
+let lastResults=[];
+
+// Drag and drop for headings
+const headingsOptions = ['i','ii','iii','iv','v','vi','vii'];
+const researchersOptions = ['A','B','C','D'];
+
+function initDragDrop() {
+  const headingsPool = document.getElementById('headingsPool');
+  const researchersPool = document.getElementById('researchersPool');
+  
+  headingsOptions.forEach(opt => {
+    const item = document.createElement('div');
+    item.className = 'drop-item';
+    item.textContent = opt;
+    item.draggable = true;
+    item.dataset.value = opt;
+    item.dataset.group = 'headings';
+    headingsPool.appendChild(item);
+  });
+  
+  researchersOptions.forEach(opt => {
+    const item = document.createElement('div');
+    item.className = 'drop-item';
+    item.textContent = opt;
+    item.draggable = true;
+    item.dataset.value = opt;
+    item.dataset.group = 'researchers';
+    researchersPool.appendChild(item);
+  });
+  
+  document.querySelectorAll('.drop-item').forEach(item => {
+    item.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', JSON.stringify({
+        value: item.dataset.value,
+        group: item.dataset.group
+      }));
+      item.style.opacity = '0.5';
+    });
+    
+    item.addEventListener('dragend', e => {
+      item.style.opacity = '1';
+    });
+  });
+  
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.classList.add('over');
+    });
+    
+    zone.addEventListener('dragleave', e => {
+      zone.classList.remove('over');
+    });
+    
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('over');
+      
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+      const qid = zone.dataset.question;
+      
+      // Check if correct group
+      if((qid.match(/q1[4-9]/) && data.group !== 'headings') ||
+         (qid.match(/q2[0-3]/) && data.group !== 'researchers')) {
+        return;
+      }
+      
+      // Remove existing answer
+      while(zone.firstChild) {
+        const child = zone.firstChild;
+        child.classList.remove('placed');
+        if(child.dataset.group === 'headings') {
+          document.getElementById('headingsPool').appendChild(child);
+        } else {
+          document.getElementById('researchersPool').appendChild(child);
+        }
+      }
+      
+      // Find and move the item
+      const item = document.querySelector(`.drop-item[data-value="${data.value}"][data-group="${data.group}"]`);
+      if(item && !item.classList.contains('placed')) {
+        zone.appendChild(item);
+        item.classList.add('placed');
+        saveAnswers();
+      }
+    });
+  });
+}
+
+function saveAnswers() {
+  const data = {};
+  
+  // Save drag-drop answers
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    const item = zone.querySelector('.drop-item');
+    if(item) {
+      data[zone.dataset.question] = item.dataset.value;
+    }
+  });
+  
+  // Save text inputs
+  document.querySelectorAll('input[type="text"]').forEach(input => {
+    if(input.name && input.value.trim()) {
+      data[input.name] = input.value.trim().toLowerCase();
+    }
+  });
+  
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  
+  Object.keys(data).forEach(qid => {
+    const value = data[qid];
+    
+    // Load drag-drop answers
+    const zone = document.querySelector(`.drop-zone[data-question="${qid}"]`);
+    if(zone) {
+      const group = qid.match(/q1[4-9]/) ? 'headings' : 'researchers';
+      const item = document.querySelector(`.drop-item[data-value="${value}"][data-group="${group}"]`);
+      if(item) {
+        zone.appendChild(item);
+        item.classList.add('placed');
+      }
+    }
+    
+    // Load text inputs
+    const input = document.querySelector(`input[name="${qid}"]`);
+    if(input) {
+      input.value = value;
+    }
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  ['left','right'].forEach(pane=>{
+    document.querySelectorAll(`#${pane} .hl, #${pane} .note`).forEach((el,idx)=>{
+      highlights[pane].push({
+        type: el.classList.contains('hl') ? 'hl' : 'note',
+        text: el.textContent,
+        index: idx
+      });
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  ['left','right'].forEach(pane=>{
+    if(!data[pane]) return;
+    data[pane].forEach(item=>{
+      const walker = document.createTreeWalker(document.getElementById(pane), NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()){
+        const idx = node.textContent.indexOf(item.text);
+        if(idx === -1) continue;
+        const parent = node.parentNode;
+        const before = node.textContent.substring(0, idx);
+        const match  = node.textContent.substring(idx, idx + item.text.length);
+        const after  = node.textContent.substring(idx + item.text.length);
+
+        parent.insertBefore(document.createTextNode(before), node);
+        const span = document.createElement('span');
+        span.className = item.type;
+        span.textContent = match;
+        parent.insertBefore(span, node);
+        parent.insertBefore(document.createTextNode(after), node);
+        parent.removeChild(node);
+        break;
+      }
+    });
+  });
+}
+
+document.querySelectorAll('input[type="text"]').forEach(input => {
+  input.addEventListener('input', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  initDragDrop();
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; 
+  let cor=0; 
+  
+  Object.keys(answerKey).forEach(q=>{ 
+    let uA = "";
+    
+    // Get drag-drop answer
+    const zone = document.querySelector(`.drop-zone[data-question="${q}"]`);
+    if(zone) {
+      const item = zone.querySelector('.drop-item');
+      if(item) uA = item.dataset.value;
+    }
+    
+    // Get text input answer
+    const input = document.querySelector(`input[name="${q}"]`);
+    if(input && input.value.trim()) {
+      uA = input.value.trim().toLowerCase();
+    }
+    
+    const cA = answerKey[q];
+    const iC = uA.toLowerCase() === cA.toLowerCase();
+    if(iC) cor++; 
+    res.push({id:q, userAns:uA, correctAns:cA, isCorrect:iC}); 
+  }); 
+  
+  lastResults=res; 
+  const tot=Object.keys(answerKey).length; 
+  const pct=((cor/tot)*100).toFixed(1); 
+  localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ 
+  document.getElementById('resetModal').classList.add('active'); 
+}
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  
+  // Reset drag-drop
+  document.querySelectorAll('.drop-item.placed').forEach(item => {
+    item.classList.remove('placed');
+    if(item.dataset.group === 'headings') {
+      document.getElementById('headingsPool').appendChild(item);
+    } else {
+      document.getElementById('researchersPool').appendChild(item);
+    }
+  });
+  
+  // Reset text inputs
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value=''); 
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const wr=lastResults.filter(r=>!r.isCorrect); 
+  wr.forEach(r=>{ 
+    const en={paperId:PAPER_ID,title:'Surviving city life',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; 
+    const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); 
+    if(ix>=0)wb[ix]=en; else wb.push(en); 
+  }); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  alert(`已添加 ${wr.length} 道错题`); 
+  closeModal('resultModal'); 
+}
+
+function deleteWrongItem(pId,qId){ 
+  if(!confirm('确定删除这道错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function clearCurrentWrongBook(){ 
+  if(!confirm('确定清空本篇所有错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>i.paperId!==PAPER_ID); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function openWrongBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const cu=wb.filter(i=>i.paperId===PAPER_ID); 
+  const ct=document.getElementById('wrongBookContent'); 
+  if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; 
+  else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; 
+  document.getElementById('wrongBookModal').classList.add('active'); 
+}
+
+function closeModal(id){ 
+  document.getElementById(id).classList.remove('active'); 
+}
+</script>
+</body>
+</html>

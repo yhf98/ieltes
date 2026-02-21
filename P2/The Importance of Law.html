@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – The Importance of Law</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .headings { background:#f9f9f9; padding:12px; margin:12px 0; border-radius:4px; }
+  .headings ol { margin-left:20px; }
+  .headings li { margin:4px 0; font-size:13px; }
+  
+  .drop-zone { min-height:40px; border:2px dashed #ccc; border-radius:6px; padding:8px; margin:8px 0; background:#f9f9f9; }
+  .drop-zone.over { border-color:#0066cc; background:#e3f2fd; }
+  .drop-item { display:inline-block; padding:6px 12px; margin:4px; background:#0066cc; color:#fff; border-radius:4px; cursor:move; user-select:none; }
+  .drop-item.placed { background:#666; }
+  
+  .options-pool { display:flex; flex-wrap:wrap; gap:8px; padding:12px; background:#fff; border:1px solid #ddd; border-radius:6px; margin:12px 0; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .question-item { position:relative; padding-left:16px; margin:16px 0; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+  
+  input[type="text"] { width:200px; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px; }
+  
+  .checkbox-group { margin:12px 0; }
+  .checkbox-group label { display:block; margin:8px 0; padding:8px; background:#f9f9f9; border-radius:4px; cursor:pointer; }
+  .checkbox-group label:hover { background:#f0f0f0; }
+  .checkbox-group input[type="checkbox"] { margin-right:8px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>The Importance of Law</h3>
+
+<h4>Paragraph A</h4>
+<p>The law influences all of us virtually all the time. It governs almost all aspects of our behaviour, and even what happens to us when we are no longer alive. It affects us from the embryo onwards. It governs the air we breathe, the food and drink we consume, our travel, family relationships, and our property. It applies at the bottom of the ocean and in space. Each time we examine a label on a food product, engage in work as an employee or employer, travel on the roads, go to school to learn or to teach, stay in a hotel, borrow a library book, create or dissolve a commercial company, play sports, or engage the services of someone for anything from plumbing a sink to planning a city, we are in the world of law.</p>
+
+<h4>Paragraph B</h4>
+<p>Law has also become much more widely recognised as the standard by which behaviour needs to be judged. A very telling development in recent history is the way in which the idea of law has permeated all parts of social life. The universal standard of whether something is socially tolerated is progressively becoming whether it is legal, rather than something that has always been considered acceptable. In earlier times, most people were illiterate. Today, by contrast, a vast number of people can read, and it is becoming easier for people to take an interest in law, and for the general population to help actually shape the law in many countries. However, law is a versatile instrument that can be used equally well for the improvement or the degradation of humanity.</p>
+
+<h4>Paragraph C</h4>
+<p>This, of course, puts law in a very significant position. In our rapidly developing world, all sorts of skills and knowledge are valuable. Those people, for example, with knowledge of computers, the internet, and communications technology are relied upon by the rest of us. There is now someone with IT skills or an IT help desk in every UK school, every company, every hospital, every local and central government office. Without their knowledge, many parts of commercial and social life today would seize up in minutes. But legal understanding is just as vital and as universally needed. The American comedian Jerry Seinfeld put it like this, 'We are all throwing the dice, playing the game, moving our pieces around the board, but if there is a problem, the lawyer is the only person who has read the inside of the top of the box.' In other words, the lawyer is the only person who has read and made sense of the rules.</p>
+
+<h4>Paragraph D</h4>
+<p>The number of laws has never been greater. In the UK alone, about 35 new Acts of Parliament are produced every year, thereby delivering thousands of new rules. The legislative output of the British Parliament has more than doubled in recent times from 1,100 pages a year in the early 1970s, to over 2,500 pages a year today. Between 1997 and 2006, the legislature passed 365 Acts of Parliament and more than 32,000 legally binding statutory instruments. In a system with so much law, lawyers do a great deal not just to vindicate the rights of citizens and organisations but also to help develop the law through legal arguments, some of which are adapted by judges to become laws. Law courts can and do produce new law and revise old law, but they do so having heard the arguments of lawyers.</p>
+
+<h4>Paragraph E</h4>
+<p>However, despite their important role in developing the rules, lawyers are not universally admired. Anti-lawyer jokes have a long history going back to the ancient Greeks. More recently, the son of a famous Hollywood actor was asked at his junior school what his father did for a living, to which he replied, 'My daddy is a movie actor, and sometimes he plays the good guy, and sometimes, he plays the lawyer.' For balance, though, it is worth remembering that there are and have been many heroic and revered lawyers such as the Roman philosopher and politician Cicero, and Mahatma Gandhi, the Indian campaigner for Independence.</p>
+
+<h4>Paragraph F</h4>
+<p>People sometimes make comments that characterise lawyers as professionals whose concerns put personal reward above truth, or who gain financially from misfortune. There are undoubtedly lawyers that would fit that bill, just as there are some scientists, journalists and others in that category. But, in general, it is no more just to say that lawyers are bad because they make a living from people's problems than it is to make the same accusation in respect of nurses or IT consultants. A great many lawyers are involved in public law work, such as that involving civil liberties, housing and other issues. Such work is not lavishly remunerated and the quality of the service provided by these lawyers relies on considerable professional dedication. Moreover, much legal work has nothing to do with conflict or misfortune, but is primarily concerned with drafting documents. Another source of social disaffection for lawyers, and disaffection for the law, is a limited public understanding of how law works and how it could be changed. Greater clarity about these issues, maybe as a result of better public relations, would reduce many aspects of public dissatisfaction with the law.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–19</h4>
+      <p>Reading Passage 2 has six paragraphs, A–F.</p>
+      <p>Choose the correct heading for each paragraph from the list of headings below.</p>
+      <p>Write the correct number, <strong>i–viii</strong>, in boxes <strong>14–19</strong> on your answer sheet.</p>
+
+      <div class="headings">
+        <strong>List of headings</strong>
+        <ol type="i">
+          <li>Different areas of professional expertise</li>
+          <li>Reasons why it is unfair to criticise lawyers</li>
+          <li>The disadvantages of the legal system</li>
+          <li>The law applies throughout our lives</li>
+          <li>The law has affected historical events</li>
+          <li>A negative regard for lawyers</li>
+          <li>The public's increasing ability to influence the law</li>
+          <li>Growth in laws</li>
+        </ol>
+      </div>
+
+      <div class="options-pool" id="headingsPool"></div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q14"></span>
+        <strong>14</strong> Paragraph A
+        <div class="drop-zone" data-question="q14"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q15"></span>
+        <strong>15</strong> Paragraph B
+        <div class="drop-zone" data-question="q15"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q16"></span>
+        <strong>16</strong> Paragraph C
+        <div class="drop-zone" data-question="q16"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q17"></span>
+        <strong>17</strong> Paragraph D
+        <div class="drop-zone" data-question="q17"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q18"></span>
+        <strong>18</strong> Paragraph E
+        <div class="drop-zone" data-question="q18"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q19"></span>
+        <strong>19</strong> Paragraph F
+        <div class="drop-zone" data-question="q19"></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 20 and 21</h4>
+      <p>Choose <strong>TWO</strong> letters, <strong>A–E</strong>.</p>
+      <p>Write the correct letters in boxes <strong>20 and 21</strong> on your answer sheet.</p>
+      <p style="margin-top:12px;"><strong>Which TWO of the following statements does the writer make about legal skills in today's world?</strong></p>
+
+      <div class="checkbox-group">
+        <label><span class="flag-btn" data-q="q20_21" style="position:relative;display:inline-block;width:8px;height:8px;transform:none;vertical-align:middle;margin-right:8px;"></span><input type="checkbox" name="q20_21" value="A"> <strong>A</strong> There should be a person with legal training in every hospital.</label>
+        <label><input type="checkbox" name="q20_21" value="B"> <strong>B</strong> Lawyers with experience in commercial law are the most in demand.</label>
+        <label><input type="checkbox" name="q20_21" value="C"> <strong>C</strong> Knowledge of the law is as important as having computer skills.</label>
+        <label><input type="checkbox" name="q20_21" value="D"> <strong>D</strong> Society could not function effectively without legal experts.</label>
+        <label><input type="checkbox" name="q20_21" value="E"> <strong>E</strong> Schools should teach students about the law.</label>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 22–26</h4>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>22–26</strong> on your answer sheet.</p>
+
+      <h4 style="margin-top:16px;">Lawyers as professionals</h4>
+      <p>People sometimes say that <span class="flag-btn" data-q="q22" style="position:relative;display:inline-block;width:auto;height:auto;transform:none;vertical-align:middle;"></span><strong>22</strong> <input type="text" name="q22"> is of little interest to lawyers, who are more concerned with making money. This may well be the case with some individuals, in the same way that some <span class="flag-btn" data-q="q23" style="position:relative;display:inline-block;width:auto;height:auto;transform:none;vertical-align:middle;"></span><strong>23</strong> <input type="text" name="q23"> or scientific experts may also be driven purely by financial greed. However, criticising lawyers because their work is concerned with people's problems would be similar to attacking IT staff or <span class="flag-btn" data-q="q24" style="position:relative;display:inline-block;width:auto;height:auto;transform:none;vertical-align:middle;"></span><strong>24</strong> <input type="text" name="q24"> for the same reason. In fact, many lawyers focus on questions relating, for example, to housing or civil liberties, which requires them to have <span class="flag-btn" data-q="q25" style="position:relative;display:inline-block;width:auto;height:auto;transform:none;vertical-align:middle;"></span><strong>25</strong> <input type="text" name="q25"> to their work. What's more, a lot of lawyers' time is spent writing <span class="flag-btn" data-q="q26" style="position:relative;display:inline-block;width:auto;height:auto;transform:none;vertical-align:middle;"></span><strong>26</strong> <input type="text" name="q26"> rather than dealing with people's misfortunes.</p>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_IMPORTANCE_OF_LAW';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey={
+  q14:"iv",q15:"vii",q16:"i",q17:"viii",q18:"vi",q19:"ii",
+  q20_21:["C","D"],
+  q22:"truth",q23:"journalists",q24:"nurses",q25:"dedication",q26:"documents"
+};
+let lastResults=[];
+
+const headingsOptions = ['i','ii','iii','iv','v','vi','vii','viii'];
+
+function initDragDrop() {
+  const pool = document.getElementById('headingsPool');
+  
+  headingsOptions.forEach(opt => {
+    const item = document.createElement('div');
+    item.className = 'drop-item';
+    item.textContent = opt;
+    item.draggable = true;
+    item.dataset.value = opt;
+    pool.appendChild(item);
+  });
+  
+  document.querySelectorAll('.drop-item').forEach(item => {
+    item.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', item.dataset.value);
+      item.style.opacity = '0.5';
+    });
+    
+    item.addEventListener('dragend', e => {
+      item.style.opacity = '1';
+    });
+  });
+  
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.classList.add('over');
+    });
+    
+    zone.addEventListener('dragleave', e => {
+      zone.classList.remove('over');
+    });
+    
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('over');
+      
+      const value = e.dataTransfer.getData('text/plain');
+      
+      while(zone.firstChild) {
+        const child = zone.firstChild;
+        child.classList.remove('placed');
+        document.getElementById('headingsPool').appendChild(child);
+      }
+      
+      const item = document.querySelector(`.drop-item[data-value="${value}"]`);
+      if(item && !item.classList.contains('placed')) {
+        zone.appendChild(item);
+        item.classList.add('placed');
+        saveAnswers();
+      }
+    });
+  });
+}
+
+function saveAnswers() {
+  const data = {};
+  
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    const item = zone.querySelector('.drop-item');
+    if(item) {
+      data[zone.dataset.question] = item.dataset.value;
+    }
+  });
+  
+  document.querySelectorAll('input[type="text"]').forEach(input => {
+    if(input.name && input.value.trim()) {
+      data[input.name] = input.value.trim().toLowerCase();
+    }
+  });
+  
+  const checked = [...document.querySelectorAll('input[name="q20_21"]:checked')].map(cb => cb.value);
+  if(checked.length > 0) {
+    data.q20_21 = checked;
+  }
+  
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  
+  Object.keys(data).forEach(qid => {
+    const value = data[qid];
+    
+    const zone = document.querySelector(`.drop-zone[data-question="${qid}"]`);
+    if(zone) {
+      const item = document.querySelector(`.drop-item[data-value="${value}"]`);
+      if(item) {
+        zone.appendChild(item);
+        item.classList.add('placed');
+      }
+    }
+    
+    const input = document.querySelector(`input[name="${qid}"]`);
+    if(input && input.type === 'text') {
+      input.value = value;
+    }
+    
+    if(qid === 'q20_21' && Array.isArray(value)) {
+      value.forEach(v => {
+        const cb = document.querySelector(`input[name="q20_21"][value="${v}"]`);
+        if(cb) cb.checked = true;
+      });
+    }
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  ['left','right'].forEach(pane=>{
+    document.querySelectorAll(`#${pane} .hl, #${pane} .note`).forEach((el,idx)=>{
+      highlights[pane].push({
+        type: el.classList.contains('hl') ? 'hl' : 'note',
+        text: el.textContent,
+        index: idx
+      });
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  ['left','right'].forEach(pane=>{
+    if(!data[pane]) return;
+    data[pane].forEach(item=>{
+      const walker = document.createTreeWalker(document.getElementById(pane), NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()){
+        const idx = node.textContent.indexOf(item.text);
+        if(idx === -1) continue;
+        const parent = node.parentNode;
+        const before = node.textContent.substring(0, idx);
+        const match  = node.textContent.substring(idx, idx + item.text.length);
+        const after  = node.textContent.substring(idx + item.text.length);
+
+        parent.insertBefore(document.createTextNode(before), node);
+        const span = document.createElement('span');
+        span.className = item.type;
+        span.textContent = match;
+        parent.insertBefore(span, node);
+        parent.insertBefore(document.createTextNode(after), node);
+        parent.removeChild(node);
+        break;
+      }
+    });
+  });
+}
+
+document.querySelectorAll('input[type="text"]').forEach(input => {
+  input.addEventListener('input', saveAnswers);
+});
+
+document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const checked = document.querySelectorAll('input[name="q20_21"]:checked');
+    if(checked.length > 2) {
+      cb.checked = false;
+      alert('只能选择两个选项');
+    } else {
+      saveAnswers();
+    }
+  });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  initDragDrop();
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; 
+  let cor=0; 
+  
+  Object.keys(answerKey).forEach(q=>{ 
+    let uA = "";
+    let cA = answerKey[q];
+    
+    const zone = document.querySelector(`.drop-zone[data-question="${q}"]`);
+    if(zone) {
+      const item = zone.querySelector('.drop-item');
+      if(item) uA = item.dataset.value;
+    }
+    
+    const input = document.querySelector(`input[name="${q}"]`);
+    if(input && input.type === 'text' && input.value.trim()) {
+      uA = input.value.trim().toLowerCase();
+    }
+    
+    if(q === 'q20_21') {
+      const checked = [...document.querySelectorAll('input[name="q20_21"]:checked')].map(cb => cb.value).sort();
+      uA = checked.join(',');
+      cA = answerKey[q].sort().join(',');
+    }
+    
+    const iC = uA === cA || (typeof cA === 'string' && uA.toLowerCase() === cA.toLowerCase());
+    if(iC) cor++; 
+    res.push({id:q, userAns:uA, correctAns:Array.isArray(answerKey[q]) ? answerKey[q].join(',') : cA, isCorrect:iC}); 
+  }); 
+  
+  lastResults=res; 
+  const tot=Object.keys(answerKey).length; 
+  const pct=((cor/tot)*100).toFixed(1); 
+  localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ 
+  document.getElementById('resetModal').classList.add('active'); 
+}
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  
+  document.querySelectorAll('.drop-item.placed').forEach(item => {
+    item.classList.remove('placed');
+    document.getElementById('headingsPool').appendChild(item);
+  });
+  
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value=''); 
+  document.querySelectorAll('input[type="checkbox"]').forEach(i=>i.checked=false); 
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const wr=lastResults.filter(r=>!r.isCorrect); 
+  wr.forEach(r=>{ 
+    const en={paperId:PAPER_ID,title:'The Importance of Law',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; 
+    const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); 
+    if(ix>=0)wb[ix]=en; else wb.push(en); 
+  }); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  alert(`已添加 ${wr.length} 道错题`); 
+  closeModal('resultModal'); 
+}
+
+function deleteWrongItem(pId,qId){ 
+  if(!confirm('确定删除这道错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function clearCurrentWrongBook(){ 
+  if(!confirm('确定清空本篇所有错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>i.paperId!==PAPER_ID); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function openWrongBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const cu=wb.filter(i=>i.paperId===PAPER_ID); 
+  const ct=document.getElementById('wrongBookContent'); 
+  if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; 
+  else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; 
+  document.getElementById('wrongBookModal').classList.add('active'); 
+}
+
+function closeModal(id){ 
+  document.getElementById(id).classList.remove('active'); 
+}
+</script>
+</body>
+</html>

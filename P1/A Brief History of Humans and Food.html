@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P1 – A Brief History of Humans and Food</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .group ol { margin-left:20px; }
+  .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+  .group ol li label { display:inline-block; margin-right:8px; cursor: pointer; }
+  
+  /* Input styles for Gap Fills */
+  .gap-input {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 14px;
+      width: 160px;
+      margin: 0 5px;
+      font-family: inherit;
+  }
+  
+  .note-box {
+      border: 1px solid #333;
+      padding: 15px;
+      margin-top: 10px;
+  }
+  .note-title {
+      text-align: center;
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 15px;
+  }
+  .note-section-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+  }
+  .bullet-list {
+      list-style-type: disc;
+      margin-left: 20px;
+      margin-bottom: 16px;
+  }
+  .bullet-list li {
+      margin-bottom: 8px;
+  }
+  .dash-list {
+      list-style-type: none;
+      margin-left: 15px;
+  }
+  .dash-list li:before {
+      content: "-";
+      position: absolute;
+      margin-left: -15px;
+  }
+
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 1</h2>
+<p>You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.</p>
+<h3>A Brief History of Humans and Food</h3>
+
+<p>During the journey from our hunter-gatherer ancestors to the present day, there have been three seismic changes that have impacted the food we eat: the discovery of cooking, the emergence of agriculture, and the invention of methods of preserving food.</p>
+
+<p>The 19th-century scientist Charles Darwin thought that cooking, after language, was the greatest discovery made by man. All of us eat some raw food, such as fruit and vegetables, but the great majority of food we consume is cooked. Cooking can turn plants that are inedible into edible food by destroying toxic chemicals that plants often manufacture to protect themselves against attack by insects or other herbivorous animals. These toxic chemicals are referred to as “plant secondary compounds” because they are not directly involved in the plant’s normal growth, development, and reproduction, and are produced purely as chemical defenses. They give many of the plants we consume, such as coffee or Brussels sprouts, their bitter taste.</p>
+
+<p>Cooked food is often more digestible because heat breaks down tough cellulose cell walls in plants or tough connective tissue in animals. Chewing raw turnip, a plate of uncooked rice, or a raw leg of lamb is much harder work than eating the cooked equivalent. The energy expended in chewing to break down the tough material is replaced by energy from the fuel used in cooking the food, so the ratio of energy gained to energy expended by the body is greater when food is cooked.</p>
+
+<p>Until the development of agriculture, hunter-gatherers spent up to seven hours a day gathering food. This all began to change around 10,500 years ago with the advent of farming, which led to dramatic changes in human societies. People began to create a variety of new tools to aid survival, and in turn, populations increased in size. These changes led to the possibility of specialization of different tasks within society. Around this time, writing became more sophisticated and allowed people to maintain records of the harvest and taxes. Eventually, formalized structures of government were established as people settled in one area.</p>
+
+<p>The arrival of agriculture meant that, for the first time, our ancestors had more food than they could eat immediately. This, combined with the seasonality of production, led them to discover methods of preserving food: smoking, drying, adding acid by fermentation, or adding salt. These four methods all share one feature in common—they make the food a more hostile environment for bacteria that can cause it to spoil. They also tend to slow down natural chemical reactions in the food that would cause decay.</p>
+
+<p>Although foods today are still preserved in these ancient ways, two more recent methods of preserving food have become more common: canning and freezing. Canning was invented by a Frenchman, Nicolas Appert, in the early 19th century. He sealed food in bottles fabricated from glass and then heated them in boiling water to cook the contents. Appert’s method had great advantages over older methods of food preservation: it could be applied to a wide range of foods, and the flavor and texture were similar to freshly cooked products. His idea was soon copied by an Englishman, Peter Durand. Until this point, containers had been too heavy to be widely used, but Durand produced the first ones which were lightweight and resistant to damage. Two years later, in 1812, two Englishmen, Bryan Donkin and John Hall, started the commercial canning of food, although the real rise in popularity of canning had to wait until the invention of the can opener in 1855. Until then, cans were opened with a chisel and hammer. Canning is an extremely effective way of preserving food: one can containing meat, dating back to 1824, was opened in 1939, and the contents were still in good condition.</p>
+
+<p>In the 21st century, the dominance of canning as a method of food preservation has been overtaken by freezing. Chilling food to keep it fresh is an old idea. The earliest mentions of icehouses, thick-walled buildings, half underground, date back to 1700 BC in northwest Iran. In early 16th-century Italy, water was mixed with chemicals to lower its freezing point to -18 degrees Celsius. Several centuries later, frozen fish and other goods were transported by ship from Australia to England. However, the modern frozen food industry was started in the 1920s by an American, Clarence Birdseye. While on a fishing trip with the Inuit in the Canadian Arctic, Birdseye observed that rapid freezing creates smaller ice crystals and therefore causes less damage to food—a discovery he had not expected. Nevertheless, the major growth in demand for frozen food came with the arrival of freezers in ordinary people’s homes. The advantages of frozen over canned food include the fact that the flavor and consistency are often identical to the fresh product, and freezing can be used to preserve a wide variety of foods.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 1–5</h4>
+      <p>Do the following statements agree with the information given in Reading Passage 1?</p>
+      <p>In boxes <strong>1–5</strong> on your answer sheet, write</p>
+      <div style="margin-left:20px; margin-top:8px;">
+        <div><strong>TRUE</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if the statement agrees with the information</div>
+        <div><strong>FALSE</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if the statement contradicts the information</div>
+        <div><strong>NOT GIVEN</strong>&nbsp;&nbsp;if there is no information on this</div>
+      </div>
+
+      <ol start="1">
+        <li><span class="flag-btn" data-q="q1" style="left:-20px;"></span>According to Darwin, cooking was the most significant development in human history.<br>
+          <label><input type="radio" name="q1" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q1" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q1" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q2" style="left:-20px;"></span>The process of cooking gets rid of some plant poisons.<br>
+          <label><input type="radio" name="q2" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q2" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q2" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q3" style="left:-20px;"></span>Eating cooked food is more energy efficient than eating raw food.<br>
+          <label><input type="radio" name="q3" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q3" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q3" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q4" style="left:-20px;"></span>Clarence Birdseye had previously worked in the Australian food industry.<br>
+          <label><input type="radio" name="q4" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q4" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q4" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q5" style="left:-20px;"></span>Birdseye’s trip with the Inuit confirmed what he already believed about rapid freezing.<br>
+          <label><input type="radio" name="q5" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q5" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q5" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+      </ol>
+    </div>
+
+    <div class="group">
+      <h4>Questions 6–13</h4>
+      <p>Complete the notes below.</p>
+      <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>6–13</strong> on your answer sheet.</p>
+      
+      <div class="note-box">
+          <div class="note-title">The Development of Agriculture and Food Preservation</div>
+          
+          <div class="note-section-title">The changes agriculture brought about were:</div>
+          <ul class="bullet-list">
+              <li>the development of equipment and larger <strong>6</strong> <span class="flag-btn" data-q="q6" style="left:-15px;"></span><input type="text" name="q6" class="gap-input" autocomplete="off"></li>
+              <li>the ability to keep <strong>7</strong> <span class="flag-btn" data-q="q7" style="left:-15px;"></span><input type="text" name="q7" class="gap-input" autocomplete="off"> as writing developed</li>
+              <li>the setting up of organised government</li>
+          </ul>
+
+          <div class="note-section-title">Food preservation</div>
+          <ul class="bullet-list">
+              <li>early methods of food preservation included: smoking, drying and combining food with acid or <strong>8</strong> <span class="flag-btn" data-q="q8" style="left:-15px;"></span><input type="text" name="q8" class="gap-input" autocomplete="off"></li>
+              <li>canning
+                  <ul class="dash-list">
+                      <li>Nicolas Appert put food into containers made of <strong>9</strong> <span class="flag-btn" data-q="q9" style="left:-15px;"></span><input type="text" name="q9" class="gap-input" autocomplete="off"></li>
+                      <li>Appert’s method resulted in preserved food that had the same taste and <strong>10</strong> <span class="flag-btn" data-q="q10" style="left:-15px;"></span><input type="text" name="q10" class="gap-input" autocomplete="off"> as fresh food</li>
+                      <li>Peter Durand introduced cans which had the advantage of being <strong>11</strong> <span class="flag-btn" data-q="q11" style="left:-15px;"></span><input type="text" name="q11" class="gap-input" autocomplete="off"> and hard to break</li>
+                      <li>In 1855, the metal can opener replaced the <strong>12</strong> <span class="flag-btn" data-q="q12" style="left:-15px;"></span><input type="text" name="q12" class="gap-input" autocomplete="off"> which had been used with a hammer to open cans</li>
+                      <li>some food was still found to be edible after more than a hundred years, e.g. an old can of <strong>13</strong> <span class="flag-btn" data-q="q13" style="left:-15px;"></span><input type="text" name="q13" class="gap-input" autocomplete="off"></li>
+                  </ul>
+              </li>
+              <li>freezing</li>
+          </ul>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P1_HUMANS_FOOD';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey = {
+  q1: "FALSE",
+  q2: "TRUE",
+  q3: "TRUE",
+  q4: "NOT GIVEN",
+  q5: "FALSE",
+  q6: "populations",
+  q7: "records",
+  q8: "salt",
+  q9: "glass",
+  q10: "texture",
+  q11: "lightweight",
+  q12: "chisel",
+  q13: "meat"
+};
+let lastResults=[];
+
+function saveAnswers() {
+  const data = {};
+  Object.keys(answerKey).forEach(q => {
+    const el = document.querySelector(`[name="${q}"]`);
+    if(el) {
+        if(el.type === 'radio') {
+            const checked = document.querySelector(`input[name="${q}"]:checked`);
+            if(checked) data[q] = checked.value;
+        } else {
+            data[q] = el.value;
+        }
+    }
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const val = data[q];
+    const radio = document.querySelector(`input[name="${q}"][value="${val}"]`);
+    if(radio) {
+        radio.checked = true;
+    } else {
+        const text = document.querySelector(`input[name="${q}"]`);
+        if(text && text.type === 'text') text.value = val;
+    }
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  const restore = (pane, items) => {
+      if(!items || items.length === 0) return;
+      items.forEach(item => {
+        const walker = document.createTreeWalker(pane, NodeFilter.SHOW_TEXT);
+        let node;
+        while(node = walker.nextNode()) {
+          if(node.textContent.includes(item.text)) {
+            const span = document.createElement('span');
+            span.className = item.type;
+            const parent = node.parentNode;
+            const text = node.textContent;
+            const idx = text.indexOf(item.text);
+            if(idx >= 0) {
+              const before = text.substring(0, idx);
+              const match = text.substring(idx, idx + item.text.length);
+              const after = text.substring(idx + item.text.length);
+              
+              parent.insertBefore(document.createTextNode(before), node);
+              span.textContent = match;
+              parent.insertBefore(span, node);
+              parent.insertBefore(document.createTextNode(after), node);
+              parent.removeChild(node);
+              break;
+            }
+          }
+        }
+      });
+  };
+
+  restore(left, data.left);
+  restore(right, data.right);
+}
+
+document.querySelectorAll('input').forEach(input => {
+  input.addEventListener('change', saveAnswers);
+  input.addEventListener('input', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+    const res=[]; 
+    let cor=0; 
+    Object.keys(answerKey).forEach(q=>{ 
+        let uA = "";
+        const el = document.querySelector(`input[name="${q}"]`);
+        if(el.type === 'radio') {
+            const ch=document.querySelector(`input[name="${q}"]:checked`);
+            uA = ch ? ch.value : "";
+        } else {
+            uA = el.value.trim();
+        }
+        
+        const cA=answerKey[q]; 
+        const iC = uA.toLowerCase() === cA.toLowerCase(); 
+        if(iC) cor++; 
+        res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); 
+    }); 
+    lastResults=res; 
+    const tot=Object.keys(answerKey).length; 
+    const pct=((cor/tot)*100).toFixed(1); 
+    localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+    document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+    document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false); 
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value='');
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const wr=lastResults.filter(r=>!r.isCorrect); wr.forEach(r=>{ const en={paperId:PAPER_ID,title:'A Brief History of Humans and Food',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); if(ix>=0)wb[ix]=en; else wb.push(en); }); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); alert(`已添加 ${wr.length} 道错题`); closeModal('resultModal'); }
+
+function deleteWrongItem(pId,qId){ if(!confirm('确定删除这道错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function clearCurrentWrongBook(){ if(!confirm('确定清空本篇所有错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>i.paperId!==PAPER_ID); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function openWrongBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const cu=wb.filter(i=>i.paperId===PAPER_ID); const ct=document.getElementById('wrongBookContent'); if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; document.getElementById('wrongBookModal').classList.add('active'); }
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

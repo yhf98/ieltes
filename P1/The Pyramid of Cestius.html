@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P1 – The Pyramid of Cestius</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  table { border-collapse: collapse; width:100%; margin:12px 0; }
+  th, td { border:1px solid #ddd; padding:6px; text-align:left; font-size:13px; position:relative; }
+  th { background:#f5f5f5; font-weight:600; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .question-item { padding:12px 0; border-top:1px dashed #ddd; position:relative; padding-left:20px; }
+  .question-item:first-child { border-top:none; }
+  
+  input.blank { 
+    border:none;
+    border-bottom:1px solid #666;
+    padding:4px 8px;
+    margin:0 4px;
+    min-width:120px;
+    font-size:14px;
+  }
+  input.blank:focus { outline:none; border-bottom:2px solid #0066cc; }
+  
+  .answer-option { display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; }
+  .answer-option label { cursor:pointer; display:flex; align-items:center; gap:4px; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 1</h2>
+<p>You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.</p>
+<h3>The Pyramid of Cestius</h3>
+
+<p>A 2,000-year-old pyramid in the city of Rome has been restored by archaeologists.</p>
+
+<p>Though Rome draws tourists from around the world to its many impressive sites, one notable monument there has never attracted nearly as much interest: the Pyramid of Cestius. But why would there be a pyramid in Italy? After the Roman conquest of Egypt in 30 B.C., Egyptian architectural style became the fashion in Rome.</p>
+
+<p>Though obelisks and other monuments inspired by Egypt's great pyramids sprang up around the city, only two actual pyramids are known to have been built. The only one left standing, the Pyramid of Cestius, was designed as the burial pyramid for a Roman politician named Caius Cestius, who ordered that the building work be completed within a period of 330 days. Construction took place at some point between 18 B.C. and 12 B.C. Cestius' pyramid had a layer of white Carrara marble on the outside, and was constructed from brick held together by a basic kind of cement on the inside. One of the things that strikes you when you look at the pyramid is how steep it is, so that the shape of Cestius' pyramid is quite unlike that of typical Egyptian ones. This is a difference that could have been the result of inaccurate information sent back to Rome by soldiers who saw the pyramids in person in Egypt. Alternatively, Roman builders could have drawn inspiration from the pyramids in Nubia, a region located in what is today northern Sudan and southern Egypt.</p>
+
+<p>At the time of its construction, since there was a strict Roman law prohibiting the placement of tombs within the city itself, the Pyramid of Cestius would have stood in the countryside. Rome grew enormously during the next two centuries, and, by the 3rd century A.D., the pyramid would have been surrounded by buildings. We also know that in the 3rd century A.D., the Pyramid of Cestius was hidden behind a high wall on the orders of Emperor Aurelian; this probably helped it survive throughout the centuries to come, even as other ancient monuments disappeared. By the Middle Ages, the pyramid was covered in vegetation and thick dirt, and popular myth had developed that it might be a tomb for one of the twin brothers Romulus and Remus, who were regarded as the men who had established the city of Rome. Cestius' actual tomb within the pyramid and the inscription identifying the pyramid as his weren't rediscovered until the 1660s, when the pyramid underwent restoration. During excavations, when trees and plants were cleared away, two marble bases were found in front of the pyramid, as well as fragments of bronze statues that had once stood on them, on either side of the pyramid. The people employed to excavate the pyramid did not find the urn that would have contained Cestius' remains, but they did come across a tunnel. It was quite possible, therefore, that robbers had at some earlier time removed the contents of the tomb. But while some of the features of Cestius' tomb no longer exist, at least the pyramid itself has survived.</p>
+
+<p>Today, the foundations of Cestius' pyramid rest below street level near an intersection with heavy traffic, so that passing tourists and residents could easily fail to notice its full height of 119 feet. Across the intersection is the Piramide station, located on Line B of the Rome Metro. In 2011, the Japanese clothing-company entrepreneur Yuzo Yagi, president of Yagi Tsusho Ltd, announced his intention to help the Italian government pay for an ambitious renovation of the Pyramid of Cestius. 'It's an act of gratitude,' he later told journalists. 'Our company has grown thanks to Italy.' Work began at the site shortly after Yagi signed an official agreement with the Special Superintendency for the Archaeological Heritage of Rome, and was completed ahead of schedule thanks to his 2-million-euro contribution.</p>
+
+<p>As archaeologist Leonardo Guarnieri explained to journalists, officials are now conducting tours of the newly renovated pyramid twice a month by reservation. Visitors who take advantage of the tour can make their way through a narrow corridor in order to enter the burial chamber itself. It is within these walls that they can admire the frescoes: watercolour paintings typical of the time. In the chamber, it is possible to make out four frescoes of the winged Roman goddess of war, Victoria, a figure from Roman legend, as well as a series of vases, the type that would have been used for special rituals and purification purposes. We know from the writings of earlier visitors that there used to be more here, but the majority have disappeared over time. Only one problem remains now that the restoration is complete. The white exterior of the Pyramid of Cestius will have to be cleaned every few months to remove the layer of urban pollution. A team of free-climbers will be employed to do the job, in order to avoid placing builders' scaffolding around the newly welcoming monument.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 1–7</h4>
+      <p>Do the following statements agree with the information in Reading Passage 1?</p>
+      <p>In boxes 1–7 on your answer sheet, write:</p>
+
+      <table style="margin:12px 0;">
+        <tr>
+          <th>TRUE</th>
+          <td>if the statement agrees with the information</td>
+        </tr>
+        <tr>
+          <th>FALSE</th>
+          <td>if the statement contradicts the information</td>
+        </tr>
+        <tr>
+          <th>NOT GIVEN</th>
+          <td>if there is no information about this</td>
+        </tr>
+      </table>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q1"></span>
+        <p><strong>1.</strong> The Pyramid of Cestius has always been one of Rome's most popular tourist attractions.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q1" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q1" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q1" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q2"></span>
+        <p><strong>2.</strong> The construction of the Pyramid was completed before Cestius' death.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q2" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q2" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q2" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q3"></span>
+        <p><strong>3.</strong> In the Middle Ages, people thought an original founder of Rome was buried in the Pyramid of Cestius.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q3" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q3" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q3" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q4"></span>
+        <p><strong>4.</strong> Today, the height of the Pyramid is something that tourists and residents immediately notice.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q4" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q4" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q4" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q5"></span>
+        <p><strong>5.</strong> Japanese businessman Yuzo Yagi was an admirer of both Italian and Egyptian architecture.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q5" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q5" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q5" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q6"></span>
+        <p><strong>6.</strong> The restoration of the Pyramid of Cestius, which was funded by Yuzo Yagi, finished earlier than expected.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q6" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q6" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q6" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q7"></span>
+        <p><strong>7.</strong> Most of the original frescoes inside Cestius' tomb have survived to this day.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q7" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q7" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q7" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 8–13</h4>
+      <p>Complete the notes below.</p>
+      <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes 8–13 on your answer sheet.</p>
+
+      <h4 style="margin-top:16px;">History of the Pyramid of Cestius</h4>
+      
+      <div style="background:#f9f9f9; padding:12px; margin:12px 0; border-left:3px solid #0066cc;">
+        <strong>Construction of Cestius' pyramid</strong>
+        <ul style="margin-left:20px; margin-top:8px;">
+          <li style="margin:6px 0; line-height:1.6;">it was made from <span class="flag-btn" data-q="q8" style="position:relative; display:inline-block; vertical-align:middle;"></span> 8. <input type="text" class="blank" id="q8">, cement and marble</li>
+          <li style="margin:6px 0; line-height:1.6;">its <span class="flag-btn" data-q="q9" style="position:relative; display:inline-block; vertical-align:middle;"></span> 9. <input type="text" class="blank" id="q9"> is different to the pyramids found in Egypt</li>
+          <li style="margin:6px 0; line-height:1.6;">it was originally built in the <span class="flag-btn" data-q="q10" style="position:relative; display:inline-block; vertical-align:middle;"></span> 10. <input type="text" class="blank" id="q10"> as building tombs in the city was forbidden</li>
+          <li style="margin:6px 0; line-height:1.6;">Emperor Aurelian ordered that a wall had to be built around it</li>
+        </ul>
+      </div>
+
+      <div style="background:#f9f9f9; padding:12px; margin:12px 0; border-left:3px solid #0066cc;">
+        <strong>Restoration of Cestius' pyramid in the 1660s</strong>
+        <ul style="margin-left:20px; margin-top:8px;">
+          <li style="margin:6px 0; line-height:1.6;">In the 1660s, some broken <span class="flag-btn" data-q="q11" style="position:relative; display:inline-block; vertical-align:middle;"></span> 11. <input type="text" class="blank" id="q11"> were found next to it</li>
+          <li style="margin:6px 0; line-height:1.6;">the <span class="flag-btn" data-q="q12" style="position:relative; display:inline-block; vertical-align:middle;"></span> 12. <input type="text" class="blank" id="q12"> inside the tomb suggests that robbers had been there</li>
+          <li style="margin:6px 0; line-height:1.6;">the frescoes show mythological scenes, and images of vases</li>
+        </ul>
+      </div>
+
+      <div style="background:#f9f9f9; padding:12px; margin:12px 0; border-left:3px solid #0066cc;">
+        <strong>Restoration of Cestius' pyramid today</strong>
+        <ul style="margin-left:20px; margin-top:8px;">
+          <li style="margin:6px 0; line-height:1.6;">a Japanese businessman paid for its restoration</li>
+          <li style="margin:6px 0; line-height:1.6;">climbers are helping to get rid of signs of <span class="flag-btn" data-q="q13" style="position:relative; display:inline-block; vertical-align:middle;"></span> 13. <input type="text" class="blank" id="q13"></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P1_PYRAMID';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey={q1:"FALSE",q2:"NOT GIVEN",q3:"TRUE",q4:"FALSE",q5:"NOT GIVEN",q6:"TRUE",q7:"FALSE",q8:"brick",q9:"shape",q10:"countryside",q11:"statues",q12:"tunnel",q13:"pollution"};
+let lastResults=[];
+
+function saveAnswers() {
+  const data = {};
+  for(let i=1; i<=7; i++) {
+    const ch = document.querySelector(`input[name="q${i}"]:checked`);
+    if(ch) data['q'+i] = ch.value;
+  }
+  for(let i=8; i<=13; i++) {
+    const input = document.getElementById('q'+i);
+    if(input && input.value.trim()) data['q'+i] = input.value.trim();
+  }
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    if (/^q[1-7]$/.test(q)) {
+      const radio = document.querySelector(`input[name="${q}"][value="${data[q]}"]`);
+      if(radio) radio.checked = true;
+    } else {
+      const input = document.getElementById(q);
+      if(input) input.value = data[q];
+    }
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = [];
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '[]');
+  if(data.length === 0) return;
+  
+  data.forEach(item => {
+    const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+    let node;
+    while(node = walker.nextNode()) {
+      if(node.textContent.includes(item.text)) {
+        const span = document.createElement('span');
+        span.className = item.type;
+        const parent = node.parentNode;
+        const text = node.textContent;
+        const idx = text.indexOf(item.text);
+        if(idx >= 0) {
+          const before = text.substring(0, idx);
+          const match = text.substring(idx, idx + item.text.length);
+          const after = text.substring(idx + item.text.length);
+          
+          parent.insertBefore(document.createTextNode(before), node);
+          span.textContent = match;
+          parent.insertBefore(span, node);
+          parent.insertBefore(document.createTextNode(after), node);
+          parent.removeChild(node);
+          break;
+        }
+      }
+    }
+  });
+}
+
+document.querySelectorAll('input[type="text"]').forEach(input => {
+  input.addEventListener('input', saveAnswers);
+});
+
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; 
+  let cor=0; 
+  
+  for(let i=1; i<=7; i++) {
+    const ch = document.querySelector(`input[name="q${i}"]:checked`);
+    const uA = ch ? ch.value : "";
+    const cA = answerKey['q'+i];
+    const iC = uA === cA;
+    if(iC) cor++;
+    res.push({id:'q'+i, userAns:uA||'(未作答)', correctAns:cA, isCorrect:iC});
+  }
+  
+  for(let i=8; i<=13; i++) {
+    const input = document.getElementById('q'+i);
+    const uA = input ? input.value.trim().toLowerCase() : "";
+    const cA = answerKey['q'+i].toLowerCase();
+    const iC = uA === cA;
+    if(iC) cor++;
+    res.push({id:'q'+i, userAns:uA||'(未作答)', correctAns:answerKey['q'+i], isCorrect:iC});
+  }
+  
+  lastResults=res; 
+  const tot=13;
+  const pct=((cor/tot)*100).toFixed(1); 
+   localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  
+  for(let i=1; i<=7; i++) {
+    document.querySelectorAll(`input[name="q${i}"]`).forEach(r=>r.checked=false);
+  }
+  for(let i=8; i<=13; i++) {
+    const input = document.getElementById('q'+i);
+    if(input) input.value = '';
+  }
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const wr=lastResults.filter(r=>!r.isCorrect); 
+  wr.forEach(r=>{ 
+    const en={
+      paperId:PAPER_ID,
+      title:'The Pyramid of Cestius',
+      questionId:r.id,
+      correctAnswer:r.correctAns,
+      myAnswer:r.userAns,
+      date:new Date().toISOString().split('T')[0]
+    }; 
+    const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); 
+    if(ix>=0)wb[ix]=en; 
+    else wb.push(en); 
+  }); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  alert(`已添加 ${wr.length} 道错题`); 
+  closeModal('resultModal'); 
+}
+
+function deleteWrongItem(pId,qId){ 
+  if(!confirm('确定删除这道错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function clearCurrentWrongBook(){ 
+  if(!confirm('确定清空本篇所有错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>i.paperId!==PAPER_ID); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function openWrongBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const cu=wb.filter(i=>i.paperId===PAPER_ID); 
+  const ct=document.getElementById('wrongBookContent'); 
+  if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; 
+  else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; 
+  document.getElementById('wrongBookModal').classList.add('active'); 
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

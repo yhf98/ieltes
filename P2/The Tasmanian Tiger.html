@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – The Tasmanian Tiger</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .group ol { margin-left:20px; }
+  .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+  
+  .summary-input { 
+    display:inline-block; 
+    width:150px; 
+    padding:4px 8px; 
+    border:1px solid #ddd; 
+    border-radius:4px; 
+    font-size:14px; 
+  }
+  .summary-input:focus { outline:none; border-color:#0066cc; }
+  
+  .match-area { margin:16px 0; }
+  .match-options { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; padding:12px; background:#f9f9f9; border-radius:6px; min-height:50px; }
+  .match-option { 
+    padding:8px 16px; 
+    background:#fff; 
+    border:1px solid #ddd; 
+    border-radius:6px; 
+    cursor:move; 
+    font-size:14px;
+    user-select:none;
+  }
+  .match-option:hover { background:#f0f0f0; }
+  .match-option.dragging { opacity:0.5; }
+  
+  .match-question { 
+    display:flex; 
+    align-items:center; 
+    margin:8px 0; 
+    padding:12px; 
+    background:#fff; 
+    border:1px solid #ddd; 
+    border-radius:6px; 
+  }
+  .match-question .q-num { 
+    font-weight:600; 
+    margin-right:12px; 
+    min-width:30px; 
+  }
+  .match-question .q-text { 
+    flex:1; 
+    font-size:14px; 
+  }
+  .match-dropzone { 
+    min-width:80px; 
+    min-height:36px; 
+    padding:6px 12px; 
+    margin-left:12px; 
+    border:2px dashed #ddd; 
+    border-radius:6px; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    font-size:14px; 
+    font-weight:600; 
+    color:#666;
+  }
+  .match-dropzone.drag-over { background:#e3f2fd; border-color:#0066cc; }
+  .match-dropzone.filled { background:#e8f5e9; border-color:#4caf50; border-style:solid; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>The Tasmanian Tiger</h3>
+
+<p>The Tasmanian tiger, or thylacine, was a carnivorous marsupial (a meat-eating mammal which carries its young in a pouch). It was given the name 'tiger' because it had striped fur, and because it was ferocious. Between 24 million and 15 million years ago, many types of thylacine roamed across Australia, their powerful jaws playing a role in maintaining a balance in the ecosystems of their day. Some species were fox-sized, while others were barely the size of kittens.</p>
+
+<p>But when a period of climate change cooled Australia about 12 million years ago, the numbers of these ancient thylacines began to decline. By about 3 million years ago, only one species was left. About 4,000 years ago, these vanished completely from the Australian mainland, so that Tasmania, a large island to the south of Australia, became the last remaining place where thylacines existed. They ruled the island's animal life unchallenged until Europeans—with sheep, dogs and a great indifference to native flora and fauna—seem to have brought about their extinction. In 1936, the last captive Tasmanian tiger died in Hobart Zoo. Since then, many expeditions have searched for tigers in the Tasmanian bush, but no definitive evidence has been found. Despite this, there are many who keep searching.</p>
+
+<p>In 1981, Dutch-born zoologist Hans Naarding was in Tasmania conducting a survey of Latham's snipe, a species of endangered bird. One night, he saw an animal in the light from the searchlight mounted on his vehicle. He described it as about the size of a large dog, but with slightly sloping hindquarters and a fairly thick tail continuing straight on from its backbone. He said that it had 12 distinct stripes on its back, running down to the point where the tail began. He reported the sighting to the Director of Tasmania's National Parks. "When the news broke," said Naarding, "I was besieged by television crews, including four or five from Japan, and others from the United Kingdom, Germany, New Zealand and South America."</p>
+
+<p>Government and private search parties combed the region, but no further sightings were made. The tiger, as always, had escaped to its lair—a place that many insist exists only in the imagination. Others disagree: there have been more than 4,000 claimed sightings of the animal since it supposedly died out, and the average number of claims reported to the authorities each year is now 150. So is it out there? Even experts differ in opinion.</p>
+
+<p>Randolph Rose, Associate Professor of Zoology at the University of Tasmania, says that he once dreamed of seeing a thylacine, but is now convinced that his dream will go unfulfilled. The consensus among conservationists is that any animal with a population base of less than 1,000 is headed for extinction within 60 years. "Sixty years ago," he says, "there was only one thylacine that we know of, and that was in Hobart Zoo. Take it from me, the tiger is gone." But Dr David Pemberton, curator of zoology at the Tasmanian Museum, states that, despite scientific thinking that a relatively large population is required to sustain a species, "the Florida panther is down to a dozen or so animals, and, while it does have some inbreeding problems, it's still ticking along! After all, animals can be notoriously elusive. The strange fish known as the coelacanth, with its 'proto legs,' was thought to have died out with the dinosaurs 700 million years ago, until a specimen was dragged to the surface in a shark net off the coast of South Africa in 1938."</p>
+
+<p>Wildlife biologist Nick Mooney has the unenviable task of investigating all so-called sightings of the tiger. It was Mooney who was first consulted in late February 2005 about the authenticity of new digital photographic images of a thylacine allegedly taken by a tourist. "On face value," Mooney says, "this particular account of a sighting and the photographs submitted as proof amount to one of the most convincing cases for the species' survival that I have seen." Many other 'sightings' have been hoaxes, and many sincere seekers are victims of obsession. "It is a blind optimism that something is, rather than cynicism that something isn't," Mooney says. "If something crosses the road, it's not a case of 'I wonder what that was?' Rather, it is a case of 'That's a thylacine!'"</p>
+
+<p>However, Mooney treats all sightings at face value. "I never try to embarrass people," he says, "but the fact that I don't pack the car immediately after they telephone can often be taken as ridicule. Obsessive characters get angry that someone in my position is not out there when they think the thylacine is there."</p>
+
+<p>Hans Naarding, whose sighting of a striped animal two decades ago was the highlight of a lifetime of animal spotting, remains puzzled by the time and money people waste on tiger searches. He says resources would be better applied to saving another endangered animal, the Tasmanian devil, and helping declining migratory bird populations. Could the thylacine still be out there? "Sure," Naarding says. "I know the vast south-west wilderness of Tasmania well. They could survive … [But] if this is the case, it will not be long before they do disappear completely." Naarding believes that any discovery of surviving thylacines would be "rather pointless." "How do you bring a species back from extinction?" he asks. "What could you do with it? If there are thylacines out there, they are better off right where they are."</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–18</h4>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>NO MORE THAN TWO WORDS AND/OR A NUMBER</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>14–18</strong> on your answer sheet.</p>
+
+      <div style="margin:16px 0; line-height:2;">
+        <p>The thylacine was a dog-like animal which had a <span class="flag-btn" data-q="q14" style="position:relative; left:-12px;"></span><input type="text" class="summary-input" data-q="q14" placeholder="14"> coat and was carnivorous. It was originally spread widely throughout the mainland of <span class="flag-btn" data-q="q15" style="position:relative; left:-12px;"></span><input type="text" class="summary-input" data-q="q15" placeholder="15">. However, the number of thylacine decreased in that area around <span class="flag-btn" data-q="q16" style="position:relative; left:-12px;"></span><input type="text" class="summary-input" data-q="q16" placeholder="16"> ago because of climate change.</p>
+        
+        <p>In the end, thylacines were found only on the island of <span class="flag-btn" data-q="q17" style="position:relative; left:-12px;"></span><input type="text" class="summary-input" data-q="q17" placeholder="17">, until the arrival of <span class="flag-btn" data-q="q18" style="position:relative; left:-12px;"></span><input type="text" class="summary-input" data-q="q18" placeholder="18"> with their farming practices brought about a drastic reduction in thylacine numbers. The last one is thought to have died in Hobart Zoo in 1936.</p>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 19–24</h4>
+      <p>Look at the following statements (Questions 19–24) and the list of people below.</p>
+      <p>Match each statement with the correct person, <strong>A, B, C or D</strong>.</p>
+      <p>Write the correct letter, <strong>A–D</strong>, in boxes <strong>19–24</strong> on your answer sheet.</p>
+      <p><strong>NB</strong> You may use any letter more than once.</p>
+
+      <div class="match-area">
+        <div class="match-options" id="matchOptions">
+          <div class="match-option" draggable="true" data-value="A">A</div>
+          <div class="match-option" draggable="true" data-value="B">B</div>
+          <div class="match-option" draggable="true" data-value="C">C</div>
+          <div class="match-option" draggable="true" data-value="D">D</div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q19"></span>
+          <span class="q-num">19</span>
+          <span class="q-text">There is no longer any hope of finding a surviving Tasmanian tiger.</span>
+          <div class="match-dropzone" data-q="q19"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q20"></span>
+          <span class="q-num">20</span>
+          <span class="q-text">It would be preferable not to disturb any surviving Tasmanian tigers.</span>
+          <div class="match-dropzone" data-q="q20"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q21"></span>
+          <span class="q-num">21</span>
+          <span class="q-text">Many who claim to have seen Tasmanian tigers are not objective witnesses.</span>
+          <div class="match-dropzone" data-q="q21"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q22"></span>
+          <span class="q-num">22</span>
+          <span class="q-text">Expert estimates of numbers needed to ensure species survival may be inaccurate.</span>
+          <div class="match-dropzone" data-q="q22"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q23"></span>
+          <span class="q-num">23</span>
+          <span class="q-text">There is a great deal of international interest in Tasmanian tiger stories.</span>
+          <div class="match-dropzone" data-q="q23"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q24"></span>
+          <span class="q-num">24</span>
+          <span class="q-text">Some fresh evidence provided by a visitor to Tasmania seems credible.</span>
+          <div class="match-dropzone" data-q="q24"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; padding:12px; background:#f9f9f9; border-radius:6px;">
+        <strong>List of People</strong>
+        <div style="margin-top:8px;">
+          <div><strong>A</strong> Hans Naarding</div>
+          <div><strong>B</strong> Randolph Rose</div>
+          <div><strong>C</strong> David Pemberton</div>
+          <div><strong>D</strong> Nick Mooney</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 25 and 26</h4>
+      <p>Choose the correct letter, <strong>A, B, C or D</strong>.</p>
+      <p>Write the correct letter in boxes <strong>25 and 26</strong> on your answer sheet.</p>
+
+      <ol start="25">
+        <li><span class="flag-btn" data-q="q25" style="left:-20px;"></span><strong>Has Naarding's sighting of a Tasmanian tiger resulted in</strong><br>
+          <label><input type="radio" name="q25" value="A"> A the capture of the tiger.</label><br>
+          <label><input type="radio" name="q25" value="B"> B an extensive follow-up.</label><br>
+          <label><input type="radio" name="q25" value="C"> C many other sightings.</label><br>
+          <label><input type="radio" name="q25" value="D"> D the death of the tiger.</label>
+        </li>
+        <li><span class="flag-btn" data-q="q26" style="left:-20px;"></span><strong>The example of the coelacanth is used to show that</strong><br>
+          <label><input type="radio" name="q26" value="A"> A new animal species are still evolving.</label><br>
+          <label><input type="radio" name="q26" value="B"> B animals can possess surprising physical characteristics.</label><br>
+          <label><input type="radio" name="q26" value="C"> C species of sea animals can be saved from extinction.</label><br>
+          <label><input type="radio" name="q26" value="D"> D opinions regarding the extinction of animal species can be mistaken.</label>
+        </li>
+      </ol>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_TASMANIAN';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+// 拖拽功能
+let draggedElement = null;
+
+document.querySelectorAll('.match-option').forEach(opt => {
+  opt.addEventListener('dragstart', e => {
+    draggedElement = e.target;
+    e.target.classList.add('dragging');
+  });
+  
+  opt.addEventListener('dragend', e => {
+    e.target.classList.remove('dragging');
+  });
+});
+
+document.querySelectorAll('.match-dropzone').forEach(zone => {
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  });
+  
+  zone.addEventListener('dragleave', () => {
+    zone.classList.remove('drag-over');
+  });
+  
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    if(draggedElement) {
+      zone.textContent = draggedElement.dataset.value;
+      zone.classList.add('filled');
+      saveAnswers();
+    }
+  });
+  
+  zone.addEventListener('click', () => {
+    zone.textContent = '';
+    zone.classList.remove('filled');
+    saveAnswers();
+  });
+});
+
+const answerKey={q14:"striped",q15:"Australia",q16:"12 million years",q17:"Tasmania",q18:"Europeans",q19:"B",q20:"A",q21:"D",q22:"C",q23:"A",q24:"D",q25:"B",q26:"D"};
+let lastResults=[];
+
+function normalizeAnswer(ans) {
+  return ans.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+function saveAnswers() {
+  const data = {};
+  document.querySelectorAll('.summary-input').forEach(inp => {
+    if(inp.value) data[inp.dataset.q] = inp.value;
+  });
+  document.querySelectorAll('.match-dropzone').forEach(zone => {
+    if(zone.textContent && zone.textContent.trim()) data[zone.dataset.q] = zone.textContent.trim();
+  });
+  Object.keys(answerKey).forEach(q => {
+    const ch = document.querySelector(`input[name="${q}"]:checked`);
+    if(ch) data[q] = ch.value;
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const input = document.querySelector(`.summary-input[data-q="${q}"]`);
+    if(input) input.value = data[q];
+    const zone = document.querySelector(`.match-dropzone[data-q="${q}"]`);
+    if(zone) {
+      zone.textContent = data[q];
+      zone.classList.add('filled');
+    }
+    const radio = document.querySelector(`input[name="${q}"][value="${data[q]}"]`);
+    if(radio) radio.checked = true;
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  if(data.left && data.left.length > 0) {
+    data.left.forEach(item => {
+      const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+  
+  if(data.right && data.right.length > 0) {
+    data.right.forEach(item => {
+      const walker = document.createTreeWalker(right, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', saveAnswers);
+});
+
+document.querySelectorAll('.summary-input').forEach(input => {
+  input.addEventListener('input', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; 
+  let cor=0; 
+  Object.keys(answerKey).forEach(q=>{ 
+    let uA="";
+    const inp = document.querySelector(`.summary-input[data-q="${q}"]`);
+    if(inp) uA = inp.value;
+    const zone = document.querySelector(`.match-dropzone[data-q="${q}"]`);
+    if(zone && zone.textContent.trim()) uA = zone.textContent.trim();
+    const ch=document.querySelector('input[name="'+q+'"]:checked'); 
+    if(ch) uA=ch.value;
+    
+    const cA=answerKey[q]; 
+    const iC = normalizeAnswer(uA) === normalizeAnswer(cA);
+    if(iC)cor++; 
+    res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); 
+  }); 
+  lastResults=res; 
+  const tot=Object.keys(answerKey).length; 
+  const pct=((cor/tot)*100).toFixed(1); 
+   localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false); 
+  document.querySelectorAll('.summary-input').forEach(i=>i.value='');
+  document.querySelectorAll('.match-dropzone').forEach(z=>{z.textContent='';z.classList.remove('filled');});
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const wr=lastResults.filter(r=>!r.isCorrect); wr.forEach(r=>{ const en={paperId:PAPER_ID,title:'The Tasmanian Tiger',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); if(ix>=0)wb[ix]=en; else wb.push(en); }); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); alert(`已添加 ${wr.length} 道错题`); closeModal('resultModal'); }
+
+function deleteWrongItem(pId,qId){ if(!confirm('确定删除这道错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function clearCurrentWrongBook(){ if(!confirm('确定清空本篇所有错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>i.paperId!==PAPER_ID); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function openWrongBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const cu=wb.filter(i=>i.paperId===PAPER_ID); const ct=document.getElementById('wrongBookContent'); if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; document.getElementById('wrongBookModal').classList.add('active'); }
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

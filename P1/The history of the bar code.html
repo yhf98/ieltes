@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P1 – The history of the bar code</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .group ol { margin-left:20px; }
+  .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+  .group ol li label { display:inline-block; margin-right:8px; cursor: pointer; }
+  
+  /* Input styles for Gap Fills */
+  .gap-input {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 14px;
+      width: 140px;
+      margin: 0 5px;
+      font-family: inherit;
+  }
+  
+  .note-box {
+      border: 1px solid #333;
+      padding: 15px;
+      margin-top: 10px;
+  }
+  .note-title {
+      text-align: center;
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 15px;
+  }
+  .note-section-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+  }
+  .bullet-list {
+      list-style-type: disc;
+      margin-left: 20px;
+      margin-bottom: 16px;
+  }
+  .dash-list {
+      list-style-type: none;
+      margin-left: 15px;
+  }
+  .dash-list li:before {
+      content: "-";
+      position: absolute;
+      margin-left: -15px;
+  }
+  .bullet-list li, .dash-list li {
+      margin-bottom: 8px;
+  }
+
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 1</h2>
+<p>You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.</p>
+<h3>The history of the bar code</h3>
+
+<p>The first step toward today’s bar codes came in 1948, when Bernard Silver, a graduate student in the USA, overheard a conversation in the halls of Philadelphia’s Drexel Institute of Technology. The president of a food chain was pleading with a professor to undertake research on a method of capturing product information automatically at store checkouts. The professor turned down the request, but Bernard Silver mentioned the conversation to his friend Norman Woodland, a twenty-seven-year-old teacher at Drexel.</p>
+
+<p>The problem fascinated the two friends, and they set about thinking of a solution. Their first idea was to use patterns printed with an ink that would glow under ultraviolet light, and they built a device to test the concept. It worked, but the printing costs were high and the patterns faded over time. Nonetheless, they were convinced they had a workable idea. After several months of work they came up with the linear bar code, using elements from two established technologies: Morse code, in which letters and numbers are coded into a system of dots and dashes, and the method used to record soundtracks in movies. Silver and Woodland patented the idea in 1952, describing their invention as ‘article classification… through the medium of identifying patterns’. But the cost, together with the fact that their scanning equipment was rather unreliable, made the idea a non-starter at that time.</p>
+
+<p>Scanning systems made little progress until the 1970s, when lasers became affordable. Following this, various systems came into use around the world in stores, libraries, factories, and the like, each with its own proprietary code, but there was no standardization. A consortium of grocery manufacturers and retailers therefore set up a committee to look into bar codes, and to standardize what became known formally as the Universal Product Code (UPC). At the heart of the committee’s guidelines were a few basic principles. To make life easier for the cashier, bar codes would have to be readable from almost any angle and at a range of distances. Because they would be reproduced by the million, the labels would have to be cheap and easy to print. And to be affordable, automated checkout systems would have to pay for themselves in two and a half years.</p>
+
+<p>The committee considered more than a dozen versions of bar codes, including one based on multi-colored dots and another using a circular bull’s-eye design with lines radiating from a central point. On April 1, 1973, they unanimously agreed on a standardized UPC, a combination of black and white lines and numbers, based on Woodland and Silver’s idea but developed by George Laurer at IBM. Alan Haberman, who headed the subcommittee as president of First National Stores, described the bar code as a kind of world language that worked for everyone. He recalls proudly, ‘We showed that it could be done on a massive scale, that cooperation… was possible for the common good, and that business didn’t need the government to shove them in the right direction.’</p>
+
+<p>The investment involved in the bar-code revolution was huge. Each of the tens of thousands of grocery outlets in the US had to spend at least $200,000 on new scanning equipment. Chains had to install new data processing centers and retrain their employees. Printers had to develop the new types of ink, plates, and other technology to reproduce the code with the exact tolerances it requires, and manufacturers had to spend millions of dollars a year on the labels.</p>
+
+<p>On June 26, 1974, all the tests were done, all the proposals were complete, all the standards were set, and at a supermarket in Ohio, a single pack of Juicy Fruit chewing gum became the first retail product sold with the help of a bar code scanner. Decades of schemes and billions of dollars in investment now became a practical reality. The bar code on any product could be read and understood in every suitably equipped store.</p>
+
+<p>The advantages of the system were not clear immediately, as wholesalers, retailers and customers remained suspicious. Some customers believed bar codes were a form of surveillance. During the early weeks, Business Week magazine ran the headline ‘The Supermarket Scanner That Failed’. However, the benefits eventually became apparent. ‘It turns out there were massive savings in labor and other areas,’ Haberman says. These included checking out items at twice the speed compared to using traditional equipment, which meant shorter lines. And it did not take supermarkets too long to see that, as well as vastly improving customer service, the bar code could hugely reduce the amount of time spent checking inventory.</p>
+
+<p>Now, every day more than 5 billion bar codes are scanned in retail outlets throughout the world. Passengers’ luggage is tagged with bar codes by airlines. Staff attach them to babies to ensure the right babies go home from hospitals with the right mothers. Runners in major marathons set off with bar codes on their vests, and librarians rely on them. Tiny bar codes have even been mounted on bees by researchers to track their movements.</p>
+
+<p>As for that original pack of Juicy Fruit, it is now, unchewed and unopened, in the Smithsonian Institution National Museum of American History in Washington.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 1–8</h4>
+      <p>Complete the notes below.</p>
+      <p>Write <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>1–8</strong> on your answer sheet.</p>
+      
+      <div class="note-box">
+          <div class="note-title">History of the bar code</div>
+          
+          <div class="note-section-title">1948–1952</div>
+          <p>Methods of recording information automatically were developed by Silver and Woodland.</p>
+          <p>1st system:</p>
+          <ul class="bullet-list">
+              <li>used ultraviolet light and a special type of <strong>1</strong> <span class="flag-btn" data-q="q1" style="left:-15px;"></span><input type="text" name="q1" class="gap-input" autocomplete="off"></li>
+              <li>problems: expensive and not permanent</li>
+          </ul>
+          <p>2nd system:</p>
+          <ul class="bullet-list">
+              <li>based on technology used in Morse code and also for the <strong>2</strong> <span class="flag-btn" data-q="q2" style="left:-15px;"></span><input type="text" name="q2" class="gap-input" autocomplete="off"> of films</li>
+              <li>problems: <strong>3</strong> <span class="flag-btn" data-q="q3" style="left:-15px;"></span><input type="text" name="q3" class="gap-input" autocomplete="off"> and expensive</li>
+          </ul>
+
+          <div class="note-section-title">1970s</div>
+          <ul class="bullet-list">
+              <li>Availability of cheaper <strong>4</strong> <span class="flag-btn" data-q="q4" style="left:-15px;"></span><input type="text" name="q4" class="gap-input" autocomplete="off"> meant scanning technology spread more widely</li>
+              <li>Problem: lack of <strong>5</strong> <span class="flag-btn" data-q="q5" style="left:-15px;"></span><input type="text" name="q5" class="gap-input" autocomplete="off"> in code systems</li>
+              <li>April 1973: committee agreed on one universal product code (UPC)</li>
+              <li>June 1974: pack of Juicy Fruit chewing gum sold with bar code scanner</li>
+              <li>Advantages of bar code system:
+                  <ul class="dash-list">
+                      <li>supermarkets needed to spend less on labour</li>
+                      <li>the <strong>6</strong> <span class="flag-btn" data-q="q6" style="left:-15px;"></span><input type="text" name="q6" class="gap-input" autocomplete="off"> of checkouts increased</li>
+                      <li>doing inventories was much cheaper</li>
+                  </ul>
+              </li>
+          </ul>
+
+          <div class="note-section-title">Present day</div>
+          <p>Users of bar codes include:</p>
+          <ul class="bullet-list">
+              <li>retail companies</li>
+              <li>airlines</li>
+              <li>staff in hospitals</li>
+              <li>participants in <strong>7</strong> <span class="flag-btn" data-q="q7" style="left:-15px;"></span><input type="text" name="q7" class="gap-input" autocomplete="off"></li>
+              <li>scientists studying <strong>8</strong> <span class="flag-btn" data-q="q8" style="left:-15px;"></span><input type="text" name="q8" class="gap-input" autocomplete="off"></li>
+          </ul>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 9–13</h4>
+      <p>Do the following statements agree with the information given in Reading Passage 1?</p>
+      <p>In boxes <strong>9–13</strong> on your answer sheet, write</p>
+      <div style="margin-left:20px; margin-top:8px;">
+        <div><strong>TRUE</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if the statement agrees with the information</div>
+        <div><strong>FALSE</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if the statement contradicts the information</div>
+        <div><strong>NOT GIVEN</strong>&nbsp;&nbsp;if there is no information on this</div>
+      </div>
+
+      <ol start="9">
+        <li><span class="flag-btn" data-q="q9" style="left:-20px;"></span>Bernard Silver was invited to develop a system for capturing product information by the president of a food chain.<br>
+          <label><input type="radio" name="q9" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q9" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q9" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q10" style="left:-20px;"></span>A committee set up in the 1970s said bar codes should be easy to use and not too expensive.<br>
+          <label><input type="radio" name="q10" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q10" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q10" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q11" style="left:-20px;"></span>Alan Haberman disagreed with government policies on business matters.<br>
+          <label><input type="radio" name="q11" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q11" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q11" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q12" style="left:-20px;"></span>Many grocery outlets were unable to afford the necessary scanning equipment.<br>
+          <label><input type="radio" name="q12" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q12" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q12" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q13" style="left:-20px;"></span>The advantages of the new bar code scanner took some time to be accepted by users.<br>
+          <label><input type="radio" name="q13" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q13" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q13" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+      </ol>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P1_BAR_CODE';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey = {
+  q1: "ink",
+  q2: "soundtracks",
+  q3: "unreliable",
+  q4: "lasers",
+  q5: "standardization",
+  q6: "speed",
+  q7: "marathons",
+  q8: "bees",
+  q9: "FALSE",
+  q10: "TRUE",
+  q11: "NOT GIVEN",
+  q12: "NOT GIVEN",
+  q13: "TRUE"
+};
+let lastResults=[];
+
+function saveAnswers() {
+  const data = {};
+  Object.keys(answerKey).forEach(q => {
+    const el = document.querySelector(`[name="${q}"]`);
+    if(el) {
+        if(el.type === 'radio') {
+            const checked = document.querySelector(`input[name="${q}"]:checked`);
+            if(checked) data[q] = checked.value;
+        } else {
+            data[q] = el.value;
+        }
+    }
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const val = data[q];
+    const radio = document.querySelector(`input[name="${q}"][value="${val}"]`);
+    if(radio) {
+        radio.checked = true;
+    } else {
+        const text = document.querySelector(`input[name="${q}"]`);
+        if(text && text.type === 'text') text.value = val;
+    }
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  const restore = (pane, items) => {
+      if(!items || items.length === 0) return;
+      items.forEach(item => {
+        const walker = document.createTreeWalker(pane, NodeFilter.SHOW_TEXT);
+        let node;
+        while(node = walker.nextNode()) {
+          if(node.textContent.includes(item.text)) {
+            const span = document.createElement('span');
+            span.className = item.type;
+            const parent = node.parentNode;
+            const text = node.textContent;
+            const idx = text.indexOf(item.text);
+            if(idx >= 0) {
+              const before = text.substring(0, idx);
+              const match = text.substring(idx, idx + item.text.length);
+              const after = text.substring(idx + item.text.length);
+              
+              parent.insertBefore(document.createTextNode(before), node);
+              span.textContent = match;
+              parent.insertBefore(span, node);
+              parent.insertBefore(document.createTextNode(after), node);
+              parent.removeChild(node);
+              break;
+            }
+          }
+        }
+      });
+  };
+
+  restore(left, data.left);
+  restore(right, data.right);
+}
+
+document.querySelectorAll('input').forEach(input => {
+  input.addEventListener('change', saveAnswers);
+  input.addEventListener('input', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+    const res=[]; 
+    let cor=0; 
+    Object.keys(answerKey).forEach(q=>{ 
+        let uA = "";
+        const el = document.querySelector(`input[name="${q}"]`);
+        if(el.type === 'radio') {
+            const ch=document.querySelector(`input[name="${q}"]:checked`);
+            uA = ch ? ch.value : "";
+        } else {
+            uA = el.value.trim();
+        }
+        
+        const cA=answerKey[q]; 
+        const iC = uA.toLowerCase() === cA.toLowerCase(); 
+        if(iC) cor++; 
+        res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); 
+    }); 
+    lastResults=res; 
+    const tot=Object.keys(answerKey).length; 
+    const pct=((cor/tot)*100).toFixed(1); 
+    localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+    document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+    document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false); 
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value='');
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const wr=lastResults.filter(r=>!r.isCorrect); wr.forEach(r=>{ const en={paperId:PAPER_ID,title:'The history of the bar code',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); if(ix>=0)wb[ix]=en; else wb.push(en); }); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); alert(`已添加 ${wr.length} 道错题`); closeModal('resultModal'); }
+
+function deleteWrongItem(pId,qId){ if(!confirm('确定删除这道错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function clearCurrentWrongBook(){ if(!confirm('确定清空本篇所有错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>i.paperId!==PAPER_ID); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function openWrongBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const cu=wb.filter(i=>i.paperId===PAPER_ID); const ct=document.getElementById('wrongBookContent'); if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; document.getElementById('wrongBookModal').classList.add('active'); }
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – Will Eating Less Make You Live Longer?</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  #left .subtitle { font-style:italic; color:#666; font-size:14px; margin-bottom:20px; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .group ol { margin-left:20px; }
+  .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+  
+  .summary-input { 
+    display:inline-block; 
+    width:150px; 
+    padding:4px 8px; 
+    border:1px solid #ddd; 
+    border-radius:4px; 
+    font-size:14px; 
+  }
+  .summary-input:focus { outline:none; border-color:#0066cc; }
+  
+  .match-area { margin:16px 0; }
+  .match-options { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; padding:12px; background:#f9f9f9; border-radius:6px; min-height:50px; }
+  .match-option { 
+    padding:8px 16px; 
+    background:#fff; 
+    border:1px solid #ddd; 
+    border-radius:6px; 
+    cursor:move; 
+    font-size:14px;
+    user-select:none;
+  }
+  .match-option:hover { background:#f0f0f0; }
+  .match-option.dragging { opacity:0.5; }
+  
+  .match-question { 
+    display:flex; 
+    align-items:center; 
+    margin:8px 0; 
+    padding:12px; 
+    background:#fff; 
+    border:1px solid #ddd; 
+    border-radius:6px; 
+  }
+  .match-question .q-num { 
+    font-weight:600; 
+    margin-right:12px; 
+    min-width:30px; 
+  }
+  .match-question .q-text { 
+    flex:1; 
+    font-size:14px; 
+  }
+  .match-dropzone { 
+    min-width:80px; 
+    min-height:36px; 
+    padding:6px 12px; 
+    margin-left:12px; 
+    border:2px dashed #ddd; 
+    border-radius:6px; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    font-size:14px; 
+    font-weight:600; 
+    color:#666;
+  }
+  .match-dropzone.drag-over { background:#e3f2fd; border-color:#0066cc; }
+  .match-dropzone.filled { background:#e8f5e9; border-color:#4caf50; border-style:solid; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>Will Eating Less Make You Live Longer?</h3>
+<p class="subtitle">The latest in a conflicting series of studies suggests calorie restriction could potentially slow ageing in humans</p>
+
+<h4>Paragraph A</h4>
+<p>Calorie restriction, or 'semi-starvation' as some refer to it, has been proven to extend lifespan in many living organisms from yeast to mice, but the picture for primates, including humans, is not so clear. Research published by a team at the University of Wisconsin in the United States shows that rhesus monkeys also live longer on a calorie-restricted diet. But those findings disagree with research by the National Institute on Aging (NIA) in Maryland, also in the United States. Rozalyn Anderson, of the Wisconsin team, says the research is not intended as a recommendation of calorie restriction. 'I find the idea monumentally unattractive!' she says. 'We study it because it is so effective at delaying ageing and the onset of age-related disease. It's a way to tease out what it is that creates increased disease vulnerability as a function of age.'</p>
+
+<h4>Paragraph B</h4>
+<p>Both groups started long-term trials on rhesus monkeys in the late 1980s to determine whether calorie restriction would extend the lifespan of primates. In mice, many experiments had come to the same finding: feed them a diet with 30% fewer calories and see a lifespan extension of 40%. The monkey trials were set up in a similar way: researchers took the calorie content of a standard monkey diet, cut it by 30% (while continuing to supply all essential nutrients) and monitored whether those monkeys lived longer, healthier lives than those on the standard diet.</p>
+
+<h4>Paragraph C</h4>
+<p>In 2009, with the monkeys approaching old age, preliminary findings of the two trials started coming in. For the Wisconsin monkeys, calorie restriction seemed to be working. Compared to well-fed control animals, the lean monkeys were living longer and suffering less from the diseases of ageing: diabetes, heart disease and brain diseases. However, in 2012 the NIA results emerged with a dramatically different conclusion: their monkeys were not living any longer than the controls, although they were healthier.</p>
+
+<h4>Paragraph D</h4>
+<p>The Wisconsin group's latest results confirm that their calorie-restricted monkeys are living longer than the controls. They also offer a possible explanation of why the two groups' findings don't agree, and that lies in the treatment of the control group. The Wisconsin study began with monkeys in early adulthood. Initially, all the monkeys were allowed to eat as much as they liked. A few months into the trial, the monkeys were placed into one of two groups: the controls (who continued to be fed as much as they wished) and the calorie-restricted monkeys (who were given an individualised diet of 30% less than they were previously eating).</p>
+
+<h4>Paragraph E</h4>
+<p>The NIA study differed in two ways. First, the control group of monkeys were not allowed to eat as much as they wished. They were given a diet considered to represent a normal calorie count, while the calorie-restricted monkeys were fed 30% less than that. Second, whereas the Wisconsin monkeys were given highly processed food high in sucrose, making it easy to standardise, the NIA diet was based on whole grains, fish oils, and was very low in sugar. These different settings for the normal control diet may provide an explanation of why the two groups showed different results.</p>
+
+<h4>Paragraph F</h4>
+<p>The Wisconsin group may in effect have studied the effects of 'overeating'. Their control animals weighed up to 10% more than average for their age and gender. Compared to them, the calorie-restricted animals not only suffered fewer diseases, they lived longer. Julie Mattison, head of the NIA study, observes that an overweight person who goes to a fast food restaurant every day will obviously benefit if their calories are cut back by 30%.</p>
+
+<h4>Paragraph G</h4>
+<p>The NIA study fed their control monkeys what they considered a 'standard' caloric intake and saw that longevity for monkeys that were fed 30% less was the same. But in Anderson's view, the NIA control monkeys were not fed enough; the NIA was calorie restricting both groups of animals. Their older female control monkeys, for example, weighed nearly 20% less than the national average. Indeed, Anderson points out that several of the NIA control monkeys have lived past the age of 40, far exceeding the 27-year average lifespan for captive rhesus monkeys. 'That's the maximum lifespan ever detected for the species, so the idea that their intervention is doing nothing is really at odds with the data,' says Anderson.</p>
+
+<h4>Paragraph H</h4>
+<p>However, neither group had the right notion of a standard diet according to Leonie Heilbronn, who researches calorie restriction and healthy ageing at the University of Adelaide in Australia. Heilbronn points out that the NIA controls were a very healthy set of monkeys and leaner than a control monkey should be. On the other hand, she notes, the Wisconsin controls were a little bigger than they had to be. On balance, Heilbronn agrees with the Wisconsin researcher's argument. 'I think these studies suggest calorie restriction definitely will increase lifespan,' she says.</p>
+
+<h4>Paragraph I</h4>
+<p>Both studies agree that cutting calories is beneficial to health — in both cases the calorie-restricted monkeys had fewer diseases related to ageing. As to the question of whether calorie restriction extends lifespan in primates, Anderson and Mattison are currently working together to compare the two studies' raw data. They plan to co-publish a joint analysis. The current data conflict will ultimately provide deeper insights into ageing, Anderson predicts. 'The fact the two studies were set up differently, asking the same question in different ways — I think we will gain maximally from that.'</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–19</h4>
+      <p>Reading Passage 2 has nine paragraphs, <strong>A–I</strong>.</p>
+      <p>Which paragraph contains the following information?</p>
+      <p>Write the correct letter, <strong>A–I</strong>, in boxes <strong>14–19</strong> on your answer sheet.</p>
+
+      <div class="match-area">
+        <div class="match-options" id="paragraphOptions">
+          <div class="match-option" draggable="true" data-value="A">A</div>
+          <div class="match-option" draggable="true" data-value="B">B</div>
+          <div class="match-option" draggable="true" data-value="C">C</div>
+          <div class="match-option" draggable="true" data-value="D">D</div>
+          <div class="match-option" draggable="true" data-value="E">E</div>
+          <div class="match-option" draggable="true" data-value="F">F</div>
+          <div class="match-option" draggable="true" data-value="G">G</div>
+          <div class="match-option" draggable="true" data-value="H">H</div>
+          <div class="match-option" draggable="true" data-value="I">I</div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q14"></span>
+          <span class="q-num">14</span>
+          <span class="q-text">a reference to studies based on the same level of calorie reduction with different animals</span>
+          <div class="match-dropzone" data-q="q14"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q15"></span>
+          <span class="q-num">15</span>
+          <span class="q-text">a comment that some control monkeys in one study reached an older age than normal for animals of their kind</span>
+          <div class="match-dropzone" data-q="q15"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q16"></span>
+          <span class="q-num">16</span>
+          <span class="q-text">distinctions between the types of food in each study that may have led to a contrast in findings</span>
+          <div class="match-dropzone" data-q="q16"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q17"></span>
+          <span class="q-num">17</span>
+          <span class="q-text">examples of health problems which monkeys on calorie-restricted diets were less likely to get</span>
+          <div class="match-dropzone" data-q="q17"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q18"></span>
+          <span class="q-num">18</span>
+          <span class="q-text">a researcher's negative opinion of a calorie-restricted diet</span>
+          <div class="match-dropzone" data-q="q18"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q19"></span>
+          <span class="q-num">19</span>
+          <span class="q-text">a reference to the stage in the monkeys' lives at which research commenced in one study</span>
+          <div class="match-dropzone" data-q="q19"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 20–23</h4>
+      <p>Look at the following statements (Questions 20–23) and the list of researchers below.</p>
+      <p>Match each statement with the correct researcher, <strong>A, B or C</strong>.</p>
+      <p>Write the correct letter, <strong>A, B or C</strong>, in boxes <strong>20–23</strong> on your answer sheet.</p>
+      <p><strong>NB</strong> You may use any letter more than once.</p>
+
+      <div class="match-area">
+        <div class="match-options" id="researcherOptions">
+          <div class="match-option" draggable="true" data-value="A">A</div>
+          <div class="match-option" draggable="true" data-value="B">B</div>
+          <div class="match-option" draggable="true" data-value="C">C</div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q20"></span>
+          <span class="q-num">20</span>
+          <span class="q-text">It is good that the two studies took dissimilar approaches.</span>
+          <div class="match-dropzone" data-q="q20"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q21"></span>
+          <span class="q-num">21</span>
+          <span class="q-text">Neither study used diets that are typical for monkeys.</span>
+          <div class="match-dropzone" data-q="q21"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q22"></span>
+          <span class="q-num">22</span>
+          <span class="q-text">Calorie restriction is a method of finding out about health issues connected with ageing.</span>
+          <div class="match-dropzone" data-q="q22"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q23"></span>
+          <span class="q-num">23</span>
+          <span class="q-text">Calorie reduction will have a positive effect on people who have unhealthy diets.</span>
+          <div class="match-dropzone" data-q="q23"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; padding:12px; background:#f9f9f9; border-radius:6px;">
+        <strong>List of Researchers</strong>
+        <div style="margin-top:8px;">
+          <div><strong>A</strong> Rozalyn Anderson</div>
+          <div><strong>B</strong> Julie Mattison</div>
+          <div><strong>C</strong> Leonie Heilbronn</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 24–26</h4>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>24–26</strong> on your answer sheet.</p>
+
+      <div style="margin:16px 0; padding:16px; background:#f9f9f9; border-radius:6px; line-height:2;">
+        <h4 style="margin:0 0 12px 0;">Agreement between the two studies on calorie restriction in rhesus monkeys</h4>
+        <p>The two studies were in agreement that it is beneficial to cut calories, in terms of health. Monkeys whose calories were restricted suffered fewer diseases that are associated with the <span class="flag-btn" data-q="q24" style="position:relative; left:-12px;"></span><input type="text" class="summary-input" data-q="q24" placeholder="24"> process. Anderson and Mattison have undertaken research to determine if a calorie-restricted diet increases primates' <span class="flag-btn" data-q="q25" style="position:relative; left:-12px;"></span><input type="text" class="summary-input" data-q="q25" placeholder="25">. Although there is a <span class="flag-btn" data-q="q26" style="position:relative; left:-12px;"></span><input type="text" class="summary-input" data-q="q26" placeholder="26"> between the two sets of data, Anderson believes they will help researchers reach a better understanding.</p>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_CALORIE';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+// 拖拽功能
+let draggedElement = null;
+
+document.querySelectorAll('.match-option').forEach(opt => {
+  opt.addEventListener('dragstart', e => {
+    draggedElement = e.target;
+    e.target.classList.add('dragging');
+  });
+  
+  opt.addEventListener('dragend', e => {
+    e.target.classList.remove('dragging');
+  });
+});
+
+document.querySelectorAll('.match-dropzone').forEach(zone => {
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  });
+  
+  zone.addEventListener('dragleave', () => {
+    zone.classList.remove('drag-over');
+  });
+  
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    if(draggedElement) {
+      zone.textContent = draggedElement.dataset.value;
+      zone.classList.add('filled');
+      saveAnswers();
+    }
+  });
+  
+  zone.addEventListener('click', () => {
+    zone.textContent = '';
+    zone.classList.remove('filled');
+    saveAnswers();
+  });
+});
+
+const answerKey={q14:"B",q15:"G",q16:"E",q17:"C",q18:"A",q19:"D",q20:"A",q21:"C",q22:"A",q23:"B",q24:"ageing",q25:"lifespan",q26:"conflict"};
+let lastResults=[];
+
+function normalizeAnswer(ans) {
+  return ans.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+function saveAnswers() {
+  const data = {};
+  document.querySelectorAll('.summary-input').forEach(inp => {
+    if(inp.value) data[inp.dataset.q] = inp.value;
+  });
+  document.querySelectorAll('.match-dropzone').forEach(zone => {
+    if(zone.textContent && zone.textContent.trim()) data[zone.dataset.q] = zone.textContent.trim();
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const input = document.querySelector(`.summary-input[data-q="${q}"]`);
+    if(input) input.value = data[q];
+    const zone = document.querySelector(`.match-dropzone[data-q="${q}"]`);
+    if(zone) {
+      zone.textContent = data[q];
+      zone.classList.add('filled');
+    }
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  if(data.left && data.left.length > 0) {
+    data.left.forEach(item => {
+      const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+  
+  if(data.right && data.right.length > 0) {
+    data.right.forEach(item => {
+      const walker = document.createTreeWalker(right, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+document.querySelectorAll('.summary-input').forEach(input => {
+  input.addEventListener('input', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; 
+  let cor=0; 
+  Object.keys(answerKey).forEach(q=>{ 
+    let uA="";
+    const inp = document.querySelector(`.summary-input[data-q="${q}"]`);
+    if(inp) uA = inp.value;
+    const zone = document.querySelector(`.match-dropzone[data-q="${q}"]`);
+    if(zone && zone.textContent.trim()) uA = zone.textContent.trim();
+    
+    const cA=answerKey[q]; 
+    const iC = normalizeAnswer(uA) === normalizeAnswer(cA);
+    if(iC)cor++; 
+    res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); 
+  }); 
+  lastResults=res; 
+  const tot=Object.keys(answerKey).length; 
+  const pct=((cor/tot)*100).toFixed(1);
+  localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`); 
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('.summary-input').forEach(i=>i.value='');
+  document.querySelectorAll('.match-dropzone').forEach(z=>{z.textContent='';z.classList.remove('filled');});
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const wr=lastResults.filter(r=>!r.isCorrect); wr.forEach(r=>{ const en={paperId:PAPER_ID,title:'Will Eating Less Make You Live Longer?',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); if(ix>=0)wb[ix]=en; else wb.push(en); }); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); alert(`已添加 ${wr.length} 道错题`); closeModal('resultModal'); }
+
+function deleteWrongItem(pId,qId){ if(!confirm('确定删除这道错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function clearCurrentWrongBook(){ if(!confirm('确定清空本篇所有错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>i.paperId!==PAPER_ID); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function openWrongBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const cu=wb.filter(i=>i.paperId===PAPER_ID); const ct=document.getElementById('wrongBookContent'); if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; document.getElementById('wrongBookModal').classList.add('active'); }
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

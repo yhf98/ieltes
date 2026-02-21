@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – The Constant Evolution of the Humble Tomato</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  #left .subtitle { font-style:italic; color:#666; font-size:14px; margin-bottom:20px; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .group ol { margin-left:20px; }
+  .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+  
+  .summary-input { 
+    display:inline-block; 
+    width:150px; 
+    padding:4px 8px; 
+    border:1px solid #ddd; 
+    border-radius:4px; 
+    font-size:14px; 
+  }
+  .summary-input:focus { outline:none; border-color:#0066cc; }
+  
+  .match-area { margin:16px 0; }
+  .match-options { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; padding:12px; background:#f9f9f9; border-radius:6px; min-height:50px; }
+  .match-option { 
+    padding:8px 16px; 
+    background:#fff; 
+    border:1px solid #ddd; 
+    border-radius:6px; 
+    cursor:move; 
+    font-size:14px;
+    user-select:none;
+  }
+  .match-option:hover { background:#f0f0f0; }
+  .match-option.dragging { opacity:0.5; }
+  
+  .match-question { 
+    display:flex; 
+    align-items:center; 
+    margin:8px 0; 
+    padding:12px; 
+    background:#fff; 
+    border:1px solid #ddd; 
+    border-radius:6px; 
+  }
+  .match-question .q-num { 
+    font-weight:600; 
+    margin-right:12px; 
+    min-width:30px; 
+  }
+  .match-question .q-text { 
+    flex:1; 
+    font-size:14px; 
+  }
+  .match-dropzone { 
+    min-width:80px; 
+    min-height:36px; 
+    padding:6px 12px; 
+    margin-left:12px; 
+    border:2px dashed #ddd; 
+    border-radius:6px; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    font-size:14px; 
+    font-weight:600; 
+    color:#666;
+  }
+  .match-dropzone.drag-over { background:#e3f2fd; border-color:#0066cc; }
+  .match-dropzone.filled { background:#e8f5e9; border-color:#4caf50; border-style:solid; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>The Constant Evolution of the Humble Tomato</h3>
+<p class="subtitle">Heirloom tomatoes—varieties that have been passed down through several generations of a family because they are thought to have a particularly good flavor—are really no more "natural" than the varieties available in grocery stores. New studies promise to restore their lost, healthy genes.</p>
+
+<h4>Paragraph A</h4>
+<p>Famous for their taste, color, and organic appearance, heirloom tomatoes are favorites of gardeners and advocates of locally grown foods. The tomato enthusiast might conclude that, given the immense varieties, heirlooms must have a more diverse and superior set of genes than the tomatoes available in grocery stores, those ordinary hybrid varieties such as cherry and plum. However, their seeming diversity is only skin-deep: heirlooms are actually feeble and inbred—the defective product of breeding experiments that began hundreds of years ago, and exploded thanks to enthusiastic backyard gardeners. "The irony of all this," says Steven Tanksley, a geneticist at Cornell University, "is that all that diversity of heirlooms can be accounted for by a handful of genes. There are probably no more than 10 mutant genes that create the diversity of heirlooms you see." But rather than simply proving that the myth about the heirlooms' diversity is wrong, Tanksley's deconstruction of the tomato genome, along with work by others, is showing how a small berry-like fruit from the Andes became one of the world's top crops.</p>
+
+<h4>Paragraph B</h4>
+<p>The cultivated tomato is a member of the nightshade family that includes New World crops such as the potato, which spread around the globe after Christopher Columbus brought them back to Spain in the 15th century. But whereas scientists have uncovered a wealth of archaeological evidence on early farming practices in the New World, the record is blank when it comes to the tomato. The modern tomato seems to have its origins in the Andes in South America and may have been domesticated in Veracruz, Mexico. Primitive varieties still grow throughout the Americas. All told, botanists call as many as 13 species "tomatoes" and consider an additional four to be closely related.</p>
+
+<h4>Paragraph C</h4>
+<p>One might assume that one of these known wild species became today's cultivated crop, but that's not the case: the Mother Tomato has never been found. The closest relative is the currant tomato, which, based on genetic comparisons, split from today's tomato some 1.4 million years ago. So researchers like Tanksley have to work backward, crossing tomato varieties and species in order to understand how various genes influence shape and size. Once isolated, Tanksley later inserts those genes into other tomato varieties to make his case with a dramatic transformation.</p>
+
+<h4>Paragraph D</h4>
+<p>Tanksley concludes from his analyses that in their effort to make bigger, tastier, and faster-growing fruit, our ancestors ultimately exploited just 30 mutations out of the tomato's 35,000 genes. Most of these genes have only small effects on tomato size and shape, but recently Tanksley and his colleagues reported that they found a gene that increases fruit size by 50 percent. It was probably the most important event in domestication. The first written record of tomatoes—from Spain in the 1500s—confirms that this mutation, which enlarges tomatoes by producing compartments known as locules, existed back in the same yellow tomatoes that gave Italians the word pomodoro, or golden apple. Besides size, tomato farmers also selected for shape. To discover those genes, Esther van der Knaap, a Tanksley alumna now at The Ohio State University, took a gene from one heirloom tomato and inserted it into a wild relative. She observed that, as a result, the tiny fruits became shaped like pears.</p>
+
+<h4>Paragraph E</h4>
+<p>The selection of these traits has, however, affected the heirlooms' hardiness. They often suffer from infections that cause the fruit to crack, split, and otherwise rot quickly. Wild plants must continuously evolve to fend off such infections, points out Roger Chetelat of the Tomato Genetics Resource Center at the University of California. But in their quest for size, shape, and flavor, humans have inadvertently eliminated defensive genes. As a result, most possess only a single disease-resistant gene. Chetelat elaborates that heirlooms' taste may have less to do with their genes than with the productivity of the plant and the growing environment. Any plant that produces only two fruits, as heirlooms sometimes do, is highly likely to produce juicier, sweeter, and more flavorful fruit than varieties that produce 100, as commercial types do. In addition, heirlooms are sold ripened on the vine, a certain way to get tastier results than allowing them to mature on the shelf. This means breeders feel confident that getting germ-beating genes back into heirlooms won't harm the desirable aspects of the fruit. Modern breeding has resuscitated grocery-store tomatoes with an influx of wild genes; in the past 50 years, as many as 40 disease-resistant genes have been bred back into commercial crops.</p>
+
+<h4>Paragraph F</h4>
+<p>In 1996, a tomato breeder and former Tanksley student named Doug Heath began a favorite project. After 12 years of traditional breeding with the help of molecular markers, he created a new multi-colored tomato less prone to cracking and also endowed with 12 disease-resistant genes. The original heirloom plant, Heath explains, had defective flowers, which is one reason why it produced only two fruits compared with the 30 he gets from his new variety. He claims he is also able to maintain a comparable flavor and sugar profile even on productive plants. The heirloom's defects are, after all, just an accident of a narrow breeding strategy left over from the very beginning of genetic modification.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–17</h4>
+      <p>Reading Passage 2 has six paragraphs, <strong>A–F</strong>.</p>
+      <p>Which paragraph contains the following information?</p>
+      <p>Write the correct letter, <strong>A–F</strong>, in boxes <strong>14–17</strong> on your answer sheet.</p>
+
+      <div class="match-area">
+        <div class="match-options" id="paragraphOptions">
+          <div class="match-option" draggable="true" data-value="A">A</div>
+          <div class="match-option" draggable="true" data-value="B">B</div>
+          <div class="match-option" draggable="true" data-value="C">C</div>
+          <div class="match-option" draggable="true" data-value="D">D</div>
+          <div class="match-option" draggable="true" data-value="E">E</div>
+          <div class="match-option" draggable="true" data-value="F">F</div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q14"></span>
+          <span class="q-num">14</span>
+          <span class="q-text">an explanation of research aimed at restoring the health of the heirloom tomato</span>
+          <div class="match-dropzone" data-q="q14"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q15"></span>
+          <span class="q-num">15</span>
+          <span class="q-text">a reference to a false belief about the heirloom tomato</span>
+          <div class="match-dropzone" data-q="q15"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q16"></span>
+          <span class="q-num">16</span>
+          <span class="q-text">a description of the flavor of the heirloom tomato</span>
+          <div class="match-dropzone" data-q="q16"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q17"></span>
+          <span class="q-num">17</span>
+          <span class="q-text">a reference to a single gene that significantly improves the cultivation of tomatoes</span>
+          <div class="match-dropzone" data-q="q17"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 18–21</h4>
+      <p>Look at the following statements (Questions 18–21) and the list of researchers below.</p>
+      <p>Match each statement with the correct researcher, <strong>A, B, C, or D</strong>.</p>
+      <p>Write the correct letter, <strong>A, B, C, or D</strong>, in boxes <strong>18–21</strong> on your answer sheet.</p>
+
+      <div class="match-area">
+        <div class="match-options" id="researcherOptions">
+          <div class="match-option" draggable="true" data-value="A">A</div>
+          <div class="match-option" draggable="true" data-value="B">B</div>
+          <div class="match-option" draggable="true" data-value="C">C</div>
+          <div class="match-option" draggable="true" data-value="D">D</div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q18"></span>
+          <span class="q-num">18</span>
+          <span class="q-text">The transplanting of certain genes into tomatoes can change their shape.</span>
+          <div class="match-dropzone" data-q="q18"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q19"></span>
+          <span class="q-num">19</span>
+          <span class="q-text">The flavor of the heirloom tomato is largely dependent on actual yield and cultivation.</span>
+          <div class="match-dropzone" data-q="q19"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q20"></span>
+          <span class="q-num">20</span>
+          <span class="q-text">A new type of tomato can be produced that is stronger than the original heirloom tomato yet equally sweet and flavorsome.</span>
+          <div class="match-dropzone" data-q="q20"></div>
+        </div>
+
+        <div class="match-question">
+          <span class="flag-btn" data-q="q21"></span>
+          <span class="q-num">21</span>
+          <span class="q-text">The wide variety of heirloom tomatoes is due to only a small number of genes.</span>
+          <div class="match-dropzone" data-q="q21"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; padding:12px; background:#f9f9f9; border-radius:6px;">
+        <strong>List of Researchers</strong>
+        <div style="margin-top:8px;">
+          <div><strong>A</strong> Steven Tanksley</div>
+          <div><strong>B</strong> Esther van der Knaap</div>
+          <div><strong>C</strong> Roger Chetelat</div>
+          <div><strong>D</strong> Doug Heath</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 22–26</h4>
+      <p>Complete the sentences below.</p>
+      <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>22–26</strong> on your answer sheet.</p>
+
+      <div style="margin:16px 0; line-height:2.2;">
+        <p><strong>22</strong> <span class="flag-btn" data-q="q22" style="position:relative; left:-12px;"></span>There is little information on the origin of the tomato despite the existence of <input type="text" class="summary-input" data-q="q22" placeholder="22"> data on the growing of other New World crops.</p>
+        
+        <p><strong>23</strong> <span class="flag-btn" data-q="q23" style="position:relative; left:-12px;"></span>Although it is uncertain, the tomato is thought to have first grown in the <input type="text" class="summary-input" data-q="q23" placeholder="23">.</p>
+        
+        <p><strong>24</strong> <span class="flag-btn" data-q="q24" style="position:relative; left:-12px;"></span>In regard to genetic similarities, the type of tomato <input type="text" class="summary-input" data-q="q24" placeholder="24"> is the nearest to the earliest.</p>
+        
+        <p><strong>25</strong> <span class="flag-btn" data-q="q25" style="position:relative; left:-12px;"></span>A genetic <input type="text" class="summary-input" data-q="q25" placeholder="25">, which is evident in pomodoro, produced larger tomatoes.</p>
+        
+        <p><strong>26</strong> <span class="flag-btn" data-q="q26" style="position:relative; left:-12px;"></span><input type="text" class="summary-input" data-q="q26" placeholder="26"> are a problem for heirloom tomatoes because they frequently lead to damage and deterioration.</p>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_TOMATO';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+// 拖拽功能
+let draggedElement = null;
+
+document.querySelectorAll('.match-option').forEach(opt => {
+  opt.addEventListener('dragstart', e => {
+    draggedElement = e.target;
+    e.target.classList.add('dragging');
+  });
+  
+  opt.addEventListener('dragend', e => {
+    e.target.classList.remove('dragging');
+  });
+});
+
+document.querySelectorAll('.match-dropzone').forEach(zone => {
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  });
+  
+  zone.addEventListener('dragleave', () => {
+    zone.classList.remove('drag-over');
+  });
+  
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    if(draggedElement) {
+      zone.textContent = draggedElement.dataset.value;
+      zone.classList.add('filled');
+      saveAnswers();
+    }
+  });
+  
+  zone.addEventListener('click', () => {
+    zone.textContent = '';
+    zone.classList.remove('filled');
+    saveAnswers();
+  });
+});
+
+const answerKey={q14:"F",q15:"A",q16:"E",q17:"D",q18:"B",q19:"C",q20:"D",q21:"A",q22:"archaeological",q23:"Andes",q24:"currant",q25:"mutation",q26:"infections"};
+let lastResults=[];
+
+function normalizeAnswer(ans) {
+  return ans.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+function saveAnswers() {
+  const data = {};
+  document.querySelectorAll('.summary-input').forEach(inp => {
+    if(inp.value) data[inp.dataset.q] = inp.value;
+  });
+  document.querySelectorAll('.match-dropzone').forEach(zone => {
+    if(zone.textContent && zone.textContent.trim()) data[zone.dataset.q] = zone.textContent.trim();
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const input = document.querySelector(`.summary-input[data-q="${q}"]`);
+    if(input) input.value = data[q];
+    const zone = document.querySelector(`.match-dropzone[data-q="${q}"]`);
+    if(zone) {
+      zone.textContent = data[q];
+      zone.classList.add('filled');
+    }
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  if(data.left && data.left.length > 0) {
+    data.left.forEach(item => {
+      const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+  
+  if(data.right && data.right.length > 0) {
+    data.right.forEach(item => {
+      const walker = document.createTreeWalker(right, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+document.querySelectorAll('.summary-input').forEach(input => {
+  input.addEventListener('input', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; 
+  let cor=0; 
+  Object.keys(answerKey).forEach(q=>{ 
+    let uA="";
+    const inp = document.querySelector(`.summary-input[data-q="${q}"]`);
+    if(inp) uA = inp.value;
+    const zone = document.querySelector(`.match-dropzone[data-q="${q}"]`);
+    if(zone && zone.textContent.trim()) uA = zone.textContent.trim();
+    
+    const cA=answerKey[q]; 
+    const iC = normalizeAnswer(uA) === normalizeAnswer(cA);
+    if(iC)cor++; 
+    res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); 
+  }); 
+  lastResults=res; 
+  const tot=Object.keys(answerKey).length; 
+  const pct=((cor/tot)*100).toFixed(1); 
+  localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('.summary-input').forEach(i=>i.value='');
+  document.querySelectorAll('.match-dropzone').forEach(z=>{z.textContent='';z.classList.remove('filled');});
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const wr=lastResults.filter(r=>!r.isCorrect); wr.forEach(r=>{ const en={paperId:PAPER_ID,title:'The Constant Evolution of the Humble Tomato',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); if(ix>=0)wb[ix]=en; else wb.push(en); }); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); alert(`已添加 ${wr.length} 道错题`); closeModal('resultModal'); }
+
+function deleteWrongItem(pId,qId){ if(!confirm('确定删除这道错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function clearCurrentWrongBook(){ if(!confirm('确定清空本篇所有错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>i.paperId!==PAPER_ID); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function openWrongBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const cu=wb.filter(i=>i.paperId===PAPER_ID); const ct=document.getElementById('wrongBookContent'); if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; document.getElementById('wrongBookModal').classList.add('active'); }
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

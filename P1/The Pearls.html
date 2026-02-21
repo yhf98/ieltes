@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>P1 – Pearls</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+      }
+      #timer {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #0066cc;
+        z-index: 1000;
+      }
+      .shell {
+        display: flex;
+        height: 100vh;
+        width: 100%;
+      }
+      .pane {
+        background: #fff;
+        overflow: auto;
+        padding: 24px;
+      }
+      #left {
+        flex: 0 0 50%;
+        border-right: 1px solid #ddd;
+      }
+      #right {
+        flex: 1 1 auto;
+        background: #fafafa;
+      }
+      #divider {
+        flex: 0 0 5px;
+        background: #ddd;
+        cursor: ew-resize;
+      }
+      #divider:hover {
+        background: #999;
+      }
+      h2,
+      h3,
+      h4 {
+        margin: 0 0 12px;
+        color: #333;
+      }
+      h2 {
+        font-size: 20px;
+      }
+      h3 {
+        font-size: 18px;
+        color: #0066cc;
+      }
+      h4 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-top: 20px;
+      }
+      #left p {
+        margin: 0 0 14px;
+        line-height: 1.7;
+        text-align: justify;
+      }
+      .group {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .group h4 {
+        margin-top: 0;
+        color: #0066cc;
+      }
+      .group p {
+        margin: 8px 0;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .flag-btn {
+        position: absolute;
+        left: 2px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ddd;
+        cursor: pointer;
+        z-index: 10;
+      }
+      .flag-btn:hover {
+        background: #999;
+      }
+      .flag-btn.active {
+        background: #ff5722;
+      }
+      .group ol {
+        margin-left: 20px;
+      }
+      .group ol li {
+        margin: 12px 0;
+        font-size: 14px;
+        line-height: 1.6;
+        position: relative;
+      }
+      .group ol li label {
+        display: inline-block;
+        margin-right: 8px;
+      }
+      input[type="text"] {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 14px;
+        width: 160px;
+        background: #fdfdfd;
+      }
+      input[type="text"]:focus {
+        border-color: #0066cc;
+        outline: none;
+        background: #fff;
+      }
+      .bottom-bar {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      button {
+        padding: 10px 20px;
+        border: 1px solid #999;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover {
+        background: #f0f0f0;
+      }
+      .btn-primary {
+        background: #0066cc;
+        color: #fff;
+        border-color: #0066cc;
+      }
+      .btn-primary:hover {
+        background: #0052a3;
+      }
+      .btn-danger {
+        background: #dc3545;
+        color: #fff;
+        border-color: #dc3545;
+      }
+      .btn-danger:hover {
+        background: #c82333;
+      }
+      .hl {
+        background: #fff59d;
+        cursor: pointer;
+      }
+      .hl:hover {
+        background: #ffeb3b;
+      }
+      .note {
+        background: #b3d9ff;
+        cursor: pointer;
+      }
+      .note:hover {
+        background: #99ccff;
+      }
+      #selbar {
+        position: fixed;
+        display: none;
+        z-index: 2000;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 8px;
+        gap: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        flex-direction: column;
+        min-width: 120px;
+      }
+      #selbar button {
+        background: #fff;
+        color: #666;
+        border: none;
+        padding: 3px 0px;
+        cursor: pointer;
+        font-size: 14px;
+        text-align: center;
+        border-radius: 4px;
+      }
+      #selbar button:hover {
+        background: #f5f5f5;
+        color: #333;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 3000;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal.active {
+        display: flex;
+      }
+      .modal-content {
+        background: #fff;
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+      .modal-header h2 {
+        font-size: 28px;
+        color: #333;
+        margin: 0;
+      }
+      .modal-close {
+        font-size: 32px;
+        cursor: pointer;
+        color: #999;
+        line-height: 1;
+      }
+      .modal-close:hover {
+        color: #333;
+      }
+      .result-summary {
+        text-align: center;
+        padding: 20px;
+        background: #f0f0f0;
+        margin-bottom: 16px;
+        border-radius: 6px;
+      }
+      .result-score {
+        font-size: 36px;
+        font-weight: 600;
+        color: #0066cc;
+      }
+      .result-item {
+        padding: 10px;
+        margin: 8px 0;
+        border-left: 3px solid #ddd;
+        background: #f9f9f9;
+        font-size: 13px;
+      }
+      .result-item.correct {
+        border-left-color: #28a745;
+        background: #e8f5e9;
+      }
+      .result-item.incorrect {
+        border-left-color: #dc3545;
+        background: #ffebee;
+      }
+      .wrong-item {
+        background: #fff3e0;
+        padding: 16px;
+        margin: 8px 0;
+        border-radius: 8px;
+        border-left: 4px solid #ff9800;
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+      }
+      .wrong-item-content {
+        flex: 1;
+      }
+      .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        margin-left: 12px;
+      }
+      .btn-delete:hover {
+        background: #c82333;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .box-container {
+        border: 1px solid #333;
+        padding: 10px;
+        margin-bottom: 15px;
+      }
+      .box-container div {
+        display: inline-block;
+        width: 30%;
+        margin: 4px;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="timer">00:00</div>
+    <div class="shell">
+      <section class="pane" id="left">
+        <h2>READING PASSAGE 1</h2>
+        <p>
+          You should spend about 20 minutes on Questions 1–13, which are based
+          on Reading Passage 1 below.
+        </p>
+        <h3>Pearls</h3>
+        <h4>Paragraph A</h4>
+        <p>
+          Long known as the “Queen of Gems”, pearls possess a history and allure
+          far beyond what today’s wearer may recognize. Throughout much of
+          recorded history, a natural pearl necklace comprised of matched
+          spheres was a treasure of almost incomparable value, in fact, the most
+          expensive jewelry in the world. Before the creation of cultured pearls
+          in the early 1900s, natural pearls were so rare and expensive that
+          they were reserved almost exclusively for the noble and very rich. The
+          ancient Egyptians were particularly fond of their pearls. Many
+          Egyptian leaders treasured pearls so much that they were often buried
+          along with their cherished pearl collection. In the Orient and Persian
+          Empire, pearls were ground into costly powders to cure anything from
+          heart disease to epilepsy, with possible aphrodisiac uses as well.
+          China’s long recorded history also provides ample evidence of the
+          importance of pearls.
+        </p>
+        <h4>Paragraph B</h4>
+        <p>
+          Pearls usually fall into three categories—natural pearls, cultured
+          pearls and simulated pearls. A natural pearl forms when an irritant,
+          such as a piece of sand, works its way into a particular species of
+          oyster, mussel, or clam. As a defense mechanism, the mollusk secretes
+          a fluid to coat the irritant. Layer upon layer of this coating is
+          deposited on the irritant until a lustrous pearl is formed. A cultured
+          pearl undergoes the same process. The only difference between natural
+          pearls and cultured pearls is that the irritant is a surgically
+          implanted bead or piece of shell called Mother of Pearl. Often, these
+          shells are ground oyster shells that are worth significant amounts of
+          money in their own right as irritant-catalysts for quality pearls. The
+          resulting core is much larger than in a natural pearl. Imitation
+          pearls are a different story altogether. In most cases, a glass bead
+          is dipped into a solution made from fish scales. This coating is thin
+          and may eventually wear off. One can usually tell an imitation by
+          biting on it. The island of Mallorca in Spain is known for its
+          imitation pearl industry.
+        </p>
+        <h4>Paragraph C</h4>
+        <p>
+          Regardless of the method used to acquire a pearl, the process usually
+          takes several years. Mussels must reach a mature age, which can take
+          up to 3 years, and then be implanted or naturally receive an irritant.
+          Once the irritant is in place, it can take up to another 3 years for
+          the pearl to reach its full size. Often, the irritant may be rejected,
+          the pearl will be terrifically misshapen, or the oyster may simply die
+          from disease or countless other complications. By the end of a 5 to 10
+          year cycle, only 50% of the oysters will have survived. And of the
+          pearls produced, only approximately 5% are of a quality substantial
+          enough for top jewelry makers.
+        </p>
+        <h4>Paragraph D</h4>
+        <p>
+          How can untrained eyes determine a pearl’s worth? Luster and size are
+          generally considered the two main factors to look for. Luster, for
+          instance, depends on the fineness and evenness of the layers. The
+          deeper the glow, the more perfect the shape and surface, the more
+          valuable they are. Size, on the other hand, has to do with the age of
+          the oyster that created the pearl (the more mature oysters produce
+          larger pearls) and the location in which the pearl was cultured. The
+          South Sea waters of Australia tend to produce the larger pearls;
+          probably because the water along the coastline is supplied with rich
+          nutrients from the ocean floor. Also, the type of mussel being common
+          to the area seems to possess a predilection for producing
+          comparatively large pearls.
+        </p>
+        <h4>Paragraph E</h4>
+        <p>
+          In general, cultured pearls are less valuable than natural pearls,
+          whereas imitation pearls have almost no value. One way that jewelers
+          can determine whether a pearl is cultured or natural is to have a gem
+          lab perform an X-ray of the pearl. If the X-ray reveals a nucleus, the
+          pearl is likely a bead nucleated saltwater pearl. If no nucleus is
+          present, but irregular and small dark inner spots indicating a cavity
+          are visible, combined with concentric rings of organic substance, the
+          pearl is likely a cultured freshwater pearl. Among cultured pearls,
+          Akoya pearls from Japan are some of the most lustrous. Although
+          imitation pearls look the part, they do not have the same weight or
+          smoothness as real pearls, and their luster will also dim greatly.
+        </p>
+        <h4>Paragraph F</h4>
+        <p>
+          Historically, the world’s best pearls came from the Persian Gulf,
+          especially around what is now Bahrain. The pearls of the Persian Gulf
+          were naturally created and collected by breath-hold divers.
+          Unfortunately, the natural pearl industry of the Persian Gulf ended
+          abruptly in the early 1930s with the discovery of large deposits of
+          oil. The water pollution resulting from spilled oil and indiscriminate
+          overfishing of oysters essentially ruined the pristine waters of the
+          Gulf that once produced pearls. Still, Bahrain remains one of the
+          foremost trading centers for high quality pearls. In fact, cultured
+          pearls are banned from the Bahrain pearl market, in an effort to
+          preserve the location’s heritage. Nowadays, the largest stock of
+          natural pearls probably resides in India. Ironically, much of India’s
+          stock of natural pearls came originally from Bahrain. Unlike Bahrain,
+          which has essentially lost its pearl resource, traditional pearl
+          fishing is still practiced on a small scale in India.
+        </p>
+        <h4>Paragraph G</h4>
+        <p>
+          Pearls also come in many colours. The most popular colours are white,
+          cream, and pink. Silver, black, and gold are also gaining interest. In
+          fact, a deep lustrous black pearl is one of the rarest finds in the
+          pearling industry, usually only being found in the South Sea near
+          Australia. Thus, they can be one of the more costly items. Nowadays,
+          pearls predominantly come from Japan, Australia, Indonesia, Myanmar,
+          China, India, the Philippines, and Tahiti. Japan, however, controls
+          roughly 80% of the world pearl market, with Australia and China coming
+          in second and third, respectively.
+        </p>
+      </section>
+      <div id="divider"></div>
+      <section class="pane" id="right">
+        <h3>Questions</h3>
+        <div class="group">
+          <h4>Questions 1–4</h4>
+          <p>Reading Passage 1 has seven paragraphs, A–G.</p>
+          <p>Which paragraph contains the following information?</p>
+          <ol start="1">
+            <li>
+              <span class="flag-btn" data-q="q1" style="left: -20px"></span
+              >difficulties in the cultivation process<br />
+              <label><input type="radio" name="q1" value="A" /> A</label>
+              <label><input type="radio" name="q1" value="B" /> B</label>
+              <label><input type="radio" name="q1" value="C" /> C</label>
+              <label><input type="radio" name="q1" value="D" /> D</label>
+              <label><input type="radio" name="q1" value="E" /> E</label>
+              <label><input type="radio" name="q1" value="F" /> F</label>
+              <label><input type="radio" name="q1" value="G" /> G</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q2" style="left: -20px"></span
+              >causes affecting the size of natural pearls<br />
+              <label><input type="radio" name="q2" value="A" /> A</label>
+              <label><input type="radio" name="q2" value="B" /> B</label>
+              <label><input type="radio" name="q2" value="C" /> C</label>
+              <label><input type="radio" name="q2" value="D" /> D</label>
+              <label><input type="radio" name="q2" value="E" /> E</label>
+              <label><input type="radio" name="q2" value="F" /> F</label>
+              <label><input type="radio" name="q2" value="G" /> G</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q3" style="left: -20px"></span
+              >ancient customs around pearls<br />
+              <label><input type="radio" name="q3" value="A" /> A</label>
+              <label><input type="radio" name="q3" value="B" /> B</label>
+              <label><input type="radio" name="q3" value="C" /> C</label>
+              <label><input type="radio" name="q3" value="D" /> D</label>
+              <label><input type="radio" name="q3" value="E" /> E</label>
+              <label><input type="radio" name="q3" value="F" /> F</label>
+              <label><input type="radio" name="q3" value="G" /> G</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q4" style="left: -20px"></span
+              >distinctions between cultured pearls and natural ones<br />
+              <label><input type="radio" name="q4" value="A" /> A</label>
+              <label><input type="radio" name="q4" value="B" /> B</label>
+              <label><input type="radio" name="q4" value="C" /> C</label>
+              <label><input type="radio" name="q4" value="D" /> D</label>
+              <label><input type="radio" name="q4" value="E" /> E</label>
+              <label><input type="radio" name="q4" value="F" /> F</label>
+              <label><input type="radio" name="q4" value="G" /> G</label>
+            </li>
+          </ol>
+        </div>
+        <div class="group">
+          <h4>Questions 5–10</h4>
+          <p>Complete the summary using the list of words, A–K, below.</p>
+          <div class="box-container">
+            <div><strong>A</strong> America</div>
+            <div><strong>B</strong> Philippines</div>
+            <div><strong>C</strong> Australia</div>
+            <div><strong>D</strong> Bahrain</div>
+            <div><strong>E</strong> China</div>
+            <div><strong>F</strong> Japan</div>
+            <div><strong>G</strong> India</div>
+            <div><strong>H</strong> Egypt</div>
+            <div><strong>I</strong> Myanmar</div>
+            <div><strong>J</strong> Persia</div>
+            <div><strong>K</strong> Mallorca</div>
+          </div>
+          <p style="line-height: 2">
+            Throughout history, people in <b>5</b>
+            <span
+              style="
+                border-bottom: 1px solid #333;
+                padding: 0 10px;
+                display: inline-block;
+                min-width: 40px;
+                text-align: center;
+              "
+              >[A-K]</span
+            >
+            <span class="flag-btn" data-q="q5"></span> used pearls for medicine
+            and philtres. There are essentially three types of pearls: natural,
+            cultured and imitation. Natural and cultured pearls share a similar
+            growing process, while imitation pearls are different. And <b>6</b>
+            <span
+              style="
+                border-bottom: 1px solid #333;
+                padding: 0 10px;
+                display: inline-block;
+                min-width: 40px;
+                text-align: center;
+              "
+              >[A-K]</span
+            >
+            <span class="flag-btn" data-q="q6"></span> owns the reputation for
+            its imitation pearl industry. The country <b>7</b>
+            <span
+              style="
+                border-bottom: 1px solid #333;
+                padding: 0 10px;
+                display: inline-block;
+                min-width: 40px;
+                text-align: center;
+              "
+              >[A-K]</span
+            >
+            <span class="flag-btn" data-q="q7"></span> usually produces the
+            larger pearls due to the favourable environment along the coastline,
+            while the nation of <b>8</b>
+            <span
+              style="
+                border-bottom: 1px solid #333;
+                padding: 0 10px;
+                display: inline-block;
+                min-width: 40px;
+                text-align: center;
+              "
+              >[A-K]</span
+            >
+            <span class="flag-btn" data-q="q8"></span> manufactures some of the
+            most glistening cultured pearls. In the past, the country <b>9</b>
+            <span
+              style="
+                border-bottom: 1px solid #333;
+                padding: 0 10px;
+                display: inline-block;
+                min-width: 40px;
+                text-align: center;
+              "
+              >[A-K]</span
+            >
+            <span class="flag-btn" data-q="q9"></span> in the Persian Gulf
+            produced the world’s best pearls. At present, the major remaining
+            suppliers of natural pearls are in <b>10</b>
+            <span
+              style="
+                border-bottom: 1px solid #333;
+                padding: 0 10px;
+                display: inline-block;
+                min-width: 40px;
+                text-align: center;
+              "
+              >[A-K]</span
+            >
+            <span class="flag-btn" data-q="q10"></span>.
+          </p>
+          <div style="margin-top: 10px; font-size: 14px">
+            <div style="margin-bottom: 5px">
+              <strong>5.</strong>
+              <label><input type="radio" name="q5" value="A" />A</label>
+              <label><input type="radio" name="q5" value="B" />B</label>
+              <label><input type="radio" name="q5" value="C" />C</label>
+              <label><input type="radio" name="q5" value="D" />D</label>
+              <label><input type="radio" name="q5" value="E" />E</label>
+              <label><input type="radio" name="q5" value="F" />F</label>
+              <label><input type="radio" name="q5" value="G" />G</label>
+              <label><input type="radio" name="q5" value="H" />H</label>
+              <label><input type="radio" name="q5" value="I" />I</label>
+              <label><input type="radio" name="q5" value="J" />J</label>
+              <label><input type="radio" name="q5" value="K" />K</label>
+            </div>
+            <div style="margin-bottom: 5px">
+              <strong>6.</strong>
+              <label><input type="radio" name="q6" value="A" />A</label>
+              <label><input type="radio" name="q6" value="B" />B</label>
+              <label><input type="radio" name="q6" value="C" />C</label>
+              <label><input type="radio" name="q6" value="D" />D</label>
+              <label><input type="radio" name="q6" value="E" />E</label>
+              <label><input type="radio" name="q6" value="F" />F</label>
+              <label><input type="radio" name="q6" value="G" />G</label>
+              <label><input type="radio" name="q6" value="H" />H</label>
+              <label><input type="radio" name="q6" value="I" />I</label>
+              <label><input type="radio" name="q6" value="J" />J</label>
+              <label><input type="radio" name="q6" value="K" />K</label>
+            </div>
+            <div style="margin-bottom: 5px">
+              <strong>7.</strong>
+              <label><input type="radio" name="q7" value="A" />A</label>
+              <label><input type="radio" name="q7" value="B" />B</label>
+              <label><input type="radio" name="q7" value="C" />C</label>
+              <label><input type="radio" name="q7" value="D" />D</label>
+              <label><input type="radio" name="q7" value="E" />E</label>
+              <label><input type="radio" name="q7" value="F" />F</label>
+              <label><input type="radio" name="q7" value="G" />G</label>
+              <label><input type="radio" name="q7" value="H" />H</label>
+              <label><input type="radio" name="q7" value="I" />I</label>
+              <label><input type="radio" name="q7" value="J" />J</label>
+              <label><input type="radio" name="q7" value="K" />K</label>
+            </div>
+            <div style="margin-bottom: 5px">
+              <strong>8.</strong>
+              <label><input type="radio" name="q8" value="A" />A</label>
+              <label><input type="radio" name="q8" value="B" />B</label>
+              <label><input type="radio" name="q8" value="C" />C</label>
+              <label><input type="radio" name="q8" value="D" />D</label>
+              <label><input type="radio" name="q8" value="E" />E</label>
+              <label><input type="radio" name="q8" value="F" />F</label>
+              <label><input type="radio" name="q8" value="G" />G</label>
+              <label><input type="radio" name="q8" value="H" />H</label>
+              <label><input type="radio" name="q8" value="I" />I</label>
+              <label><input type="radio" name="q8" value="J" />J</label>
+              <label><input type="radio" name="q8" value="K" />K</label>
+            </div>
+            <div style="margin-bottom: 5px">
+              <strong>9.</strong>
+              <label><input type="radio" name="q9" value="A" />A</label>
+              <label><input type="radio" name="q9" value="B" />B</label>
+              <label><input type="radio" name="q9" value="C" />C</label>
+              <label><input type="radio" name="q9" value="D" />D</label>
+              <label><input type="radio" name="q9" value="E" />E</label>
+              <label><input type="radio" name="q9" value="F" />F</label>
+              <label><input type="radio" name="q9" value="G" />G</label>
+              <label><input type="radio" name="q9" value="H" />H</label>
+              <label><input type="radio" name="q9" value="I" />I</label>
+              <label><input type="radio" name="q9" value="J" />J</label>
+              <label><input type="radio" name="q9" value="K" />K</label>
+            </div>
+            <div style="margin-bottom: 5px">
+              <strong>10.</strong>
+              <label><input type="radio" name="q10" value="A" />A</label>
+              <label><input type="radio" name="q10" value="B" />B</label>
+              <label><input type="radio" name="q10" value="C" />C</label>
+              <label><input type="radio" name="q10" value="D" />D</label>
+              <label><input type="radio" name="q10" value="E" />E</label>
+              <label><input type="radio" name="q10" value="F" />F</label>
+              <label><input type="radio" name="q10" value="G" />G</label>
+              <label><input type="radio" name="q10" value="H" />H</label>
+              <label><input type="radio" name="q10" value="I" />I</label>
+              <label><input type="radio" name="q10" value="J" />J</label>
+              <label><input type="radio" name="q10" value="K" />K</label>
+            </div>
+          </div>
+        </div>
+        <div class="group">
+          <h4>Questions 11–13</h4>
+          <p>
+            Do the following statements agree with the information given in
+            Reading Passage 1?
+          </p>
+          <div style="margin: 8px 0 16px 20px">
+            <div>
+              <strong>TRUE</strong> if the statement agrees with the information
+            </div>
+            <div>
+              <strong>FALSE</strong> if the statement contradicts the
+              information
+            </div>
+            <div>
+              <strong>NOT GIVEN</strong> if there is no information on this
+            </div>
+          </div>
+          <ol start="11">
+            <li>
+              <span class="flag-btn" data-q="q11" style="left: -20px"></span>A
+              cultured pearl’s centre is often significantly larger than that in
+              a natural pearl.<br />
+              <label><input type="radio" name="q11" value="TRUE" /> TRUE</label>
+              <label
+                ><input type="radio" name="q11" value="FALSE" /> FALSE</label
+              >
+              <label
+                ><input type="radio" name="q11" value="NOT GIVEN" /> NOT
+                GIVEN</label
+              >
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q12" style="left: -20px"></span
+              >Imitation pearls are usually the same price as natural ones.<br />
+              <label><input type="radio" name="q12" value="TRUE" /> TRUE</label>
+              <label
+                ><input type="radio" name="q12" value="FALSE" /> FALSE</label
+              >
+              <label
+                ><input type="radio" name="q12" value="NOT GIVEN" /> NOT
+                GIVEN</label
+              >
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q13" style="left: -20px"></span
+              >Akoya pearls from Japan glow more deeply than South Sea pearls
+              from Australia.<br />
+              <label><input type="radio" name="q13" value="TRUE" /> TRUE</label>
+              <label
+                ><input type="radio" name="q13" value="FALSE" /> FALSE</label
+              >
+              <label
+                ><input type="radio" name="q13" value="NOT GIVEN" /> NOT
+                GIVEN</label
+              >
+            </li>
+          </ol>
+        </div>
+        <div class="bottom-bar">
+          <button class="btn-primary" onclick="submitAnswers()">提交</button>
+          <button onclick="resetForm()">重置</button>
+          <button onclick="openWrongBook()">本篇错题</button>
+        </div>
+      </section>
+    </div>
+    <div id="selbar">
+      <button id="btnNote">Note</button>
+      <button id="btnHL">Highlight</button>
+      <button id="btnUH" style="display: none">Clear Highlight</button>
+    </div>
+    <div class="modal" id="resultModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>成绩</h2>
+          <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+        </div>
+        <div id="resultContent"></div>
+        <button
+          class="btn-primary"
+          style="width: 100%; margin-top: 16px"
+          onclick="addWrongToBook()"
+        >
+          加入错题本
+        </button>
+      </div>
+    </div>
+    <div class="modal" id="wrongBookModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>本篇错题</h2>
+          <span class="modal-close" onclick="closeModal('wrongBookModal')"
+            >×</span
+          >
+        </div>
+        <div id="wrongBookContent"></div>
+      </div>
+    </div>
+    <div class="modal" id="resetModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>重置练习</h2>
+          <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+        </div>
+        <div style="margin: 16px 0">
+          <label style="display: block; margin-bottom: 10px"
+            ><input type="radio" name="resetType" value="answers" checked />
+            只清空答案</label
+          >
+          <label style="display: block"
+            ><input type="radio" name="resetType" value="all" />
+            清空答案和标记</label
+          >
+        </div>
+        <button
+          class="btn-primary"
+          style="width: 100%"
+          onclick="confirmReset()"
+        >
+          确定
+        </button>
+      </div>
+    </div>
+    <script>
+      const PAPER_ID = "P1_PEARLS";
+      let t = 0;
+      const timerEl = document.getElementById("timer");
+      setInterval(() => {
+        t++;
+        timerEl.textContent =
+          String(Math.floor(t / 60)).padStart(2, "0") +
+          ":" +
+          String(t % 60).padStart(2, "0");
+      }, 1000);
+      const divider = document.getElementById("divider"),
+        left = document.getElementById("left"),
+        right = document.getElementById("right");
+      let dragging = false;
+      divider.onmousedown = () => {
+        dragging = true;
+        document.body.style.cursor = "ew-resize";
+      };
+      window.onmousemove = (e) => {
+        if (!dragging) return;
+        const c = document.querySelector(".shell").getBoundingClientRect();
+        let x = e.clientX - c.left;
+        x = Math.max(280, Math.min(c.width - 280, x));
+        left.style.flex = "0 0 " + x + "px";
+        right.style.flex = "1 1 auto";
+      };
+      window.onmouseup = () => {
+        dragging = false;
+        document.body.style.cursor = "";
+      };
+      const selbar = document.getElementById("selbar"),
+        btnHL = document.getElementById("btnHL"),
+        btnUH = document.getElementById("btnUH"),
+        btnNote = document.getElementById("btnNote");
+      let lastRange = null,
+        currentHlNode = null;
+      function posSelbar(r) {
+        selbar.style.display = "flex";
+        const t = window.scrollY + r.top - selbar.offsetHeight - 8;
+        const l =
+          window.scrollX + r.left + r.width / 2 - selbar.offsetWidth / 2;
+        selbar.style.top = (t > 0 ? t : window.scrollY + r.bottom + 8) + "px";
+        selbar.style.left = Math.max(8, l) + "px";
+      }
+      function updSel() {
+        const s = window.getSelection();
+        if (!s || s.rangeCount === 0 || s.isCollapsed) {
+          if (!currentHlNode) selbar.style.display = "none";
+          return;
+        }
+        const r = s.getRangeAt(0);
+        lastRange = r.cloneRange();
+        currentHlNode = null;
+        btnNote.style.display = "block";
+        btnHL.style.display = "block";
+        btnUH.style.display = "none";
+        posSelbar(r.getBoundingClientRect());
+      }
+      left.onmouseup = updSel;
+      right.onmouseup = updSel;
+      document.onselectionchange = () => {
+        const s = window.getSelection();
+        if ((!s || s.rangeCount === 0 || s.isCollapsed) && !currentHlNode)
+          selbar.style.display = "none";
+      };
+      document.addEventListener(
+        "click",
+        (e) => {
+          if (
+            e.target.classList &&
+            (e.target.classList.contains("hl") ||
+              e.target.classList.contains("note"))
+          ) {
+            currentHlNode = e.target;
+            lastRange = null;
+            btnNote.style.display = "none";
+            btnHL.style.display = "none";
+            btnUH.style.display = "block";
+            posSelbar(e.target.getBoundingClientRect());
+            const s = window.getSelection();
+            if (s) s.removeAllRanges();
+          }
+        },
+        true
+      );
+      btnHL.onclick = () => {
+        if (currentHlNode || !lastRange || lastRange.collapsed) return;
+        const s = document.createElement("span");
+        s.className = "hl";
+        try {
+          lastRange.surroundContents(s);
+        } catch (e) {
+          const w = document.createElement("span");
+          w.className = "hl";
+          w.appendChild(lastRange.cloneContents());
+          lastRange.deleteContents();
+          lastRange.insertNode(w);
+        }
+        selbar.style.display = "none";
+        saveHighlights();
+      };
+      btnNote.onclick = () => {
+        if (currentHlNode || !lastRange || lastRange.collapsed) return;
+        const s = document.createElement("span");
+        s.className = "note";
+        try {
+          lastRange.surroundContents(s);
+        } catch (e) {
+          const w = document.createElement("span");
+          w.className = "note";
+          w.appendChild(lastRange.cloneContents());
+          lastRange.deleteContents();
+          lastRange.insertNode(w);
+        }
+        selbar.style.display = "none";
+        saveHighlights();
+      };
+      btnUH.onclick = () => {
+        if (currentHlNode) {
+          const p = currentHlNode.parentNode;
+          while (currentHlNode.firstChild)
+            p.insertBefore(currentHlNode.firstChild, currentHlNode);
+          p.removeChild(currentHlNode);
+          p.normalize();
+          currentHlNode = null;
+          selbar.style.display = "none";
+          saveHighlights();
+        } else if (lastRange) {
+          const sR = lastRange.getBoundingClientRect();
+          const w = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_ELEMENT
+          );
+          const tr = [];
+          while (w.nextNode()) {
+            const n = w.currentNode;
+            if (
+              n.classList &&
+              (n.classList.contains("hl") || n.classList.contains("note"))
+            ) {
+              const r = n.getBoundingClientRect();
+              if (
+                !(
+                  r.right < sR.left ||
+                  r.left > sR.right ||
+                  r.bottom < sR.top ||
+                  r.top > sR.bottom
+                )
+              )
+                tr.push(n);
+            }
+          }
+          tr.forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          selbar.style.display = "none";
+          saveHighlights();
+        }
+      };
+      document.querySelectorAll(".flag-btn").forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          btn.classList.toggle("active");
+          saveFlags();
+        };
+      });
+      const answerKey = {
+        q1: "C",
+        q2: "D",
+        q3: "A",
+        q4: "B",
+        q5: "J",
+        q6: "K",
+        q7: "C",
+        q8: "F",
+        q9: "D",
+        q10: "G",
+        q11: "TRUE",
+        q12: "FALSE",
+        q13: "NOT GIVEN",
+      };
+      let lastResults = [];
+      function saveAnswers() {
+        const data = {};
+        Object.keys(answerKey).forEach((q) => {
+          const radio = document.querySelector(
+            `input[name="${q}"][type="radio"]:checked`
+          );
+          const text = document.querySelector(
+            `input[name="${q}"][type="text"]`
+          );
+          if (radio) data[q] = radio.value;
+          else if (text) data[q] = text.value;
+        });
+        localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+      }
+      function loadAnswers() {
+        const data = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_answers`) || "{}"
+        );
+        Object.keys(data).forEach((q) => {
+          const radio = document.querySelector(
+            `input[name="${q}"][value="${data[q]}"]`
+          );
+          const text = document.querySelector(
+            `input[name="${q}"][type="text"]`
+          );
+          if (radio) radio.checked = true;
+          else if (text) text.value = data[q];
+        });
+      }
+      function saveFlags() {
+        const flags = [...document.querySelectorAll(".flag-btn.active")].map(
+          (b) => b.dataset.q
+        );
+        localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+      }
+      function loadFlags() {
+        const flags = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_flags`) || "[]"
+        );
+        flags.forEach((q) =>
+          document.querySelector(`[data-q="${q}"]`)?.classList.add("active")
+        );
+      }
+      function saveHighlights() {
+        const highlights = { left: [], right: [] };
+        document
+          .querySelectorAll("#left .hl, #left .note")
+          .forEach((el, idx) => {
+            highlights.left.push({
+              type: el.classList.contains("hl") ? "hl" : "note",
+              text: el.textContent,
+              index: idx,
+            });
+          });
+        document
+          .querySelectorAll("#right .hl, #right .note")
+          .forEach((el, idx) => {
+            highlights.right.push({
+              type: el.classList.contains("hl") ? "hl" : "note",
+              text: el.textContent,
+              index: idx,
+            });
+          });
+        localStorage.setItem(
+          `${PAPER_ID}_highlights`,
+          JSON.stringify(highlights)
+        );
+      }
+      function loadHighlights() {
+        const data = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_highlights`) ||
+            '{"left":[],"right":[]}'
+        );
+        const restore = (pane, items) => {
+          if (!items || items.length === 0) return;
+          items.forEach((item) => {
+            const walker = document.createTreeWalker(
+              pane,
+              NodeFilter.SHOW_TEXT
+            );
+            let node;
+            while ((node = walker.nextNode())) {
+              if (node.textContent.includes(item.text)) {
+                const span = document.createElement("span");
+                span.className = item.type;
+                const parent = node.parentNode;
+                const text = node.textContent;
+                const idx = text.indexOf(item.text);
+                if (idx >= 0) {
+                  const before = text.substring(0, idx);
+                  const match = text.substring(idx, idx + item.text.length);
+                  const after = text.substring(idx + item.text.length);
+                  parent.insertBefore(document.createTextNode(before), node);
+                  span.textContent = match;
+                  parent.insertBefore(span, node);
+                  parent.insertBefore(document.createTextNode(after), node);
+                  parent.removeChild(node);
+                  break;
+                }
+              }
+            }
+          });
+        };
+        restore(left, data.left);
+        restore(right, data.right);
+      }
+      document.querySelectorAll("input").forEach((inp) => {
+        inp.addEventListener("change", saveAnswers);
+        if (inp.type === "text") inp.addEventListener("input", saveAnswers);
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+        loadAnswers();
+        loadFlags();
+        loadHighlights();
+      });
+      function submitAnswers() {
+        const res = [];
+        let cor = 0;
+        Object.keys(answerKey).forEach((q) => {
+          let uA = "";
+          const radio = document.querySelector(
+            `input[name="${q}"][type="radio"]:checked`
+          );
+          const text = document.querySelector(
+            `input[name="${q}"][type="text"]`
+          );
+          if (radio) uA = radio.value;
+          else if (text) uA = text.value.trim();
+          const cA = answerKey[q];
+          const iC = uA.toLowerCase() === cA.toLowerCase();
+          if (iC) cor++;
+          res.push({ id: q, userAns: uA, correctAns: cA, isCorrect: iC });
+        });
+        lastResults = res;
+        const tot = Object.keys(answerKey).length;
+        const pct = ((cor / tot) * 100).toFixed(1);
+        localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+        document.getElementById(
+          "resultContent"
+        ).innerHTML = `<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res
+          .map(
+            (r) =>
+              `<div class="result-item ${
+                r.isCorrect ? "correct" : "incorrect"
+              }"><div><strong>${r.id}</strong> ${
+                r.isCorrect ? "✓" : "✗"
+              }</div><div>你的答案: ${r.userAns || "(未作答)"}</div>${
+                !r.isCorrect ? `<div>正确答案: ${r.correctAns}</div>` : ""
+              }</div>`
+          )
+          .join("")}`;
+        document.getElementById("resultModal").classList.add("active");
+      }
+      function resetForm() {
+        document.getElementById("resetModal").classList.add("active");
+      }
+      function confirmReset() {
+        const tp = document.querySelector(
+          'input[name="resetType"]:checked'
+        ).value;
+        document.querySelectorAll("input").forEach((i) => {
+          if (i.type === "radio") i.checked = false;
+          if (i.type === "text") i.value = "";
+        });
+        localStorage.removeItem(`${PAPER_ID}_answers`);
+        if (tp === "all") {
+          document.querySelectorAll(".hl").forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          document.querySelectorAll(".note").forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          document
+            .querySelectorAll(".flag-btn")
+            .forEach((b) => b.classList.remove("active"));
+          localStorage.removeItem(`${PAPER_ID}_highlights`);
+          localStorage.removeItem(`${PAPER_ID}_flags`);
+        }
+        closeModal("resetModal");
+      }
+      function addWrongToBook() {
+        const wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        const wr = lastResults.filter((r) => !r.isCorrect);
+        wr.forEach((r) => {
+          const en = {
+            paperId: PAPER_ID,
+            title: "Pearls",
+            questionId: r.id,
+            correctAnswer: r.correctAns,
+            myAnswer: r.userAns || "(未作答)",
+            date: new Date().toISOString().split("T")[0],
+          };
+          const ix = wb.findIndex(
+            (i) => i.paperId === en.paperId && i.questionId === en.questionId
+          );
+          if (ix >= 0) wb[ix] = en;
+          else wb.push(en);
+        });
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        alert(`已添加 ${wr.length} 道错题`);
+        closeModal("resultModal");
+      }
+      function deleteWrongItem(pId, qId) {
+        if (!confirm("确定删除这道错题？")) return;
+        let wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        wb = wb.filter((i) => !(i.paperId === pId && i.questionId === qId));
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        openWrongBook();
+      }
+      function clearCurrentWrongBook() {
+        if (!confirm("确定清空本篇所有错题？")) return;
+        let wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        wb = wb.filter((i) => i.paperId !== PAPER_ID);
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        openWrongBook();
+      }
+      function openWrongBook() {
+        const wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        const cu = wb.filter((i) => i.paperId === PAPER_ID);
+        const ct = document.getElementById("wrongBookContent");
+        if (cu.length === 0)
+          ct.innerHTML =
+            '<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>';
+        else
+          ct.innerHTML = `<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" stylewidth:100%;">🗑️ 清空本篇错题</button></div>${cu
+            .map(
+              (i) =>
+                `<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`
+            )
+            .join("")}`;
+        document.getElementById("wrongBookModal").classList.add("active");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("active");
+      }
+    </script>
+  </body>
+</html>

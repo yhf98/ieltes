@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – Roller coaster</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .diagram-container { background:#f9f9f9; padding:20px; margin:12px 0; border-radius:4px; text-align:center; }
+  .diagram-container img { max-width:100%; height:auto; margin-bottom:20px; }
+  .diagram-inputs { display:flex; flex-direction:column; gap:12px; max-width:400px; margin:0 auto; }
+  .diagram-input-row { display:flex; align-items:center; gap:10px; }
+  .diagram-input-row label { font-weight:600; min-width:80px; }
+  .diagram-input-row input { flex:1; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px; }
+  
+  table { border-collapse: collapse; width:100%; margin:12px 0; }
+  th, td { border:1px solid #ddd; padding:6px; text-align:center; font-size:13px; position:relative; }
+  th { background:#f5f5f5; font-weight:600; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  tr td:first-child { padding-left:16px; }
+  
+  .group ol { margin-left:20px; }
+  .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+  .group ol li label { display:inline-block; margin-right:8px; }
+  .group ol li input[type="text"] { width:200px; padding:6px; border:1px solid #ddd; border-radius:4px; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>Roller coaster: the great fairground attraction</h3>
+
+<h4>How they move</h4>
+<p>Like a passenger train, a roller coaster consists of a series of connected cars that move on a track. But unlike a passenger train, it has no engine or power source of its own. For most of the ride, it is moved only by the forces of inertia and gravity. The only exertion of energy occurs at the very beginning of the ride when the coaster train is pulled up the lift hill.</p>
+
+<p>The traditional lifting mechanism is a long length of chain running up the hill under the track. The chain is fastened in a loop, which is wound around a gear at the top of the hill and another one at the bottom. The gear at the bottom of the hill is turned by a motor. This turns the chain so that it continually moves up the hill like a long conveyor belt. The coaster cars grip onto the chain, which simply pulls them to the top. At the summit, the train is released and starts its descent.</p>
+
+<p>The purpose of this initial ascent is to build up a sort of reservoir of potential energy, which simply means that as the coaster gets higher in the air, there is a greater distance gravity can pull it down.</p>
+
+<p>As the train starts coasting down the hill, this potential energy is converted into kinetic energy (energy of motion), and the train speeds up. At the bottom of the hill, this has reached its maximum, and this propels the train up the second hill, again building up the potential-energy level.</p>
+
+<p>In this way, the course of the track is constantly converting energy from kinetic to potential and back again. This fluctuation in acceleration is what makes roller coasters so much fun. At its most basic level, this is all a roller coaster is – a machine that uses gravity and inertia to send a train along a winding track.</p>
+
+<h4>Coasting through history</h4>
+<p>Roller coasters have a long, fascinating history. Their direct ancestors were ice slides, popular in Russia in the 16th and 17th centuries. They consisted of a long, steep, wooden slide covered in ice. Riders walked up a ladder or set of stairs to the top of the slide, as high as 21 metres up. At the top, they climbed into sleds made of wood or blocks of ice and shot down the slope. At the base, the sleds would crash-land in a sand pile.</p>
+
+<p>It seems that the idea was then imported into France. For most of the year, the warmer climate would melt the ice, so the French started building waxed slides instead. To help the sleds move down these slides, they added wheels, and in 1817, for the first time, a train was attached to the track. The French continued to expand on this idea, coming up with more complex track layouts, with multiple cars and all sorts of twists and turns.</p>
+
+<p>The first American roller coaster was built in the mountains of Pennsylvania in the mid-1800s, originally to provide an easy way to send coal to the railway 29 km down the mountain. When the track was first built, a crew at the bottom of the mountain would attach the cart to a team of mules after emptying the load, and the mules would drag it back up to the top. They were eventually replaced with steam engines to make the system more efficient.</p>
+
+<p>Soon after these improvements were made, the railway company built a new tunnel that brought the freight trains much closer to the coal mine. No longer required for its original purpose, the roller coaster was configured as a 'scenic tour'. For one dollar, tourists got a leisurely ride up to the top of the mountain, followed by a wild, bumpy ride straight down. This was soon a resounding success, attracting thousands of tourists every year.</p>
+
+<p>Scenic rides like this continued to thrive and were joined by wooden roller coasters similar to the ones we know today. These coasters were the main attraction at popular amusement parks throughout the United States, such as the many parks of Coney Island in New York. By the 1920s, roller coasters were in full swing, with some 2,000 rides in operation around the country.</p>
+
+<p>Following the Great Depression, a decline in roller-coaster production began in the early 1930s, but a second roller-coaster boom in the 1970s and the beginning of the 1980s revitalised the amusement-park industry and introduced a slew of innovative tubular steel coasters.</p>
+
+<p>This was followed by a decline in interest for the rest of the decade, but since the early 1990s the amusement-park industry has experienced another coaster boom of sorts. New launching techniques and other technological developments have opened up a world of options for designers, so in some rides you feel as if you are flying. In the next few years we can expect to see many faster, taller and more twisted rides popping up in amusement parks around the world.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–16</h4>
+      <p>Label the diagram below.</p>
+      <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>14–16</strong> on your answer sheet.</p>
+
+      <div class="diagram-container">
+        <svg viewBox="0 0 800 400" style="max-width:700px; border:1px solid #ddd; background:white;">
+          <!-- Roller coaster track -->
+          <path d="M 50 300 L 150 280 L 200 150 L 250 160 L 350 300 L 450 280 L 500 150 L 600 200 L 700 300" 
+                stroke="#333" stroke-width="3" fill="none"/>
+          <path d="M 50 310 L 150 290 L 200 160 L 250 170 L 350 310 L 450 290 L 500 160 L 600 210 L 700 310" 
+                stroke="#333" stroke-width="3" fill="none"/>
+          
+          <!-- Lift hill label -->
+          <text x="180" y="130" font-size="12" fill="#333">lift hill</text>
+          
+          <!-- Start label -->
+          <text x="40" y="330" font-size="14" font-weight="bold" fill="#333">START</text>
+          
+          <!-- Lifting mechanism circle -->
+          <circle cx="120" cy="320" r="60" fill="#eee" stroke="#333" stroke-width="2"/>
+          <text x="80" y="260" font-size="11" fill="#333">lifting mechanism</text>
+          
+          <!-- Motor (black box) -->
+          <rect x="95" y="305" width="30" height="35" fill="#000"/>
+          
+          <!-- Gear (circle with teeth) -->
+          <circle cx="145" cy="310" r="18" fill="#666" stroke="#333" stroke-width="1"/>
+          <circle cx="145" cy="310" r="12" fill="#999"/>
+          
+          <!-- Chain -->
+          <line x1="127" y1="310" x2="170" y2="220" stroke="#333" stroke-width="2"/>
+          <line x1="130" y1="312" x2="173" y2="222" stroke="#333" stroke-width="2"/>
+          
+          <!-- Label 14 (chain) -->
+          <line x1="170" y1="270" x2="220" y2="270" stroke="#666" stroke-width="1"/>
+          <text x="225" y="275" font-size="13" font-weight="bold" fill="#333">14 ...............</text>
+          
+          <!-- Label 15 (gear) -->
+          <line x1="163" y1="310" x2="200" y2="340" stroke="#666" stroke-width="1"/>
+          <text x="205" y="345" font-size="13" font-weight="bold" fill="#333">15 ...............</text>
+          
+          <!-- Label 16 (motor) -->
+          <line x1="95" y1="322" x2="50" y2="360" stroke="#666" stroke-width="1"/>
+          <text x="15" y="375" font-size="13" font-weight="bold" fill="#333">16 ...............</text>
+        </svg>
+        
+        <div class="diagram-inputs">
+          <div class="diagram-input-row">
+            <span class="flag-btn" data-q="q14"></span>
+            <label for="q14">14</label>
+            <input type="text" id="q14" name="q14" maxlength="20">
+          </div>
+          <div class="diagram-input-row">
+            <span class="flag-btn" data-q="q15"></span>
+            <label for="q15">15</label>
+            <input type="text" id="q15" name="q15" maxlength="20">
+          </div>
+          <div class="diagram-input-row">
+            <span class="flag-btn" data-q="q16"></span>
+            <label for="q16">16</label>
+            <input type="text" id="q16" name="q16" maxlength="20">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 17–21</h4>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>17–21</strong> on your answer sheet.</p>
+
+      <div style="background:#f9f9f9; padding:16px; margin:12px 0; border-radius:4px; border-left:3px solid #0066cc;">
+        <h4 style="margin-top:0;">History of roller coasters</h4>
+        <ul style="list-style:none; padding:0;">
+          <li style="margin:12px 0;">
+            <span class="flag-btn" data-q="q17" style="position:relative; display:inline-block; margin-right:8px;"></span>
+            • Modern roller coasters are descended from 16th-century Russian slides with a surface of 
+            <strong>17</strong> <input type="text" id="q17" name="q17" style="width:150px; padding:4px; margin:0 4px;">
+          </li>
+          <li style="margin:12px 0;">
+            <span class="flag-btn" data-q="q18" style="position:relative; display:inline-block; margin-right:8px;"></span>
+            • In France, because of the higher temperatures, the wooden surface on the slides was 
+            <strong>18</strong> <input type="text" id="q18" name="q18" style="width:150px; padding:4px; margin:0 4px;">, 
+            and <strong>19</strong> <input type="text" id="q19" name="q19" style="width:150px; padding:4px; margin:0 4px;"> 
+            were attached to the cars to ease the descent.
+          </li>
+          <li style="margin:12px 0;">
+            <span class="flag-btn" data-q="q20" style="position:relative; display:inline-block; margin-right:8px;"></span>
+            • The first US roller coaster was used for transporting 
+            <strong>20</strong> <input type="text" id="q20" name="q20" style="width:150px; padding:4px; margin:0 4px;"> 
+            down a mountainside in carts.
+          </li>
+          <li style="margin:12px 0;">
+            <span class="flag-btn" data-q="q21" style="position:relative; display:inline-block; margin-right:8px;"></span>
+            • Initially, these were pulled by mules, but in time power was produced by 
+            <strong>21</strong> <input type="text" id="q21" name="q21" style="width:150px; padding:4px; margin:0 4px;">
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 22–26</h4>
+      <p>Do the following statements agree with the information given in Reading Passage 2?</p>
+      <p>In boxes <strong>22–26</strong> on your answer sheet, write</p>
+      <div style="margin-left:20px; margin-top:8px;">
+        <div><strong>TRUE</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if the statement agrees with the information</div>
+        <div><strong>FALSE</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if the statement contradicts the information</div>
+        <div><strong>NOT GIVEN</strong>&nbsp;&nbsp;if there is no information on this</div>
+      </div>
+
+      <ol start="22">
+        <li><span class="flag-btn" data-q="q22" style="left:-20px;"></span>The earliest modifications to the basic slide were made in France.<br>
+          <label><input type="radio" name="q22" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q22" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q22" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q23" style="left:-20px;"></span>Roller coasters continued to increase in popularity throughout the 1920s and 1930s.<br>
+          <label><input type="radio" name="q23" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q23" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q23" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q24" style="left:-20px;"></span>New roller-coaster technology was introduced in the 1970s in response to public demand.<br>
+          <label><input type="radio" name="q24" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q24" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q24" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q25" style="left:-20px;"></span>Roller coasters were less popular for most of the 1980s than in the 1970s and 1990s.<br>
+          <label><input type="radio" name="q25" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q25" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q25" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q26" style="left:-20px;"></span>The design of roller-coaster rides became more varied in the 1990s.<br>
+          <label><input type="radio" name="q26" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q26" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q26" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+      </ol>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">Submit</button>
+      <button onclick="resetForm()">Reset</button>
+      <button onclick="openWrongBook()">Wrong Answers</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Results</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">Add to Wrong Answer Book</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Wrong Answers for This Passage</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Reset Practice</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        Clear answers only
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        Clear answers and all markings
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">Confirm</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_ROLLER_COASTER';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey={
+  q14:"chain",
+  q15:"gear",
+  q16:"motor",
+  q17:"ice",
+  q18:"waxed",
+  q19:"wheels",
+  q20:"coal",
+  q21:"steam engines",
+  q22:"TRUE",
+  q23:"FALSE",
+  q24:"NOT GIVEN",
+  q25:"TRUE",
+  q26:"TRUE"
+};
+let lastResults=[];
+
+function normalizeAnswer(answer) {
+  if (!answer) return '';
+  return answer.toString().toLowerCase().trim().replace(/[^\w\s]/g, '');
+}
+
+function saveAnswers() {
+  const data = {};
+  Object.keys(answerKey).forEach(q => {
+    const el = document.querySelector(`[name="${q}"]`);
+    if (el) {
+      if (el.type === 'radio') {
+        const ch = document.querySelector(`input[name="${q}"]:checked`);
+        if(ch) data[q] = ch.value;
+      } else {
+        data[q] = el.value;
+      }
+    }
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const el = document.querySelector(`[name="${q}"]`);
+    if (el) {
+      if (el.type === 'radio') {
+        const radio = document.querySelector(`input[name="${q}"][value="${data[q]}"]`);
+        if(radio) radio.checked = true;
+      } else {
+        el.value = data[q];
+      }
+    }
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  if(data.left && data.left.length > 0) {
+    data.left.forEach(item => {
+      const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+  
+  if(data.right && data.right.length > 0) {
+    data.right.forEach(item => {
+      const walker = document.createTreeWalker(right, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', saveAnswers);
+});
+
+document.querySelectorAll('input[type="text"]').forEach(input => {
+  input.addEventListener('input', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers() {
+  const res = [];
+  let cor = 0;
+  
+  Object.keys(answerKey).forEach(q => {
+    const el = document.querySelector(`[name="${q}"]`);
+    let uA = "";
+    
+    if (el) {
+      if (el.type === 'radio') {
+        const ch = document.querySelector(`input[name="${q}"]:checked`);
+        uA = ch ? ch.value : "";
+      } else {
+        uA = el.value;
+      }
+    }
+    
+    const cA = answerKey[q];
+    let iC = false;
+    
+    // For text inputs, normalize and compare
+    if (el && el.type === 'text') {
+      iC = normalizeAnswer(uA) === normalizeAnswer(cA);
+    } else {
+      // For radio buttons, exact match
+      iC = uA === cA;
+    }
+    
+    if(iC) cor++;
+    res.push({id: q, userAns: uA, correctAns: cA, isCorrect: iC});
+  });
+  
+  lastResults = res;
+  const tot = Object.keys(answerKey).length;
+  const pct = ((cor/tot)*100).toFixed(1);
+  localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML = `
+    <div class="result-summary">
+      <div class="result-score">${cor} / ${tot}</div>
+      <div style="margin-top:8px;font-size:18px;">${pct}%</div>
+    </div>
+    ${res.map(r => `
+      <div class="result-item ${r.isCorrect?'correct':'incorrect'}">
+        <div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div>
+        <div>Your answer: ${r.userAns||'(not answered)'}</div>
+        ${!r.isCorrect?`<div>Correct answer: ${r.correctAns}</div>`:''}
+      </div>
+    `).join('')}
+  `;
+  
+  document.getElementById('resultModal').classList.add('active');
+}
+
+function resetForm(){ 
+  document.getElementById('resetModal').classList.add('active'); 
+}
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false); 
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value=''); 
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook() {
+  const wb = JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]');
+  const wr = lastResults.filter(r => !r.isCorrect);
+  
+  wr.forEach(r => {
+    const en = {
+      paperId: PAPER_ID,
+      title: 'Roller coaster: the great fairground attraction',
+      questionId: r.id,
+      correctAnswer: r.correctAns,
+      myAnswer: r.userAns||'(not answered)',
+      date: new Date().toISOString().split('T')[0]
+    };
+    
+    const ix = wb.findIndex(i => i.paperId === en.paperId && i.questionId === en.questionId);
+    if(ix >= 0) wb[ix] = en;
+    else wb.push(en);
+  });
+  
+  localStorage.setItem('ielts_wrong_book', JSON.stringify(wb));
+  alert(`Added ${wr.length} wrong answer(s) to the book`);
+  closeModal('resultModal');
+}
+
+function deleteWrongItem(pId, qId) {
+  if(!confirm('Are you sure you want to delete this wrong answer?')) return;
+  let wb = JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]');
+  wb = wb.filter(i => !(i.paperId === pId && i.questionId === qId));
+  localStorage.setItem('ielts_wrong_book', JSON.stringify(wb));
+  openWrongBook();
+}
+
+function clearCurrentWrongBook() {
+  if(!confirm('Are you sure you want to clear all wrong answers for this passage?')) return;
+  let wb = JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]');
+  wb = wb.filter(i => i.paperId !== PAPER_ID);
+  localStorage.setItem('ielts_wrong_book', JSON.stringify(wb));
+  openWrongBook();
+}
+
+function openWrongBook() {
+  const wb = JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]');
+  const cu = wb.filter(i => i.paperId === PAPER_ID);
+  const ct = document.getElementById('wrongBookContent');
+  
+  if(cu.length === 0) {
+    ct.innerHTML = '<div style="text-align:center;padding:40px;color:#666;">No wrong answers yet</div>';
+  } else {
+    ct.innerHTML = `
+      <div class="modal-actions">
+        <button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">
+          🗑️ Clear all wrong answers for this passage
+        </button>
+      </div>
+      ${cu.map(i => `
+        <div class="wrong-item">
+          <div class="wrong-item-content">
+            <div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div>
+            <div style="font-size:13px;color:#666;">
+              <div>✓ Correct: ${i.correctAnswer}</div>
+              <div style="color:#d32f2f;">✗ Your answer: ${i.myAnswer}</div>
+            </div>
+          </div>
+          <button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">Delete</button>
+        </div>
+      `).join('')}
+    `;
+  }
+  
+  document.getElementById('wrongBookModal').classList.add('active');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+</script>
+</body>
+</html>

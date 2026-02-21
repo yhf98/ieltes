@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IELTS Reading Practice System</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #f5e6e8 0%, #f5e6e8 100%);
+        min-height: 100vh;
+        padding: 15px;
+      }
+      .container {
+        max-width: 100%;
+        margin: 0 auto;
+      }
+      .header {
+        text-align: center;
+        color: rgb(179, 126, 153);
+        margin-bottom: 15px;
+      }
+      .header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .header p {
+        font-size: 15px;
+        opacity: 0.9;
+      }
+      .top-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
+      .search-box {
+        flex: 1;
+        min-width: 250px;
+        position: relative;
+      }
+      .search-box input {
+        width: 100%;
+        padding: 12px 18px 12px 42px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+      }
+      .search-box input:focus {
+        outline: none;
+      }
+      .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px;
+        color: #666;
+      }
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+      }
+      .btn {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn-wrongbook {
+        background: white;
+        color: #667eea;
+      }
+      .btn-stats {
+        background: rgba(255, 255, 255, 0.2);
+        color: rgb(179, 126, 153);
+      }
+      .btn-danger {
+        background: #dc3545;
+        color: white;
+      }
+      .btn-danger:hover {
+        background: #c82333;
+      }
+      .content-grid {
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+      }
+      .passage-card {
+        flex: 1;
+        background: white;
+        border-radius: 10px;
+        padding: 12px;
+        min-width: 0;
+      }
+      .passage-card h2 {
+        font-size: 18px;
+        color: #333;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .passage-icon {
+        font-size: 20px;
+      }
+      .level-group {
+        margin-bottom: 8px;
+      }
+      .level-group:last-child {
+        margin-bottom: 0;
+      }
+      .level-header {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 5px;
+        padding: 4px 7px;
+        background: #f5f5f5;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .level-header:hover {
+        background: #e8e8e8;
+      }
+      .level-icon {
+        font-size: 14px;
+      }
+      .level-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: #555;
+        flex: 1;
+      }
+      .level-count {
+        font-size: 13px;
+        color: #999;
+        background: white;
+        padding: 2px 5px;
+        border-radius: 8px;
+      }
+      .article-list {
+        display: grid;
+        gap: 3px;
+        padding-left: 3px;
+      }
+      .article-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 6px;
+        background: #fafafa;
+        border-radius: 5px;
+        cursor: pointer;
+        border-left: 2px solid transparent;
+        text-decoration: none;
+        color: inherit;
+      }
+      .article-item:hover {
+        background: #f0f0f0;
+        border-left-color: #667eea;
+      }
+      .article-title {
+        flex: 1;
+        font-size: 15px;
+        color: #333;
+        line-height: 1.2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .article-subtitle {
+        font-size: 15px;
+        color: #999;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: white;
+      }
+      .empty-state h3 {
+        font-size: 24px;
+        margin-bottom: 12px;
+      }
+      .empty-state p {
+        font-size: 16px;
+        opacity: 0.8;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal.active {
+        display: flex;
+      }
+      .modal-content {
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        max-width: 800px;
+        width: 90%;
+        max-height: 85vh;
+        overflow-y: auto;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+      .modal-header h2 {
+        font-size: 28px;
+        color: #333;
+      }
+      .modal-close {
+        font-size: 32px;
+        cursor: pointer;
+        color: #999;
+        line-height: 1;
+      }
+      .modal-close:hover {
+        color: #333;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .stat-card {
+        background: linear-gradient(135deg, #f5e6e8 0%, #f5e6e8 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: rgb(179, 126, 153);
+      }
+      .stat-label {
+        font-size: 13px;
+        opacity: 0.9;
+        color: rgb(179, 126, 153);
+      }
+      .wrong-item {
+        background: #fff3e0;
+        padding: 16px;
+        margin: 8px 0;
+        border-radius: 8px;
+        border-left: 4px solid #ff9800;
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+      }
+      .wrong-item-content {
+        flex: 1;
+      }
+      .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        margin-left: 12px;
+      }
+      .btn-delete:hover {
+        background: #c82333;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      @media (max-width: 768px) {
+        .top-bar {
+          flex-direction: column;
+        }
+        .search-box {
+          min-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📚 IELTS Reading Practice</h1>
+        <p>雅思阅读机考练习系统</p>
+      </div>
+
+      <div class="top-bar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="搜索文章标题、编号..."
+            oninput="handleSearch()"
+          />
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-wrongbook" onclick="openWrongBook()">
+            ❌ 错题本
+          </button>
+          <button class="btn btn-stats" onclick="openStats()">📊 统计</button>
+        </div>
+      </div>
+
+      <div class="content-grid" id="contentGrid"></div>
+      <div class="empty-state" id="emptyState" style="display: none">
+        <h3>🔍 没有找到匹配的文章</h3>
+        <p>试试其他关键词吧</p>
+      </div>
+    </div>
+
+    <div class="modal" id="wrongBookModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>错题本</h2>
+          <span class="modal-close" onclick="closeModal('wrongBookModal')"
+            >×</span
+          >
+        </div>
+        <div id="wrongBookContent"></div>
+      </div>
+    </div>
+
+    <div class="modal" id="statsModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>📊 学习统计</h2>
+          <span class="modal-close" onclick="closeModal('statsModal')">×</span>
+        </div>
+        <div id="statsContent"></div>
+      </div>
+    </div>
+
+    <script>
+      function getScore(articleId) {
+        const score = localStorage.getItem("ielts_score_" + articleId);
+        return score ? `(${score})` : ""; // 未做过则不显示
+      }
+
+      const CONFIG = {
+        passages: {
+          P1: {
+            icon: "📄",
+            levels: {
+              高频: {
+                icon: "🔥",
+                articles: [
+                  {
+                    id: "P1_TEA",
+                    title: "1.A Brief History of Tea",
+                    subtitle: "茶叶简史",
+                    file: "P1/A Brief History of Tea.html",
+                  },
+                  {
+                    id: "P1_SURVIVOR",
+                    title: "2.A survivor’s story",
+                    subtitle: "新西兰猫头鹰",
+                    file: "P1/A survivor’s story.html",
+                  },
+                  {
+                    id: "P1_FISHBOURNE",
+                    title: "8.Fishbourne Roman Palace",
+                    subtitle: "罗马宫殿",
+                    file: "P1/Fishbourne Roman Palace.html",
+                  },
+                  {
+                    id: "P1_RUBBER",
+                    title: "12.Rubber",
+                    subtitle: "橡胶",
+                    file: "P1/Rubber.html",
+                  },
+                  {
+                    id: "P1_SYDNEY_OPERA",
+                    title: "14.Sydney Opera House",
+                    subtitle: "悉尼歌剧院",
+                    file: "P1/Sydney Opera House.html",
+                  },
+                  {
+                    id: "P1_POTATO",
+                    title: "19.The Impact of the Potato",
+                    subtitle: "土豆的影响",
+                    file: "P1/The Impact of the Potato.html",
+                  },
+                  {
+                    id: "P1_THAMES_TUNNEL",
+                    title: "29.Tunnelling under the Thames",
+                    subtitle: "泰晤士河隧道",
+                    file: "P1/Tunnelling under the Thames.html",
+                  },
+                  {
+                    id: "P1_LUCY",
+                    title: "30.What Lucy Taught Us",
+                    subtitle: "露西化石",
+                    file: "P1/What Lucy Taught Us.html",
+                  },
+                  {
+                    id: "P1_031",
+                    title: "31.William Gilbert and Magnetism",
+                    subtitle: "电磁学之父",
+                    file: "P1/William Gilbert and Magnetism.html",
+                  },
+                  {
+                    id: "P1_102",
+                    title: "102.Katherine Mansfield",
+                    subtitle: "新西兰作家",
+                    file: "P1/Katherine Mansfield.html",
+                  },
+                  {
+                    id: "P1_PLASTICS",
+                    title: "116.The Development of Plastics",
+                    subtitle: "塑料的发展史",
+                    file: "P1/The Development of Plastics.html",
+                  },
+                  {
+                    id: "P1_FOOTPRINTS",
+                    title: "122.Footprints in the Mud",
+                    subtitle: "恐龙脚印",
+                    file: "P1/Footprints in the Mud.html",
+                  },
+                  {
+                    id: "P1_DOLLS",
+                    title: "126.Dolls through the ages",
+                    subtitle: "玩偶的变迁史",
+                    file: "P1/Dolls through the ages.html",
+                  },
+                  {
+                    id: "P1_PYRAMID",
+                    title: "128.The Pyramid of Cestius",
+                    subtitle: "罗马金字塔",
+                    file: "P1/The Pyramid of Cestius.html",
+                  },
+                  {
+                    id: "P1_SLEEP_STUDY",
+                    title: "139.Sleep Study on 部落",
+                    subtitle: "部落睡眠研究",
+                    file: "P1/Sleep Study on Modern-Day Hunter-Gatherers Dispels Popular Notions.html",
+                  },
+                  {
+                    id: "P1_GUITAR",
+                    title: "141.The history of the guitar",
+                    subtitle: "吉他的历史",
+                    file: "P1/The history of the guitar.html",
+                  },
+                  {
+                    id: "P1_OLIVE_OIL",
+                    title: "146.The Early History of Olive Oil",
+                    subtitle: "橄榄油的历史",
+                    file: "P1/The Early History of Olive Oil.html",
+                  },
+                  {
+                    id: "P1_PROSOPAGNOSIA",
+                    title: "152.Sorry—who are you",
+                    subtitle: "脸盲症",
+                    file: "P1/Sorry—who are you.html",
+                  },
+                  {
+                    id: "P1_HUMANS_FOOD",
+                    title: "155.A Brief History of Humans and Food",
+                    subtitle: "人类食物的历史",
+                    file: "P1/A Brief History of Humans and Food.html",
+                  },
+                  {
+                    id: "P1_AHEAD_OF_TIME",
+                    title: "211.Ahead of its time",
+                    subtitle: "新西兰头骨",
+                    file: "P1/Ahead of its time.html",
+                  },
+                  {
+                    id: "P1_CANE_TOAD",
+                    title: "216.Australia's cane toad problem",
+                    subtitle: "澳洲蟾蜍",
+                    file: "P1/Australia's cane toad problem.html",
+                  },
+                  // 图中没有的文章，添加(删)标记
+                  {
+                    id: "P1_MAORI_HOOKS",
+                    title: "(删)10.Maori Fish Hooks",
+                    subtitle: "毛利鱼钩",
+                    file: "P1/Maori Fish Hooks.html",
+                  },
+                  {
+                    id: "P1_SILK_INDUSTRY",
+                    title: "(删)17.The Development of The Silk Industry",
+                    subtitle: "丝绸产业发展",
+                    file: "P1/The Development of The Silk Industry.html",
+                  },
+                  {
+                    id: "P1_BUSINESS_CARDS",
+                    title: "(删)20.The Importance of Business Cards",
+                    subtitle: "名片的重要性",
+                    file: "P1/The Importance of Business Cards.html",
+                  },
+                  {
+                    id: "P1_032",
+                    title: "(删)32.Wood",
+                    subtitle: "新西兰木材产业",
+                    file: "P1/Wood A Valuable Resource in New Zealand's Economy.html",
+                  },
+                  {
+                    id: "P1_SLOW_FOOD",
+                    title: "(删)129.The Slow Food Organization",
+                    subtitle: "慢食运动组织",
+                    file: "P1/The Slow Food Organization.html",
+                  },
+                  {
+                    id: "P1_BURGESS",
+                    title: "(删)140.The Burgess Shale fossils",
+                    subtitle: "伯吉斯页岩",
+                    file: "P1/The Burgess Shale fossils.html",
+                  },
+                ],
+              },
+              次高频: {
+                icon: "⭐",
+                articles: [
+                  {
+                    id: "P1_AMBERGRIS",
+                    title: "4.Ambergris",
+                    subtitle: "龙涎香",
+                    file: "P1/Ambergris.html",
+                  },
+                  {
+                    id: "P1_OCEAN_SOUND",
+                    title: "9.Listening to the Ocean",
+                    subtitle: "海洋探测",
+                    file: "P1/Listening to the Ocean.html",
+                  },
+                  {
+                    id: "P1_MAORI_HOOKS",
+                    title: "10.Maori Fish Hooks",
+                    subtitle: "毛利鱼钩",
+                    file: "P1/Maori Fish Hooks.html",
+                  },
+                  {
+                    id: "P1_UNIVERSITY_DRAMA",
+                    title: "11.Report on a university drama project",
+                    subtitle: "大学戏剧项目报告",
+                    file: "P1/Report on a university drama project.html",
+                  },
+                  {
+                    id: "P1_SILK_INDUSTRY",
+                    title: "17.The Development of The Silk Industry",
+                    subtitle: "丝绸产业发展",
+                    file: "P1/The Development of The Silk Industry.html",
+                  },
+                  {
+                    id: "P1_BUSINESS_CARDS",
+                    title: "20.The Importance of Business Cards",
+                    subtitle: "名片的重要性",
+                    file: "P1/The Importance of Business Cards.html",
+                  },
+                  {
+                    id: "P1_BEATRIX_POTTER",
+                    title: "21.The life of Beatrix Potter",
+                    subtitle: "彼得兔作家",
+                    file: "P1/The life of Beatrix Potter.html",
+                  },
+                  {
+                    id: "P1_PAPER_ORIGIN",
+                    title: "23.The Origin of Paper",
+                    subtitle: "造纸术起源",
+                    file: "P1/The Origin of Paper.html",
+                  },
+                  {
+                    id: "P1_PEARLS",
+                    title: "24.The Pearls",
+                    subtitle: "珍珠",
+                    file: "P1/The Pearls.html",
+                  },
+                  {
+                    id: "P1_THOMAS_YOUNG",
+                    title: "27.Thomas Young The last man who knew everything",
+                    subtitle: "托马斯杨",
+                    file: "P1/Thomas Young The last man who knew everything.html",
+                  },
+                  {
+                    id: "P1_032",
+                    title: "32.Wood",
+                    subtitle: "新西兰木材产业",
+                    file: "P1/Wood A Valuable Resource in New Zealand's Economy.html",
+                  },
+                  {
+                    id: "P1_DYES",
+                    title: "134.Dyes and fabric dyeing",
+                    subtitle: "染料的历史",
+                    file: "P1/Dyes and fabric dyeing.html",
+                  },
+                  {
+                    id: "P1_BURGESS",
+                    title: "140.The Burgess Shale fossils",
+                    subtitle: "伯吉斯页岩",
+                    file: "P1/The Burgess Shale fossils.html",
+                  },
+                  {
+                    id: "P1_CARNIVOROUS_PLANTS",
+                    title: "153.Carnivorous plants",
+                    subtitle: "食虫植物",
+                    file: "P1/Carnivorous plants.html",
+                  },
+                  {
+                    id: "P1_THINK_SMALL",
+                    title: "172.Think Small",
+                    subtitle: "微观科学",
+                    file: "P1/Think Small.html",
+                  },
+                  {
+                    id: "P1_DUST",
+                    title: "181.Dust and the American West",
+                    subtitle: "美国西部尘埃",
+                    file: "P1/Dust and the American West.html",
+                  },
+                  {
+                    id: "P1_BAR_CODE",
+                    title: "188.The history of the bar code",
+                    subtitle: "条形码的历史",
+                    file: "P1/The history of the bar code.html",
+                  },
+                  {
+                    id: "P1_BRITISH_WOOL",
+                    title: "194.The history of the British wool industry",
+                    subtitle: "英国羊毛产业的历史",
+                    file: "P1/The history of the British wool industry.html",
+                  },
+                  {
+                    id: "P1_AIRBORNE_DENTISTS",
+                    title: "200.Australia's Airborne Dentists",
+                    subtitle: "澳洲飞行牙医",
+                    file: "P1/Australia's Airborne Dentists.html",
+                  },
+                  // 图中没有的文章，添加(删)标记
+                  {
+                    id: "P1_CLIPPER_RACES",
+                    title: "(删)16.The Clipper Races",
+                    subtitle: "帆船竞速",
+                    file: "P1/The Clipper Races.html",
+                  },
+                  {
+                    id: "P1_CAVE_BEAR",
+                    title: "(删)124.The extinction of the cave bear",
+                    subtitle: "洞熊的灭绝",
+                    file: "P1/The extinction of the cave bear.html",
+                  },
+                  {
+                    id: "P1_CUNEIFORM",
+                    title: "(删)160.An important language development",
+                    subtitle: "楔形文字",
+                    file: "P1/An important language development.html",
+                  },
+                  {
+                    id: "P1_FOOD_DESERT",
+                    title: "(删)163.How to find your way out of a food desert",
+                    subtitle: "城市食物荒漠",
+                    file: "P1/How to find your way out of a food desert.html",
+                  },
+                  {
+                    id: "P1_SMELL",
+                    title: "(删)170.The unsung sense",
+                    subtitle: "被低估的嗅觉",
+                    file: "P1/The unsung sense.html",
+                  },
+                ],
+              },
+            },
+          },
+          P2: {
+            icon: "📃",
+            levels: {
+              高频: {
+                icon: "🔥",
+                articles: [
+                  {
+                    id: "P2_TALBOT_PARK",
+                    number: 1,
+                    title: "33.A new look for Talbot Park",
+                    subtitle: "奥克兰社区改造",
+                    file: "P2/A new look for Talbot Park.html",
+                  },
+                  {
+                    id: "P2_SPIDER_SILK",
+                    number: 2,
+                    title: "34.A unique golden textile",
+                    subtitle: "蜘蛛丝",
+                    file: "P2/A unique golden textile.html",
+                  },
+                  {
+                    id: "P2_BIRD_MIGRATION",
+                    number: 3,
+                    title: "36.Bird Migration",
+                    subtitle: "鸟类迁徙",
+                    file: "P2/Bird Migration.html",
+                  },
+                  {
+                    id: "P2_CSR",
+                    number: 4,
+                    title: "37.Corporate Social Responsibility",
+                    subtitle: "企业社会责任",
+                    file: "P2/Corporate Social Responsibility.html",
+                  },
+                  {
+                    id: "P2_DESERTS",
+                    number: 5,
+                    title: "39.How are deserts formed",
+                    subtitle: "沙漠成因",
+                    file: "P2/How are deserts formed.html",
+                  },
+                  {
+                    id: "P2_INTELLIGENT_BIRDS",
+                    number: 6,
+                    title: "41.Intelligent behaviour in birds",
+                    subtitle: "鸟类智慧行为",
+                    file: "P2/Intelligent behaviour in birds.html",
+                  },
+                  {
+                    id: "P2_INVESTMENT_SHARES",
+                    number: 7,
+                    title:
+                      "42.Investment in shares versus investment in other assets",
+                    subtitle: "回报数据分析",
+                    file: "P2/Investment in shares versus investment in other assets.html",
+                  },
+                  {
+                    id: "P2_ROMANS",
+                    number: 8,
+                    title: "43.Learning from the Romans",
+                    subtitle: "罗马混凝土",
+                    file: "P2/Learning from the Romans.html",
+                  },
+                  {
+                    id: "P2_SOCCER",
+                    number: 9,
+                    title: "45.Playing soccer",
+                    subtitle: "街头足球",
+                    file: "P2/Playing soccer.html",
+                  },
+                  {
+                    id: "P2_ROLLER_COASTER",
+                    number: 10,
+                    title: "46.Roller coaster",
+                    subtitle: "过山车",
+                    file: "P2/Roller coaster.html",
+                  },
+                  {
+                    id: "P2_MALARIA",
+                    number: 11,
+                    title: "50.The conquest of malaria in Italy",
+                    subtitle: "意大利疟疾防治",
+                    file: "P2/The conquest of malaria in Italy.html",
+                  },
+                  {
+                    id: "P2_ATTINE_ANTS",
+                    number: 12,
+                    title: "52.The fascinating world of attine ants",
+                    subtitle: "切叶蚁",
+                    file: "P2/The fascinating world of attine ants.html",
+                  },
+                  {
+                    id: "P2_TASMANIAN",
+                    number: 13,
+                    title: "57.The Tasmanian Tiger",
+                    subtitle: "袋狼",
+                    file: "P2/The Tasmanian Tiger.html",
+                  },
+                  {
+                    id: "P2_IMPORTANCE_OF_LAW",
+                    number: 14,
+                    title: "112.The Importance of Law",
+                    subtitle: "法律的意义",
+                    file: "P2/The Importance of Law.html",
+                  },
+                  {
+                    id: "P2_HERBAL",
+                    number: 15,
+                    title: "113.Herbal Medicines",
+                    subtitle: "新西兰草药",
+                    file: "P2/Herbal Medicines.html",
+                  },
+                  {
+                    id: "P2_MIND_MUSIC",
+                    number: 16,
+                    title: "115.Mind Music",
+                    subtitle: "脑海中的音乐(心灵音乐)",
+                    file: "P2/Mind Music.html",
+                  },
+                  {
+                    id: "P2_CALORIE",
+                    number: 17,
+                    title: "120.Will Eating Less Make You Live Longer",
+                    subtitle: "节食与长寿",
+                    file: "P2/Will Eating Less Make You Live Longer.html",
+                  },
+                  {
+                    id: "P2_KEEPING_WATER_AWAY",
+                    number: 18,
+                    title: "131.Keeping the water away",
+                    subtitle: "洪水防控",
+                    file: "P2/Keeping the water away.html",
+                  },
+                  {
+                    id: "P2_NEW_FILTER",
+                    number: 19,
+                    title: "156.New filter promises clean water for millions",
+                    subtitle: "新型泥土净水器",
+                    file: "P2/New filter promises clean water for millions.html",
+                  },
+                  {
+                    id: "P2_URBAN_REGENERATION",
+                    number: 20,
+                    title: "176.Urban Regeneration",
+                    subtitle: "柏林公园改造",
+                    file: "P2/Urban Regeneration.html",
+                  },
+                  {
+                    id: "P2_CAMOUFLAGE",
+                    number: 21,
+                    title: "180.Australia's camouflaged creatures",
+                    subtitle: "澳洲伪装生物",
+                    file: "P2/Australia's camouflaged creatures.html",
+                  },
+                  {
+                    id: "P2_MULTITASKING",
+                    number: 22,
+                    title: "201.Multi-tasking and the brain",
+                    subtitle: "大脑与多任务处理",
+                    file: "P2/Multi-tasking and the brain.html",
+                  },
+                  // 图中没有的文章，添加(删)标记
+                  {
+                    id: "P2_ASTEROID",
+                    number: 11,
+                    title: "(删)55.The plan to bring an asteroid to Earth",
+                    subtitle: "捕获小行星",
+                    file: "P2/The plan to bring an asteroid to Earth.html",
+                  },
+                  {
+                    id: "P2_TOMATO",
+                    number: 15,
+                    title:
+                      "(删)119.The Constant Evolution of the Humble Tomato",
+                    subtitle: "番茄的演化",
+                    file: "P2/The Constant Evolution of the Humble Tomato.html",
+                  },
+                  {
+                    id: "P2_MULTITASKING_OLD",
+                    number: 40,
+                    title: "(删)40.How Well Do We Concentrate",
+                    subtitle: "多任务处理",
+                    file: "P2/How Well Do We Concentrate.html",
+                  },
+                  {
+                    id: "P2_WASTE_DISPOSAL",
+                    number: 10,
+                    title: "(删)48.Solving the problem of waste disposal",
+                    subtitle: "垃圾处理",
+                    file: "P2/Solving the problem of waste disposal.html",
+                  },
+                ],
+              },
+              次高频: {
+                icon: "⭐",
+                articles: [
+                  {
+                    id: "P2_SKYSCRAPER_FARMING",
+                    number: 1,
+                    title: "47.Skyscraper Farming",
+                    subtitle: "摩天大楼种植",
+                    file: "P2/Skyscraper Farming.html",
+                  },
+                  {
+                    id: "P2_WASTE_DISPOSAL",
+                    number: 2,
+                    title: "48.Solving the problem of waste disposal",
+                    subtitle: "垃圾处理",
+                    file: "P2/Solving the problem of waste disposal.html",
+                  },
+                  {
+                    id: "P2_SURVIVING_CITY_LIFE",
+                    number: 3,
+                    title: "49.Surviving city life",
+                    subtitle: "动物适应城市",
+                    file: "P2/Surviving city life.html",
+                  },
+                  {
+                    id: "P2_FASHION_INDUSTRY",
+                    number: 4,
+                    title: "53.The fashion industry",
+                    subtitle: "时尚产业",
+                    file: "P2/The fashion industry.html",
+                  },
+                  {
+                    id: "P2_ASTEROID",
+                    number: 5,
+                    title: "55.The plan to bring an asteroid to Earth",
+                    subtitle: "捕获小行星",
+                    file: "P2/The plan to bring an asteroid to Earth.html",
+                  },
+                  {
+                    id: "P2_MONKEY",
+                    number: 6,
+                    title: "56.The return of monkey life",
+                    subtitle: "猴群回归",
+                    file: "P2/The return of monkey life.html",
+                  },
+                  {
+                    id: "P2_SHAKESPEARE",
+                    number: 7,
+                    title: "58.Who wrote Shakespeare's plays",
+                    subtitle: "莎士比亚",
+                    file: "P2/Who wrote Shakespeare's plays.html",
+                  },
+                  {
+                    id: "P2_CELEBRITY",
+                    number: 8,
+                    title: "107.A study of western celebrity",
+                    subtitle: "西方名人",
+                    file: "P2/A study of western celebrity.html",
+                  },
+                  {
+                    id: "P2_SPACE_EXPLORATION",
+                    number: 9,
+                    title:
+                      "110.Should space be explored by robots or by humans",
+                    subtitle: "人机太空探索",
+                    file: "P2/Should space be explored by robots or by humans.html",
+                  },
+                  {
+                    id: "P2_STRESS_LESS",
+                    number: 10,
+                    title: "117.Stress Less",
+                    subtitle: "工作压力",
+                    file: "P2/Stress Less.html",
+                  },
+                  {
+                    id: "P2_TOMATO",
+                    number: 11,
+                    title: "119.The Constant Evolution of the Humble Tomato",
+                    subtitle: "番茄的演化",
+                    file: "P2/The Constant Evolution of the Humble Tomato.html",
+                  },
+                  {
+                    id: "P2_MUSCLE_LOSS",
+                    number: 12,
+                    title: "121.Muscle Loss",
+                    subtitle: "肌肉流失",
+                    file: "P2/Muscle Loss.html",
+                  },
+                  {
+                    id: "P2_SLEEP",
+                    number: 13,
+                    title: "135.The Myth of the Eight-hour Sleep",
+                    subtitle: "八小时睡眠",
+                    file: "P2/The Myth of the Eight-hour Sleep.html",
+                  },
+                  {
+                    id: "P2_JELLYFISH",
+                    number: 14,
+                    title: "143.Jellyfish – The Dominant Species",
+                    subtitle: "水母-海洋中的优势物种",
+                    file: "P2/Jellyfish – The Dominant Species.html",
+                  },
+                  {
+                    id: "P2_POWER_OF_SMELL",
+                    number: 15,
+                    title: "164.The Power of Smell",
+                    subtitle: "嗅觉的力量",
+                    file: "P2/The Power of Smell.html",
+                  },
+                  {
+                    id: "P2_MAMMOTH_KILL",
+                    number: 16,
+                    title: "168.Mammoth Kill",
+                    subtitle: "猛犸象的灭绝",
+                    file: "P2/Mammoth Kill.html",
+                  },
+                  {
+                    id: "P2_ANTARCTIC_RESEARCH",
+                    number: 17,
+                    title: "182.Antarctic research",
+                    subtitle: "南极考察",
+                    file: "P2/Antarctic research.html",
+                  },
+                  {
+                    id: "P2_PLAYFUL",
+                    number: 18,
+                    title: "183.The importance of being playful",
+                    subtitle: "玩耍的重要性",
+                    file: "P2/The importance of being playful.html",
+                  },
+                  {
+                    id: "P2_CLIMATE_ECONOMY",
+                    number: 19,
+                    title: "191.The economic effect of climate change",
+                    subtitle: "气候对经济的影响",
+                    file: "P2/The economic effect of climate change.html",
+                  },
+                  {
+                    id: "P2_MEAT",
+                    number: 20,
+                    title: "192.Should we stop eating meat",
+                    subtitle: "是否应该吃素",
+                    file: "P2/Should we stop eating meat.html",
+                  },
+                  {
+                    id: "P2_DECISION_FATIGUE",
+                    number: 21,
+                    title: "209.Decision Fatigue",
+                    subtitle: "决策疲劳",
+                    file: "P2/Decision Fatigue.html",
+                  },
+                  {
+                    id: "P2_GROWING_MORE",
+                    number: 22,
+                    title: "213.Growing more for less",
+                    subtitle: "卫星农业",
+                    file: "P2/Growing more for less.html",
+                  },
+                  {
+                    id: "P2_MECHANICAL_FRIEND",
+                    number: 23,
+                    title: "217.A mechanical friend for children",
+                    subtitle: "孩子的机器人朋友",
+                    file: "P2/A mechanical friend for children.html",
+                  },
+                  // 图中没有的文章，添加(删)标记
+                  {
+                    id: "P2_ORG_DESIGN",
+                    number: 6,
+                    title: "(删)106.Early Approaches to Organisational Design",
+                    subtitle: "组织设计",
+                    file: "P2/Early Approaches to Organisational Design.html",
+                  },
+                  {
+                    id: "P2_HAPPY",
+                    number: 11,
+                    title: "(删)133.How to be Happy",
+                    subtitle: "如何获得幸福",
+                    file: "P2/How to be Happy.html",
+                  },
+                  {
+                    id: "P2_MUSIC",
+                    number: 15,
+                    title: "(删)190.The power of music",
+                    subtitle: "音乐的力量",
+                    file: "P2/The power of music.html",
+                  },
+                  {
+                    id: "P2_DINGO_DEBATE",
+                    number: 51,
+                    title: "(删)51.The dingo debate",
+                    subtitle: "澳洲野犬",
+                    file: "P2/The dingo debate.html",
+                  },
+                ],
+              },
+            },
+          },
+          P3: {
+            icon: "📋",
+            levels: {
+              高频: {
+                icon: "🔥",
+                articles: [
+                  {
+                    id: "P3_VERBAL_NONVERBAL",
+                    number: 1,
+                    title: "60.A closer examination(verbal&non-verbal)",
+                    subtitle: "语言表达研究",
+                    file: "P3/A closer examination of a study on verbal and non-verbal messages.html",
+                  },
+                  {
+                    id: "P3_BOOK_REVIEW",
+                    number: 2,
+                    title: "61.Book Review The Discovery of Slowness",
+                    subtitle: "富兰克林(慢的发现)",
+                    file: "P3/Book Review The Discovery of Slowness.html",
+                  },
+                  {
+                    id: "P3_EVO_PSYCH",
+                    number: 3,
+                    title: "62.Charles Darwin and Evolutionary Psychology",
+                    subtitle: "进化心理学",
+                    file: "P3/Charles Darwin and Evolutionary Psychology.html",
+                  },
+                  {
+                    id: "P3_CLASS_SIZE",
+                    number: 4,
+                    title: "65.Does class size matter",
+                    subtitle: "课堂规模",
+                    file: "P3/Does class size matter.html",
+                  },
+                  {
+                    id: "P3_INSECT_ROBOTS",
+                    number: 5,
+                    title: "70.Insect-inspired robots",
+                    subtitle: "昆虫机器人",
+                    file: "P3/Insect-inspired robots.html",
+                  },
+                  {
+                    id: "P3_JEAN_PIAGET",
+                    number: 6,
+                    title: "71.Jean Piaget (1896–1980)",
+                    subtitle: "让·皮亚杰",
+                    file: "P3/Jean Piaget (1896–1980).html",
+                  },
+                  {
+                    id: "P3_LIVING_DUNES",
+                    number: 7,
+                    title: "76.Living dunes",
+                    subtitle: "流动沙丘",
+                    file: "P3/Living dunes.html",
+                  },
+                  {
+                    id: "P3_REBRANDING",
+                    number: 8,
+                    title: "80.Rebranding art museums",
+                    subtitle: "博物馆品牌重塑",
+                    file: "P3/Rebranding art museums.html",
+                  },
+                  {
+                    id: "P3_STEVENSON",
+                    number: 9,
+                    title: "81.Robert Louis Stevenson",
+                    subtitle: "苏格兰作家",
+                    file: "P3/Robert Louis Stevenson.html",
+                  },
+                  {
+                    id: "P3_HEADPHONES",
+                    number: 10,
+                    title: "82.Some views on the use of headphones",
+                    subtitle: "耳机使用",
+                    file: "P3/Some views on the use of headphones.html",
+                  },
+                  {
+                    id: "P3_TERMITE_MOUNDS",
+                    number: 11,
+                    title: "83.Termite Mounds",
+                    subtitle: "白蚁丘",
+                    file: "P3/Termite Mounds.html",
+                  },
+                  {
+                    id: "P3_FEAR",
+                    number: 12,
+                    title: "84.The Analysis of Fear",
+                    subtitle: "猴子恐惧实验",
+                    file: "P3/The Analysis of Fear.html",
+                  },
+                  {
+                    id: "P3_DECEPTION",
+                    number: 13,
+                    title: "85.The Art of Deception",
+                    subtitle: "欺骗的艺术",
+                    file: "P3/The Art of Deception.html",
+                  },
+                  {
+                    id: "P3_MARGARET_MAHY",
+                    number: 14,
+                    title: "91.The New Zealand writer Margaret Mahy",
+                    subtitle: "新西兰女作家",
+                    file: "P3/The New Zealand writer Margaret Mahy.html",
+                  },
+                  {
+                    id: "P3_MOTHER_TONGUE",
+                    number: 15,
+                    title:
+                      "95.The Significant Role of Mother Tongue in Education",
+                    subtitle: "母语教育",
+                    file: "P3/The Significant Role of Mother Tongue in Education.html",
+                  },
+                  {
+                    id: "P3_TUATARA",
+                    number: 16,
+                    title: "96.The tuatara – past and future",
+                    subtitle: "新西兰蜥蜴",
+                    file: "P3/The tuatara – past and future.html",
+                  },
+                  {
+                    id: "P3_VOYNICH",
+                    number: 17,
+                    title: "99.Voynich Manuscript",
+                    subtitle: "伏尼契手稿",
+                    file: "P3/Voynich Manuscript.html",
+                  },
+                  {
+                    id: "P3_MUSICAL_EXPERT",
+                    number: 18,
+                    title: "100.What makes a musical expert",
+                    subtitle: "音乐天赋",
+                    file: "P3/What makes a musical expert.html",
+                  },
+                  {
+                    id: "P3_YAWNING",
+                    number: 19,
+                    title: "101.Yawning",
+                    subtitle: "打呵欠",
+                    file: "P3/Yawning.html",
+                  },
+                  {
+                    id: "P3_SCIENCE_FILM",
+                    number: 20,
+                    title: "127.Science and Filmmaking (CGI)",
+                    subtitle: "电影科学(CGI)",
+                    file: "P3/Science and Filmmaking (CGI).html",
+                  },
+                  {
+                    id: "P3_MONA",
+                    number: 21,
+                    title: "130.Tasmania’s Museum of Old&New Art",
+                    subtitle: "塔斯马尼亚古今艺术博物馆 MONA",
+                    file: "P3/Tasmania’s Museum of Old and New Art.html",
+                  },
+                  {
+                    id: "P3_TEACHING_STYLES",
+                    number: 22,
+                    title:
+                      "132.Research into the effects of different teaching styles",
+                    subtitle: "教学风格研究",
+                    file: "P3/Research into the effects of different teaching styles.html",
+                  },
+                  {
+                    id: "P3_PATIENT_SAFETY",
+                    number: 23,
+                    title: "148.Improving Patient Safety",
+                    subtitle: "药品包装设计",
+                    file: "P3/Improving Patient Safety.html",
+                  },
+                  {
+                    id: "P3_SIGHT",
+                    number: 24,
+                    title: "184.The strange world of sight",
+                    subtitle: "奇异的视觉世界",
+                    file: "P3/The strange world of sight.html",
+                  },
+                  {
+                    id: "P3_PETROL_POWER",
+                    number: 25,
+                    title: "187.Petrol power an eco-revolution",
+                    subtitle: "交通的革命",
+                    file: "P3/Petrol power an eco-revolution.html",
+                  },
+                  {
+                    id: "P3_DEAF_TO_MUSIC",
+                    number: 26,
+                    title: "204.When people are 'deaf' to music",
+                    subtitle: "失乐症",
+                    file: "P3/When people are 'deaf' to music.html",
+                  },
+                  {
+                    id: "P3_AUSTRALIAN_LANDSCAPES",
+                    number: 27,
+                    title: "206.200 Years of Australian Landscapes",
+                    subtitle: "澳大利亚风景画200年",
+                    file: "P3/200 Years of Australian Landscapes at the Royal Academy in London.html",
+                  },
+                  {
+                    id: "P3_CHILDREN_LITERATURE",
+                    number: 28,
+                    title: "212.Children's literature studies today",
+                    subtitle: "儿童文学",
+                    file: "P3/Children's literature studies today.html",
+                  },
+                  {
+                    id: "P3_LINGUISTIC_CHANGE",
+                    number: 29,
+                    title: "218.The Causes of Linguistic Change",
+                    subtitle: "语言的演变",
+                    file: "P3/The Causes of Linguistic Change.html",
+                  },
+                  // 图中没有的文章，添加(删)标记
+                  {
+                    id: "P3_ELEPHANT",
+                    number: 2,
+                    title: "(删)66.Elephant Communication",
+                    subtitle: "大象交流",
+                    file: "P3/Elephant Communication.html",
+                  },
+                  {
+                    id: "P3_FLOWER_POWER",
+                    number: 3,
+                    title: "(删)67.Flower Power",
+                    subtitle: "鲜花的力量(花之力)",
+                    file: "P3/Flower Power.html",
+                  },
+                  {
+                    id: "P3_FRUIT_BOOK",
+                    number: 11,
+                    title: "(删)89.The Fruit Book",
+                    subtitle: "果实之书",
+                    file: "P3/The Fruit Book.html",
+                  },
+                  {
+                    id: "P3_PIRAHA",
+                    number: 13,
+                    title: "(删)92.The Pirahã people of Brazil",
+                    subtitle: "巴西皮拉罕部落语言",
+                    file: "P3/The Pirahã people of Brazil.html",
+                  },
+                  {
+                    id: "P3_STAR_PERFORMERS",
+                    number: 16,
+                    title: "(删)104.Star Performers",
+                    subtitle: "明星员工",
+                    file: "P3/Star Performers.html",
+                  },
+                  {
+                    id: "P3_NEANDERTHAL",
+                    number: 17,
+                    title: "(删)118.Neanderthal Technology",
+                    subtitle: "尼安德特人的生存技艺",
+                    file: "P3/Neanderthal Technology.html",
+                  },
+                  {
+                    id: "P3_SOCIAL_HISTORY",
+                    number: 20,
+                    title: "(删)137.What is social history",
+                    subtitle: "社会史",
+                    file: "P3/What is social history.html",
+                  },
+                  {
+                    id: "P3_FAN_MIND",
+                    number: 22,
+                    title: "(删)151.Inside the mind of a fan",
+                    subtitle: "观赛心境",
+                    file: "P3/Inside the mind of a fan.html",
+                  },
+                  {
+                    id: "P3_MERCATOR",
+                    number: 23,
+                    title: "(删)158.Mercator - The Map Maker",
+                    subtitle: "地理制图师",
+                    file: "P3/Mercator - The Map Maker.html",
+                  },
+                  {
+                    id: "P3_ROME",
+                    number: 24,
+                    title: "(删)179.Looking at daily life in ancient Rome",
+                    subtitle: "古罗马的日常",
+                    file: "P3/Looking at daily life in ancient Rome.html",
+                  },
+                  {
+                    id: "P3_MARKETING",
+                    number: 26,
+                    title: "(删)77.Marketing and the information age",
+                    subtitle: "信息时代营销",
+                    file: "P3/Marketing and the information age.html",
+                  },
+                  {
+                    id: "P3_INSTRUMENT",
+                    number: 27,
+                    title: "(删)86.The benefits of learning an instrument",
+                    subtitle: "学乐器的好处",
+                    file: "P3/The benefits of learning an instrument.html",
+                  },
+                  {
+                    id: "P3_IMAGES_PLACES",
+                    number: 29,
+                    title: "(删)123.Images and Places",
+                    subtitle: "图像与地点",
+                    file: "P3/Images and Places.html",
+                  },
+                ],
+              },
+              次高频: {
+                icon: "⭐",
+                articles: [
+                  {
+                    id: "P3_ELEPHANT",
+                    number: 1,
+                    title: "66.Elephant Communication",
+                    subtitle: "大象交流",
+                    file: "P3/Elephant Communication.html",
+                  },
+                  {
+                    id: "P3_FLOWER_POWER",
+                    number: 2,
+                    title: "67.Flower Power",
+                    subtitle: "鲜花的力量(花之力)",
+                    file: "P3/Flower Power.html",
+                  },
+                  {
+                    id: "P3_LIFE_ON_MARS",
+                    number: 3,
+                    title: "75.Life on Mars",
+                    subtitle: "火星地球化改造",
+                    file: "P3/Life on Mars.html",
+                  },
+                  {
+                    id: "P3_MARKETING",
+                    number: 4,
+                    title: "77.Marketing and the information age",
+                    subtitle: "信息时代营销",
+                    file: "P3/Marketing and the information age.html",
+                  },
+                  {
+                    id: "P3_MUSIC_LANGUAGE",
+                    number: 5,
+                    title: "78.Music Language We All Speak",
+                    subtitle: "音乐语言",
+                    file: "P3/Music Language We All Speak.html",
+                  },
+                  {
+                    id: "P3_FRUIT_BOOK",
+                    number: 6,
+                    title: "89.The Fruit Book",
+                    subtitle: "果实之书",
+                    file: "P3/The Fruit Book.html",
+                  },
+                  {
+                    id: "P3_STAR_PERFORMERS",
+                    number: 7,
+                    title: "104.Star Performers",
+                    subtitle: "明星员工",
+                    file: "P3/Star Performers.html",
+                  },
+                  {
+                    id: "P3_WHALE_CULTURE",
+                    number: 8,
+                    title: "111.Whale Culture",
+                    subtitle: "鲸鱼文化",
+                    file: "P3/Whale Culture.html",
+                  },
+                  {
+                    id: "P3_NEANDERTHAL",
+                    number: 9,
+                    title: "118.Neanderthal Technology",
+                    subtitle: "尼安德特人的生存技艺",
+                    file: "P3/Neanderthal Technology.html",
+                  },
+                  {
+                    id: "P3_IMAGES_PLACES",
+                    number: 10,
+                    title: "123.Images and Places",
+                    subtitle: "风景与印记",
+                    file: "P3/Images and Places.html",
+                  },
+                  {
+                    id: "P3_SIGN_BABY",
+                    number: 11,
+                    title: "167.Sign, Baby, Sign!",
+                    subtitle: "美国手语",
+                    file: "P3/Sign, Baby, Sign!.html",
+                  },
+                  {
+                    id: "P3_MEGAFAUNA",
+                    number: 12,
+                    title: "197.Australia's Megafauna Controversy",
+                    subtitle: "巨兽灭绝",
+                    file: "P3/Australia's Megafauna Controversy.html",
+                  },
+                  // 图中没有的文章，添加(删)标记
+                  {
+                    id: "P3_PATAGONIA",
+                    number: 9,
+                    title: "(删)136.The peopling of Patagonia",
+                    subtitle: "巴塔哥尼亚的人类迁徙",
+                    file: "P3/The peopling of Patagonia.html",
+                  },
+                  {
+                    id: "P3_CONFORMITY",
+                    number: 10,
+                    title: "(删)138.Conformity",
+                    subtitle: "从众心理",
+                    file: "P3/Conformity.html",
+                  },
+                  {
+                    id: "P3_MOVEMENT_UNDERWATER",
+                    number: 11,
+                    title: "(删)147.Movement Underwater",
+                    subtitle: "水下运动",
+                    file: "P3/Movement Underwater.html",
+                  },
+                  {
+                    id: "P3_BRAND_LOYALTY",
+                    number: 12,
+                    title: "(删)169.The Costs of Brand Loyalty",
+                    subtitle: "品牌忠诚的代价",
+                    file: "P3/The Costs of Brand Loyalty.html",
+                  },
+                ],
+              },
+            },
+          },
+        },
+      };
+
+      let allArticles = [];
+      let filteredArticles = [];
+
+      document.addEventListener("DOMContentLoaded", () => {
+        loadAllArticles();
+        renderContent();
+      });
+
+      function loadAllArticles() {
+        allArticles = [];
+        Object.keys(CONFIG.passages).forEach((passageKey) => {
+          const passage = CONFIG.passages[passageKey];
+          Object.keys(passage.levels).forEach((levelKey) => {
+            const level = passage.levels[levelKey];
+            level.articles.forEach((article) => {
+              allArticles.push({
+                ...article,
+                passage: passageKey,
+                level: levelKey,
+                passageIcon: passage.icon,
+                levelIcon: level.icon,
+              });
+            });
+          });
+        });
+        filteredArticles = [...allArticles];
+      }
+
+      function renderContent() {
+        const grid = document.getElementById("contentGrid");
+        const emptyState = document.getElementById("emptyState");
+
+        if (filteredArticles.length === 0) {
+          grid.style.display = "none";
+          emptyState.style.display = "block";
+          return;
+        }
+
+        grid.style.display = "flex";
+        emptyState.style.display = "none";
+
+        const grouped = {};
+        filteredArticles.forEach((article) => {
+          if (!grouped[article.passage]) grouped[article.passage] = {};
+          if (!grouped[article.passage][article.level])
+            grouped[article.passage][article.level] = [];
+          grouped[article.passage][article.level].push(article);
+        });
+
+        grid.innerHTML = Object.keys(grouped)
+          .map((passageKey) => {
+            const passage = CONFIG.passages[passageKey];
+            const levels = grouped[passageKey];
+
+            return `
+                    <div class="passage-card">
+                        <h2>
+                            <span class="passage-icon">${passage.icon}</span>
+                            ${passageKey}
+                        </h2>
+                        ${Object.keys(levels)
+                          .map((levelKey) => {
+                            const articles = levels[levelKey];
+                            const level = passage.levels[levelKey];
+                            return `
+                                <div class="level-group">
+                                    <div class="level-header" onclick="toggleLevel('${passageKey}-${levelKey}')">
+                                        <span class="level-icon">${
+                                          level.icon
+                                        }</span>
+                                        <span class="level-title">${levelKey}</span>
+                                        <span class="level-count">${
+                                          articles.length
+                                        }篇</span>
+                                    </div>
+                                    <div class="article-list" id="${passageKey}-${levelKey}">
+                                        ${articles
+                                          .map(
+                                            (article) => `
+                                            <a href="${
+                                              article.file
+                                            }" class="article-item" title="${
+                                              article.title
+                                            }">
+                                                <div style="flex: 1; min-width: 0;">
+                                                    <div class="article-title">${
+                                                      article.title
+                                                    }<span class="article-score" style="color:#667eea; font-size:13px; margin-left:6px;">${getScore(
+                                              article.id
+                                            )}</span></div>
+
+                                                    <div class="article-subtitle">${
+                                                      article.subtitle
+                                                    }</div>
+                                                </div>
+                                            </a>
+                                        `
+                                          )
+                                          .join("")}
+                                    </div>
+                                </div>
+                            `;
+                          })
+                          .join("")}
+                    </div>
+                `;
+          })
+          .join("");
+      }
+
+      function handleSearch() {
+        const query = document
+          .getElementById("searchInput")
+          .value.toLowerCase()
+          .trim();
+
+        if (!query) {
+          filteredArticles = [...allArticles];
+        } else {
+          filteredArticles = allArticles.filter((article) => {
+            return (
+              article.title.toLowerCase().includes(query) ||
+              article.subtitle.toLowerCase().includes(query) ||
+              article.passage.toLowerCase().includes(query)
+            );
+          });
+        }
+
+        renderContent();
+      }
+
+      function toggleLevel(id) {
+        const element = document.getElementById(id);
+        if (element.style.display === "none") {
+          element.style.display = "grid";
+        } else {
+          element.style.display = "none";
+        }
+      }
+
+      function deleteWrongItem(paperId, questionId) {
+        if (!confirm("确定删除这道错题？")) return;
+
+        let wrongBook = JSON.parse(
+          localStorage.getItem("ielts_wrong_book") || "[]"
+        );
+        wrongBook = wrongBook.filter(
+          (item) =>
+            !(item.paperId === paperId && item.questionId === questionId)
+        );
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wrongBook));
+
+        openWrongBook();
+      }
+
+      function clearAllWrongBook() {
+        if (!confirm("确定清空全部错题？此操作无法撤销！")) return;
+
+        localStorage.setItem("ielts_wrong_book", "[]");
+        openWrongBook();
+      }
+
+      function openWrongBook() {
+        const wrongBook = JSON.parse(
+          localStorage.getItem("ielts_wrong_book") || "[]"
+        );
+        const content = document.getElementById("wrongBookContent");
+
+        if (wrongBook.length === 0) {
+          content.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <div style="font-size: 64px; margin-bottom: 16px;">🎉</div>
+                        <h3 style="font-size: 24px; margin-bottom: 12px;">没有错题</h3>
+                        <p>继续保持！</p>
+                    </div>
+                `;
+        } else {
+          const grouped = {};
+          wrongBook.forEach((item) => {
+            const key = item.title || item.paperId;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(item);
+          });
+
+          content.innerHTML = `
+                    <div class="modal-actions">
+                        <button class="btn btn-wrongbook" onclick="exportWrongBook()" style="flex: 1;">
+                            📥 导出错题本 CSV
+                        </button>
+                        <button class="btn btn-danger" onclick="clearAllWrongBook()">
+                            🗑️ 清空全部
+                        </button>
+                    </div>
+                    ${Object.keys(grouped)
+                      .map(
+                        (key) => `
+                        <div style="margin-bottom: 24px;">
+                            <h3 style="margin-bottom: 12px; color: #667eea;">${key}</h3>
+                            ${grouped[key]
+                              .map(
+                                (item) => `
+                                <div class="wrong-item">
+                                    <div class="wrong-item-content">
+                                        <div style="font-weight: 600; margin-bottom: 8px;">${item.questionId}</div>
+                                        <div style="font-size: 13px; color: #666;">
+                                            <div>✓ 正确答案: ${item.correctAnswer}</div>
+                                            <div style="color: #d32f2f;">✗ 我的答案: ${item.myAnswer}</div>
+                                        </div>
+                                    </div>
+                                    <button class="btn-delete" onclick="deleteWrongItem('${item.paperId}', '${item.questionId}')">删除</button>
+                                </div>
+                            `
+                              )
+                              .join("")}
+                        </div>
+                    `
+                      )
+                      .join("")}
+                `;
+        }
+
+        document.getElementById("wrongBookModal").classList.add("active");
+      }
+
+      function exportWrongBook() {
+        const wrongBook = JSON.parse(
+          localStorage.getItem("ielts_wrong_book") || "[]"
+        );
+        const csv = [
+          ["题目", "题号", "正确答案", "我的答案", "日期"],
+          ...wrongBook.map((item) => [
+            item.title || item.paperId,
+            item.questionId,
+            item.correctAnswer,
+            item.myAnswer,
+            item.date,
+          ]),
+        ]
+          .map((row) => row.map((cell) => `"${cell}"`).join(","))
+          .join("\n");
+
+        const blob = new Blob(["\ufeff" + csv], {
+          type: "text/csv;charset=utf-8;",
+        });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `IELTS_WrongBook_${
+          new Date().toISOString().split("T")[0]
+        }.csv`;
+        link.click();
+      }
+
+      function openStats() {
+        const wrongCount = JSON.parse(
+          localStorage.getItem("ielts_wrong_book") || "[]"
+        ).length;
+        const content = document.getElementById("statsContent");
+
+        content.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${allArticles.length}</div>
+                        <div class="stat-label">总文章数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${wrongCount}</div>
+                        <div class="stat-label">错题数</div>
+                    </div>
+                </div>
+                <div style="background: #f5f5f5; padding: 20px; border-radius: 12px;">
+                    <h3 style="margin-bottom: 12px;">文章数量</h3>
+                    <div style="margin-bottom: 8px;">P1 高频: 10篇</div>
+                    <div style="margin-bottom: 8px;">P1 次高频: 14篇</div>
+                    <div style="margin-bottom: 8px;">P2 高频: 16篇</div>
+                    <div style="margin-bottom: 8px;">P2 次高频: 13篇</div>
+                    <div style="margin-bottom: 8px;">P3 高频: 20篇</div>
+                    <div style="margin-bottom: 8px;">P3 次高频: 15篇</div>
+                </div>
+            `;
+
+        document.getElementById("statsModal").classList.add("active");
+      }
+
+      function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove("active");
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – The power of music</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .headings { background:#f9f9f9; padding:12px; margin:12px 0; border-radius:4px; }
+  .headings ol { margin-left:20px; }
+  .headings li { margin:4px 0; font-size:13px; }
+  
+  /* Input Styles */
+  .input-text { border:none; border-bottom:1px solid #333; background:#f0f8ff; width:140px; text-align:center; font-size:14px; color:#0066cc; outline:none; padding:2px 4px; border-radius:3px; }
+  .input-text:focus { background:#e1f0ff; border-bottom:2px solid #0066cc; }
+
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  /* Inline flag for summary */
+  .flag-inline { position:relative; display:inline-block; margin-left:5px; top:0; transform:none; }
+
+  .group ol { margin-left:20px; }
+  .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+  .group ol li label { display:inline-block; margin-right:8px; cursor: pointer; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>The power of music</h3>
+
+<h4>Paragraph A</h4>
+<p>Robert Matthews looks at research into the effects of music. Music is becoming ever more popular electronically. To meet our craving for music, internet sites are using increasingly sophisticated ways of putting us in touch with artists we may not even know we like. Most work by trawling our existing files or online listening habits and looking for patterns so they can recommend new artists for their subscribers to listen to. The search often turns up surprises. But is it possible to tease apart our likes and dislikes to identify precisely what it is about some music that thrills us or leaves us cold?</p>
+
+<h4>Paragraph B</h4>
+<p>For centuries composers have sought to create unforgettable music using accepted notions about the emotional appeal of certain combinations of sounds, yet only now are scientists starting to uncover what it is about these combinations that can have such a dramatic effect on our minds. Given that archaeologists have found musical instruments played by Neanderthals at least 50,000 years ago, why have scientists taken so long to investigate such a source of pleasure?</p>
+
+<h4>Paragraph C</h4>
+<p>‘For psychologists, who are always desperate to show that their work is rigorous, there’s an image problem in tackling the emotionality of music,’ says Professor Norman Cook of Kansai University in Osaka, Japan, one of the pioneers of the new science of music. ‘Emotion is such a slippery topic.’ The other problem, says Cook, is the long-standing principle among psychologists that our response to music is an acquired one, rather than something that is stimulated by the effect of sound on our brain cells. Yet one of the first insights to emerge from this new branch of psychology is that music affects our brains at a very basic level.</p>
+
+<h4>Paragraph D</h4>
+<p>Together with his colleague, Professor Takefumi Hayashi, Cook has been investigating one of the best-known examples of the emotional impact of music: the difference between major and minor chords. For centuries, composers have known that notes arranged to form major chords sound happy and upbeat, while those in minor chords sound mournful. In tests, even three-year-olds have been shown to link music in a major mode to happy faces and minor modes to sad faces.</p>
+
+<h4>Paragraph E</h4>
+<p>According to Cook, analysis of how people respond to notes suggests a link with how our brains interpret certain sounds in everyday life. He points out that sad-sounding minor chords can be formed by raising the pitch of any of a set of notes, while dropping the pitch produces a major chord. The same change in pitch works as an emotional telltale in communication between some mammals, where rising pitch is used to communicate weakness or defeat, while falling pitch signals social dominance. It’s also present in our speech. ‘A rising inflection is used to denote questions, politeness or deference, whereas a falling inflection signals dominance,’ says Cook.</p>
+
+<h4>Paragraph F</h4>
+<p>This suggests that music in major and minor modes taps into some very basic features of how we relate to the world and each other – perhaps dating back millions of years. Could music in general be doing something similar? Quite possibly, according to research into how music triggers certain types of brain activity. At McGill University in Canada, Professor Robert Zatorre and his colleagues have carried out studies in which volunteers listen to different types of music while their brain activity is monitored. The biggest surprise was the evidence that pleasurable music activates brain circuitry which has been in existence in the human brain for thousands of years, says Zatorre. ‘We share it with rats and other distant relatives on the evolutionary tree – and it’s typically associated with biological rewards, like food, for example.’</p>
+
+<h4>Paragraph G</h4>
+<p>At the University of Oxford, Dr Joyce Chen has been looking into another celebrated feature of music – the irresistibility of rhythm. Her interest was sparked by studies involving patients with movement difficulties. If music that had a strong rhythm – say, a marching band – was played to these patients, they were able to improve their walking ability, says Chen. In an attempt to find out why the simple act of listening to music might help disabled patients, Dr Chen and colleagues from the International Laboratory for Brain, Music and Sound Research in Montreal carried out brain scans on volunteers who were listening to rhythmic sounds. The criteria for selecting these volunteers were that they should be in first-rate physical health but musically untrained. The results have been another revelation. Chen and her colleagues found the rhythms triggered activity in parts of the brain linked to hearing, but something even more surprising was the evidence that the rhythms also triggered activity in the motor regions of the brain, linked to active movement.</p>
+
+<h4>Paragraph H</h4>
+<p>‘Somehow, the mere act of just listening triggers motor-neural activity. Maybe this is one reason why we often tap our feet, move or dance when hearing music,’ says Chen. She believes the discovery of this deep connection between music and movement may cast light on why disabled patients can benefit from listening to music – and could also prove useful with other impairments such as those involved in sound production. ‘It’s been shown that people who talk with a stutter might have problems in this auditory-motor loop.’</p>
+
+<h4>Paragraph I</h4>
+<p>For researchers working in this new area of science, these early discoveries hold the promise of much more to come. Zatorre and his colleagues are investigating whether some people have more musical brains than others. ‘We can see certain subtle brain features that can tell us how well somebody can do things like identify a slight change in a melody,’ explains Zatorre. ‘This ability could be enhanced by training – just like someone born with a predisposition to building strong muscles can enhance them by taking up weightlifting.’</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–18</h4>
+      <p>Reading Passage 2 has nine paragraphs, A–I.</p>
+      <p>Which paragraph contains the following information?</p>
+      <p>Write the correct letter, <strong>A–I</strong>, in boxes <strong>14–18</strong> on your answer sheet.</p>
+
+      <ol start="14">
+        <li><span class="flag-btn" data-q="q14" style="left:-20px;"></span>a reference to studies involving children<br>
+          <label><input type="radio" name="q14" value="A"> A</label>
+          <label><input type="radio" name="q14" value="B"> B</label>
+          <label><input type="radio" name="q14" value="C"> C</label>
+          <label><input type="radio" name="q14" value="D"> D</label>
+          <label><input type="radio" name="q14" value="E"> E</label>
+          <label><input type="radio" name="q14" value="F"> F</label>
+          <label><input type="radio" name="q14" value="G"> G</label>
+          <label><input type="radio" name="q14" value="H"> H</label>
+          <label><input type="radio" name="q14" value="I"> I</label>
+        </li>
+        <li><span class="flag-btn" data-q="q15" style="left:-20px;"></span>a mention of the discovery of significant artefacts<br>
+          <label><input type="radio" name="q15" value="A"> A</label>
+          <label><input type="radio" name="q15" value="B"> B</label>
+          <label><input type="radio" name="q15" value="C"> C</label>
+          <label><input type="radio" name="q15" value="D"> D</label>
+          <label><input type="radio" name="q15" value="E"> E</label>
+          <label><input type="radio" name="q15" value="F"> F</label>
+          <label><input type="radio" name="q15" value="G"> G</label>
+          <label><input type="radio" name="q15" value="H"> H</label>
+          <label><input type="radio" name="q15" value="I"> I</label>
+        </li>
+        <li><span class="flag-btn" data-q="q16" style="left:-20px;"></span>reasons why a particular aspect of music has not been researched<br>
+          <label><input type="radio" name="q16" value="A"> A</label>
+          <label><input type="radio" name="q16" value="B"> B</label>
+          <label><input type="radio" name="q16" value="C"> C</label>
+          <label><input type="radio" name="q16" value="D"> D</label>
+          <label><input type="radio" name="q16" value="E"> E</label>
+          <label><input type="radio" name="q16" value="F"> F</label>
+          <label><input type="radio" name="q16" value="G"> G</label>
+          <label><input type="radio" name="q16" value="H"> H</label>
+          <label><input type="radio" name="q16" value="I"> I</label>
+        </li>
+        <li><span class="flag-btn" data-q="q17" style="left:-20px;"></span>a mention of an unexpected discovery involving two different areas of the brain<br>
+          <label><input type="radio" name="q17" value="A"> A</label>
+          <label><input type="radio" name="q17" value="B"> B</label>
+          <label><input type="radio" name="q17" value="C"> C</label>
+          <label><input type="radio" name="q17" value="D"> D</label>
+          <label><input type="radio" name="q17" value="E"> E</label>
+          <label><input type="radio" name="q17" value="F"> F</label>
+          <label><input type="radio" name="q17" value="G"> G</label>
+          <label><input type="radio" name="q17" value="H"> H</label>
+          <label><input type="radio" name="q17" value="I"> I</label>
+        </li>
+        <li><span class="flag-btn" data-q="q18" style="left:-20px;"></span>a comparison of tone variations produced by certain animals and humans<br>
+          <label><input type="radio" name="q18" value="A"> A</label>
+          <label><input type="radio" name="q18" value="B"> B</label>
+          <label><input type="radio" name="q18" value="C"> C</label>
+          <label><input type="radio" name="q18" value="D"> D</label>
+          <label><input type="radio" name="q18" value="E"> E</label>
+          <label><input type="radio" name="q18" value="F"> F</label>
+          <label><input type="radio" name="q18" value="G"> G</label>
+          <label><input type="radio" name="q18" value="H"> H</label>
+          <label><input type="radio" name="q18" value="I"> I</label>
+        </li>
+      </ol>
+    </div>
+
+    <div class="group">
+      <h4>Questions 19–22</h4>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>19–22</strong> on your answer sheet.</p>
+      
+      <div style="background:#f9f9f9; padding:15px; border-radius:4px; line-height:2.2;">
+        <p>A study involving collaboration between researchers in Oxford and Montreal. The participants in this study led by Dr Chen were chosen because they were not musicians, and they demonstrated a good state of <strong>19</strong> <input type="text" class="input-text" data-q="q19"> <span class="flag-btn flag-inline" data-q="q19"></span>. The participants were given <strong>20</strong> <input type="text" class="input-text" data-q="q20"> <span class="flag-btn flag-inline" data-q="q20"></span> while music with a very noticeable rhythm was being played. Previous research had indicated that listening to this type of music seemed to be of assistance to some <strong>21</strong> <input type="text" class="input-text" data-q="q21"> <span class="flag-btn flag-inline" data-q="q21"></span> people. By listening to it, their <strong>22</strong> <input type="text" class="input-text" data-q="q22"> <span class="flag-btn flag-inline" data-q="q22"></span> ability had definitely got better. The findings of Dr Chen’s study proved most informative.</p>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 23–26</h4>
+      <p>Look at the following statements (Questions 23-26) and the list of researchers below.</p>
+      <p>Match each statement with the correct researcher, <strong>A, B or C</strong>.</p>
+      <p><strong>List of researchers</strong></p>
+      <div style="margin-left:20px; margin-bottom:10px; font-size:13px; background:#f0f0f0; padding:10px; border-radius:4px;">
+        <div><strong>A</strong> Professor Norman Cook</div>
+        <div><strong>B</strong> Professor Robert Zatorre</div>
+        <div><strong>C</strong> Dr Joyce Chen</div>
+      </div>
+      <p>Write the correct letter, <strong>A, B or C</strong>, in boxes <strong>23–26</strong> on your answer sheet.</p>
+
+      <ol start="23">
+        <li><span class="flag-btn" data-q="q23" style="left:-20px;"></span>Research into the brain activity set off by music may help people with speech defects.<br>
+          <label><input type="radio" name="q23" value="A"> A</label>
+          <label><input type="radio" name="q23" value="B"> B</label>
+          <label><input type="radio" name="q23" value="C"> C</label>
+        </li>
+        <li><span class="flag-btn" data-q="q24" style="left:-20px;"></span>It may be possible in time to improve a person’s ability to recognise certain musical characteristics.<br>
+          <label><input type="radio" name="q24" value="A"> A</label>
+          <label><input type="radio" name="q24" value="B"> B</label>
+          <label><input type="radio" name="q24" value="C"> C</label>
+        </li>
+        <li><span class="flag-btn" data-q="q25" style="left:-20px;"></span>The way listeners react to certain musical combinations may be similar to the way they react to other noises.<br>
+          <label><input type="radio" name="q25" value="A"> A</label>
+          <label><input type="radio" name="q25" value="B"> B</label>
+          <label><input type="radio" name="q25" value="C"> C</label>
+        </li>
+        <li><span class="flag-btn" data-q="q26" style="left:-20px;"></span>When a person reacts positively to music, the same parts of the brain are stimulated as when certain animals react to a positive outcome.<br>
+          <label><input type="radio" name="q26" value="A"> A</label>
+          <label><input type="radio" name="q26" value="B"> B</label>
+          <label><input type="radio" name="q26" value="C"> C</label>
+        </li>
+      </ol>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_MUSIC';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+// Answer Key based on PDF
+const answerKey={
+  q14:"D", q15:"B", q16:"C", q17:"G", q18:"E",
+  q19:"physical health", q20:"brain scans", q21:"disabled", q22:"walking",
+  q23:"C", q24:"B", q25:"A", q26:"B"
+};
+let lastResults=[];
+
+function saveAnswers() {
+  const data = {};
+  Object.keys(answerKey).forEach(q => {
+    // Check Radio
+    const ch = document.querySelector(`input[name="${q}"]:checked`);
+    if(ch) {
+      data[q] = ch.value;
+    } else {
+      // Check Text Input
+      const txt = document.querySelector(`input[data-q="${q}"][type="text"]`);
+      if(txt) data[q] = txt.value;
+    }
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const radio = document.querySelector(`input[name="${q}"][value="${data[q]}"]`);
+    if(radio) radio.checked = true;
+    
+    const txt = document.querySelector(`input[data-q="${q}"][type="text"]`);
+    if(txt) txt.value = data[q];
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"].flag-btn`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({ type: el.classList.contains('hl') ? 'hl' : 'note', text: el.textContent, index: idx });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({ type: el.classList.contains('hl') ? 'hl' : 'note', text: el.textContent, index: idx });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  const restore = (list, root) => {
+    if(!list || list.length === 0) return;
+    list.forEach(item => {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const idx = node.textContent.indexOf(item.text);
+          if(idx >= 0) {
+            const before = node.textContent.substring(0, idx);
+            const match = node.textContent.substring(idx, idx + item.text.length);
+            const after = node.textContent.substring(idx + item.text.length);
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  };
+  restore(data.left, left);
+  restore(data.right, right);
+}
+
+document.querySelectorAll('input').forEach(inp => {
+  if(inp.type === 'radio') inp.addEventListener('change', saveAnswers);
+  else inp.addEventListener('input', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; let cor=0; 
+  Object.keys(answerKey).forEach(q=>{ 
+    const r=document.querySelector('input[name="'+q+'"]:checked');
+    const t=document.querySelector('input[data-q="'+q+'"][type="text"]');
+    let uA = "";
+    if(r) uA = r.value;
+    else if(t) uA = t.value.trim();
+
+    const cA=answerKey[q];
+    // Case insensitive comparison for text inputs
+    const iC = (uA.toLowerCase() === cA.toLowerCase()); 
+    if(iC) cor++; 
+    res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); 
+  }); 
+  lastResults=res; 
+  const tot=Object.keys(answerKey).length; 
+  const pct=((cor/tot)*100).toFixed(1); 
+  localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false); 
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value='');
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const wr=lastResults.filter(r=>!r.isCorrect); wr.forEach(r=>{ const en={paperId:PAPER_ID,title:'The power of music',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); if(ix>=0)wb[ix]=en; else wb.push(en); }); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); alert(`已添加 ${wr.length} 道错题`); closeModal('resultModal'); }
+
+function deleteWrongItem(pId,qId){ if(!confirm('确定删除这道错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function clearCurrentWrongBook(){ if(!confirm('确定清空本篇所有错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>i.paperId!==PAPER_ID); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function openWrongBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const cu=wb.filter(i=>i.paperId===PAPER_ID); const ct=document.getElementById('wrongBookContent'); if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; document.getElementById('wrongBookModal').classList.add('active'); }
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

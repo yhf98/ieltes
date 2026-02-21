@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>P2 – Bird Migration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+      }
+
+      #timer {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #0066cc;
+        z-index: 1000;
+      }
+
+      .shell {
+        display: flex;
+        height: 100vh;
+        width: 100%;
+      }
+      .pane {
+        background: #fff;
+        overflow: auto;
+        padding: 24px;
+      }
+      #left {
+        flex: 0 0 50%;
+        border-right: 1px solid #ddd;
+      }
+      #right {
+        flex: 1 1 auto;
+        background: #fafafa;
+      }
+      #divider {
+        flex: 0 0 5px;
+        background: #ddd;
+        cursor: ew-resize;
+      }
+      #divider:hover {
+        background: #999;
+      }
+
+      h2,
+      h3,
+      h4 {
+        margin: 0 0 12px;
+        color: #333;
+      }
+      h2 {
+        font-size: 20px;
+      }
+      h3 {
+        font-size: 18px;
+        color: #0066cc;
+      }
+      h4 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-top: 20px;
+      }
+
+      #left p {
+        margin: 0 0 14px;
+        line-height: 1.7;
+        text-align: justify;
+      }
+
+      .paragraph-label {
+        font-weight: 600;
+        color: #0066cc;
+        margin-right: 8px;
+      }
+
+      .group {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .group h4 {
+        margin-top: 0;
+        color: #0066cc;
+      }
+      .group p {
+        margin: 8px 0;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .headings {
+        background: #f9f9f9;
+        padding: 12px;
+        margin: 12px 0;
+        border-radius: 4px;
+      }
+      .headings ol {
+        margin-left: 20px;
+      }
+      .headings li {
+        margin: 4px 0;
+        font-size: 13px;
+      }
+      .headings ul {
+        list-style: none;
+        padding-left: 0;
+      }
+      .headings ul li {
+        margin: 4px 0;
+        font-size: 13px;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 12px 0;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 6px;
+        text-align: center;
+        font-size: 13px;
+        position: relative;
+      }
+      th {
+        background: #f5f5f5;
+        font-weight: 600;
+      }
+
+      .flag-btn {
+        position: absolute;
+        left: 2px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ddd;
+        cursor: pointer;
+        z-index: 10;
+      }
+      .flag-btn:hover {
+        background: #999;
+      }
+      .flag-btn.active {
+        background: #ff5722;
+      }
+
+      tr td:first-child {
+        padding-left: 16px;
+      }
+
+      .group ol {
+        margin-left: 20px;
+      }
+      .group ol li {
+        margin: 12px 0;
+        font-size: 14px;
+        line-height: 1.6;
+        position: relative;
+      }
+      .group ol li label {
+        display: inline-block;
+        margin-right: 8px;
+      }
+
+      .answer-input {
+        width: 200px;
+        padding: 6px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .bottom-bar {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      button {
+        padding: 10px 20px;
+        border: 1px solid #999;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover {
+        background: #f0f0f0;
+      }
+      .btn-primary {
+        background: #0066cc;
+        color: #fff;
+        border-color: #0066cc;
+      }
+      .btn-primary:hover {
+        background: #0052a3;
+      }
+      .btn-danger {
+        background: #dc3545;
+        color: #fff;
+        border-color: #dc3545;
+      }
+      .btn-danger:hover {
+        background: #c82333;
+      }
+
+      .hl {
+        background: #fff59d;
+        cursor: pointer;
+      }
+      .hl:hover {
+        background: #ffeb3b;
+      }
+      .note {
+        background: #b3d9ff;
+        cursor: pointer;
+      }
+      .note:hover {
+        background: #99ccff;
+      }
+
+      #selbar {
+        position: fixed;
+        display: none;
+        z-index: 2000;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 8px;
+        gap: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        flex-direction: column;
+        min-width: 120px;
+      }
+      #selbar button {
+        background: #fff;
+        color: #666;
+        border: none;
+        padding: 3px 0px;
+        cursor: pointer;
+        font-size: 14px;
+        text-align: center;
+        border-radius: 4px;
+      }
+      #selbar button:hover {
+        background: #f5f5f5;
+        color: #333;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 3000;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal.active {
+        display: flex;
+      }
+      .modal-content {
+        background: #fff;
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+      .modal-header h2 {
+        font-size: 28px;
+        color: #333;
+        margin: 0;
+      }
+      .modal-close {
+        font-size: 32px;
+        cursor: pointer;
+        color: #999;
+        line-height: 1;
+      }
+      .modal-close:hover {
+        color: #333;
+      }
+
+      .result-summary {
+        text-align: center;
+        padding: 20px;
+        background: #f0f0f0;
+        margin-bottom: 16px;
+        border-radius: 6px;
+      }
+      .result-score {
+        font-size: 36px;
+        font-weight: 600;
+        color: #0066cc;
+      }
+      .result-item {
+        padding: 10px;
+        margin: 8px 0;
+        border-left: 3px solid #ddd;
+        background: #f9f9f9;
+        font-size: 13px;
+      }
+      .result-item.correct {
+        border-left-color: #28a745;
+        background: #e8f5e9;
+      }
+      .result-item.incorrect {
+        border-left-color: #dc3545;
+        background: #ffebee;
+      }
+
+      .wrong-item {
+        background: #fff3e0;
+        padding: 16px;
+        margin: 8px 0;
+        border-radius: 8px;
+        border-left: 4px solid #ff9800;
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+      }
+      .wrong-item-content {
+        flex: 1;
+      }
+      .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        margin-left: 12px;
+      }
+      .btn-delete:hover {
+        background: #c82333;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="timer">00:00</div>
+
+    <div class="shell">
+      <section class="pane" id="left">
+        <h2>READING PASSAGE 2</h2>
+        <p>
+          You should spend about 20 minutes on Questions 14–26, which are based
+          on Reading Passage 2 below.
+        </p>
+        <h3>Bird Migration</h3>
+
+        <p><span class="paragraph-label">Paragraph A</span></p>
+        <p>
+          Birds have many unique design features that enable them to perform
+          such amazing feats of endurance. They are equipped with lightweight,
+          hollow bones, intricately designed feathers providing both lift and
+          thrust for rapid flight, navigation systems superior to any that man
+          has developed, and an ingenious heat-conserving design that, among
+          other things, concentrates all blood circulation beneath layers of
+          warm, waterproof plumage, leaving them fit to face life in the
+          harshest of climates. Their respiratory systems have to perform
+          efficiently during sustained flights at altitude, so they have a
+          system of extracting oxygen from their lungs that far exceeds that of
+          any other animal. During the later stages of the summer breeding
+          season, when food is plentiful, their bodies can accumulate
+          considerable layers of fat, to provide sufficient energy for their
+          long migratory flights.
+        </p>
+
+        <p><span class="paragraph-label">Paragraph B</span></p>
+        <p>
+          The fundamental reason that birds migrate is to find adequate food
+          during the winter months when it is in short supply. This particularly
+          applies to birds that breed in the temperate and Arctic regions of the
+          Northern Hemisphere, where food is abundant during the short growing
+          season. Many species can tolerate cold temperatures if food is
+          plentiful, but when food is not available, they must migrate. However,
+          intriguing questions remain.
+        </p>
+
+        <p><span class="paragraph-label">Paragraph C</span></p>
+        <p>
+          One puzzling fact is that many birds journey much further than would
+          be necessary just to find food and good weather. Nobody knows, for
+          instance, why British swallows, which could presumably survive equally
+          well if they spent the winter in equatorial Africa, instead of flying
+          several thousand miles further to their preferred winter home in South
+          Africa's Cape Province. Another mystery involves the huge migrations
+          performed by arctic terns and mudflat-feeding shorebirds that breed
+          close to Polar Regions. In general, the further north a migrant
+          species breeds, the further south it spends the winter. For arctic
+          terns, this necessitates an annual round trip of 25,000 miles. Yet, en
+          route to their final destination in far-flung southern latitudes, all
+          these individuals overfly other areas of seemingly suitable habitat
+          spanning two hemispheres. While we may not fully understand birds'
+          reasons for going to particular places, we can marvel at their feats.
+        </p>
+
+        <p><span class="paragraph-label">Paragraph D</span></p>
+        <p>
+          One of the greatest mysteries is how young birds know how to find the
+          traditional wintering areas without parental guidance. Very few adults
+          migrate with juveniles in tow, and youngsters may even have little or
+          no inkling of their parents' appearance. A familiar example is that of
+          the cuckoo, which lays its eggs in another species' nest and never
+          re-encounters its young. It is mind-boggling to consider that, once
+          raised by its host species, the young cuckoo makes its way to
+          ancestral wintering grounds in the tropics before returning
+          single-handedly to northern Europe the next season to seek out a mate
+          among its kind. The obvious implication is that it inherits from its
+          parents an inbuilt route map and direction-finding capability, as well
+          as a mental image of what another cuckoo looks like. Yet nobody has
+          the slightest idea as to how this is possible.
+        </p>
+
+        <p><span class="paragraph-label">Paragraph E</span></p>
+        <p>
+          Mounting evidence has confirmed that birds use the positions of the
+          sun and stars to obtain compass directions. They also seem to be able
+          to detect the earth's magnetic field, probably due to having minute
+          crystals of magnetite in the region of their brains. However, accurate
+          navigation also requires an awareness of position and time, especially
+          when lost. Experiments have shown that after being taken thousands of
+          miles over an unfamiliar landmass, birds are still capable of
+          returning rapidly to nest sites. Such phenomenal powers are the
+          product of computing several sophisticated cues, including an inborn
+          map of the night sky and the pull of the earth's magnetic field. How
+          the birds use their 'instruments' remains unknown, but one thing is
+          clear: they see the world with a superior sensory perception to ours.
+          Most small birds migrate at night and take their direction from the
+          position of the setting sun. However, as well as seeing the sun go
+          down, they also seem to see the plane of polarized light caused by it,
+          which calibrates their compass. Travelling at night provides other
+          benefits. Daytime predators are avoided and the danger of dehydration
+          due to flying for long periods in warm, sunlit skies is reduced.
+          Furthermore, at night the air is generally cool and less turbulent and
+          so conducive to sustained, stable flight.
+        </p>
+
+        <p><span class="paragraph-label">Paragraph F</span></p>
+        <p>
+          Nevertheless, all journeys involve considerable risk, and part of the
+          skill in arriving safely is setting off at the right time. This means
+          accurate weather forecasting and utilizing favourable winds. Birds are
+          adept at both, and, in laboratory tests, some have been shown to
+          detect the minute difference in barometric pressure between the floor
+          and ceiling of a room. Often birds react to weather changes before
+          there is any visible sign of them. Lapwings, which feed on grassland,
+          flee west from the Netherlands to the British Isles, France, and Spain
+          at the onset of a cold snap. When the ground surface freezes, the
+          birds could starve. Yet they return to Holland ahead of a thaw, their
+          arrival linked to a pressure change presaging an improvement in the
+          weather.
+        </p>
+
+        <p><span class="paragraph-label">Paragraph G</span></p>
+        <p>
+          In one instance a Welsh Manx shearwater carried to America and
+          released was back in its burrow on Skokholm Island, off the
+          Pembrokeshire coast, one day before a letter announcing its release!
+          Conversely, each autumn a small number of North American birds are
+          blown across the Atlantic by fast-moving westerly tailwinds. Not only
+          do they arrive safely in Europe, but, based on ringing evidence, some
+          make it back to North America the following spring, after probably
+          spending the winter with European migrants in sunny African climes.
+        </p>
+      </section>
+
+      <div id="divider" title="Drag to resize"></div>
+
+      <section class="pane" id="right">
+        <h3>Questions</h3>
+
+        <div class="group">
+          <h4>Questions 14–20</h4>
+          <p>Reading Passage 2 has seven paragraphs, A–G.</p>
+          <p>
+            Choose the correct heading for each paragraph from the list of
+            headings below.
+          </p>
+          <p>
+            Write the correct number, <strong>i–x</strong>, in boxes
+            <strong>14–20</strong> on your answer sheet.
+          </p>
+
+          <div class="headings">
+            <p><strong>List of Headings</strong></p>
+            <ol type="i" style="line-height: 2">
+              <li>The best moment to migrate</li>
+              <li>The unexplained rejection of closer feeding grounds</li>
+              <li>The influence of weather on the migration route</li>
+              <li>Physical characteristics that allow birds to migrate</li>
+              <li>The main reason why birds migrate</li>
+              <li>The best wintering grounds for birds</li>
+              <li>Research findings on how birds migrate</li>
+              <li>Successful migration despite the trouble of wind</li>
+              <li>
+                The contrast between long-distance migration and short-distance
+                migration
+              </li>
+              <li>Mysterious migration despite lack of teaching</li>
+            </ol>
+          </div>
+
+          <table>
+            <tr>
+              <th>Para</th>
+              <th>i</th>
+              <th>ii</th>
+              <th>iii</th>
+              <th>iv</th>
+              <th>v</th>
+              <th>vi</th>
+              <th>vii</th>
+              <th>viii</th>
+              <th>ix</th>
+              <th>x</th>
+            </tr>
+            <tr>
+              <td><span class="flag-btn" data-q="q14"></span>14. A</td>
+              <td><input type="radio" name="q14" value="i" /></td>
+              <td><input type="radio" name="q14" value="ii" /></td>
+              <td><input type="radio" name="q14" value="iii" /></td>
+              <td><input type="radio" name="q14" value="iv" /></td>
+              <td><input type="radio" name="q14" value="v" /></td>
+              <td><input type="radio" name="q14" value="vi" /></td>
+              <td><input type="radio" name="q14" value="vii" /></td>
+              <td><input type="radio" name="q14" value="viii" /></td>
+              <td><input type="radio" name="q14" value="ix" /></td>
+              <td><input type="radio" name="q14" value="x" /></td>
+            </tr>
+            <tr>
+              <td><span class="flag-btn" data-q="q15"></span>15. B</td>
+              <td><input type="radio" name="q15" value="i" /></td>
+              <td><input type="radio" name="q15" value="ii" /></td>
+              <td><input type="radio" name="q15" value="iii" /></td>
+              <td><input type="radio" name="q15" value="iv" /></td>
+              <td><input type="radio" name="q15" value="v" /></td>
+              <td><input type="radio" name="q15" value="vi" /></td>
+              <td><input type="radio" name="q15" value="vii" /></td>
+              <td><input type="radio" name="q15" value="viii" /></td>
+              <td><input type="radio" name="q15" value="ix" /></td>
+              <td><input type="radio" name="q15" value="x" /></td>
+            </tr>
+            <tr>
+              <td><span class="flag-btn" data-q="q16"></span>16. C</td>
+              <td><input type="radio" name="q16" value="i" /></td>
+              <td><input type="radio" name="q16" value="ii" /></td>
+              <td><input type="radio" name="q16" value="iii" /></td>
+              <td><input type="radio" name="q16" value="iv" /></td>
+              <td><input type="radio" name="q16" value="v" /></td>
+              <td><input type="radio" name="q16" value="vi" /></td>
+              <td><input type="radio" name="q16" value="vii" /></td>
+              <td><input type="radio" name="q16" value="viii" /></td>
+              <td><input type="radio" name="q16" value="ix" /></td>
+              <td><input type="radio" name="q16" value="x" /></td>
+            </tr>
+            <tr>
+              <td><span class="flag-btn" data-q="q17"></span>17. D</td>
+              <td><input type="radio" name="q17" value="i" /></td>
+              <td><input type="radio" name="q17" value="ii" /></td>
+              <td><input type="radio" name="q17" value="iii" /></td>
+              <td><input type="radio" name="q17" value="iv" /></td>
+              <td><input type="radio" name="q17" value="v" /></td>
+              <td><input type="radio" name="q17" value="vi" /></td>
+              <td><input type="radio" name="q17" value="vii" /></td>
+              <td><input type="radio" name="q17" value="viii" /></td>
+              <td><input type="radio" name="q17" value="ix" /></td>
+              <td><input type="radio" name="q17" value="x" /></td>
+            </tr>
+            <tr>
+              <td><span class="flag-btn" data-q="q18"></span>18. E</td>
+              <td><input type="radio" name="q18" value="i" /></td>
+              <td><input type="radio" name="q18" value="ii" /></td>
+              <td><input type="radio" name="q18" value="iii" /></td>
+              <td><input type="radio" name="q18" value="iv" /></td>
+              <td><input type="radio" name="q18" value="v" /></td>
+              <td><input type="radio" name="q18" value="vi" /></td>
+              <td><input type="radio" name="q18" value="vii" /></td>
+              <td><input type="radio" name="q18" value="viii" /></td>
+              <td><input type="radio" name="q18" value="ix" /></td>
+              <td><input type="radio" name="q18" value="x" /></td>
+            </tr>
+            <tr>
+              <td><span class="flag-btn" data-q="q19"></span>19. F</td>
+              <td><input type="radio" name="q19" value="i" /></td>
+              <td><input type="radio" name="q19" value="ii" /></td>
+              <td><input type="radio" name="q19" value="iii" /></td>
+              <td><input type="radio" name="q19" value="iv" /></td>
+              <td><input type="radio" name="q19" value="v" /></td>
+              <td><input type="radio" name="q19" value="vi" /></td>
+              <td><input type="radio" name="q19" value="vii" /></td>
+              <td><input type="radio" name="q19" value="viii" /></td>
+              <td><input type="radio" name="q19" value="ix" /></td>
+              <td><input type="radio" name="q19" value="x" /></td>
+            </tr>
+            <tr>
+              <td><span class="flag-btn" data-q="q20"></span>20. G</td>
+              <td><input type="radio" name="q20" value="i" /></td>
+              <td><input type="radio" name="q20" value="ii" /></td>
+              <td><input type="radio" name="q20" value="iii" /></td>
+              <td><input type="radio" name="q20" value="iv" /></td>
+              <td><input type="radio" name="q20" value="v" /></td>
+              <td><input type="radio" name="q20" value="vi" /></td>
+              <td><input type="radio" name="q20" value="vii" /></td>
+              <td><input type="radio" name="q20" value="viii" /></td>
+              <td><input type="radio" name="q20" value="ix" /></td>
+              <td><input type="radio" name="q20" value="x" /></td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="group">
+          <h4>Questions 21 and 22</h4>
+          <p>Choose <strong>TWO</strong> letters, <strong>A–E</strong>.</p>
+          <p>
+            Write the correct letters in boxes <strong>21 and 22</strong> on
+            your answer sheet.
+          </p>
+
+          <p>
+            <strong
+              >Which TWO of the following statements are true of bird
+              migration?</strong
+            >
+          </p>
+          <ul style="list-style: none; padding-left: 0; line-height: 2">
+            <li>A. Birds often fly further than they need to.</li>
+            <li>B. Birds travelling in family groups are safe.</li>
+            <li>C. Birds flying at night need less water.</li>
+            <li>D. Birds have much sharper eyesight than humans.</li>
+            <li>E. Only shorebirds are resistant to strong winds.</li>
+          </ul>
+
+          <ol start="21">
+            <li>
+              <span class="flag-btn" data-q="q21" style="left: -20px"></span
+              >First correct letter<br />
+              <label><input type="radio" name="q21" value="A" /> A</label>
+              <label><input type="radio" name="q21" value="B" /> B</label>
+              <label><input type="radio" name="q21" value="C" /> C</label>
+              <label><input type="radio" name="q21" value="D" /> D</label>
+              <label><input type="radio" name="q21" value="E" /> E</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q22" style="left: -20px"></span
+              >Second correct letter<br />
+              <label><input type="radio" name="q22" value="A" /> A</label>
+              <label><input type="radio" name="q22" value="B" /> B</label>
+              <label><input type="radio" name="q22" value="C" /> C</label>
+              <label><input type="radio" name="q22" value="D" /> D</label>
+              <label><input type="radio" name="q22" value="E" /> E</label>
+            </li>
+          </ol>
+        </div>
+
+        <div class="group">
+          <h4>Questions 23–26</h4>
+          <p>Complete the sentences below.</p>
+          <p>
+            Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for
+            each answer.
+          </p>
+          <p>
+            Write your answers in boxes <strong>23–26</strong> on your answer
+            sheet.
+          </p>
+
+          <ol start="23">
+            <li style="margin: 12px 0">
+              <span class="flag-btn" data-q="q23" style="left: -20px"></span>It
+              is a great mystery that young birds like cuckoos can find their
+              wintering grounds without
+              <input
+                type="text"
+                class="answer-input"
+                id="q23"
+                placeholder="answer"
+              />.
+            </li>
+            <li style="margin: 12px 0">
+              <span class="flag-btn" data-q="q24" style="left: -20px"></span
+              >Evidence shows birds can tell directions like a
+              <input
+                type="text"
+                class="answer-input"
+                id="q24"
+                placeholder="answer"
+              />
+              by observing the sun and the stars.
+            </li>
+            <li style="margin: 12px 0">
+              <span class="flag-btn" data-q="q25" style="left: -20px"></span>One
+              advantage for birds flying at night is that they can avoid contact
+              with
+              <input
+                type="text"
+                class="answer-input"
+                id="q25"
+                placeholder="answer"
+              />.
+            </li>
+            <li style="margin: 12px 0">
+              <span class="flag-btn" data-q="q26" style="left: -20px"></span
+              >Laboratory tests show that birds can detect weather without
+              <input
+                type="text"
+                class="answer-input"
+                id="q26"
+                placeholder="answer"
+              />
+              signs.
+            </li>
+          </ol>
+        </div>
+
+        <div class="bottom-bar">
+          <button class="btn-primary" onclick="submitAnswers()">提交</button>
+          <button onclick="resetForm()">重置</button>
+          <button onclick="openWrongBook()">本篇错题</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="selbar">
+      <button id="btnNote">Note</button>
+      <button id="btnHL">Highlight</button>
+      <button id="btnUH" style="display: none">Clear Highlight</button>
+    </div>
+
+    <div class="modal" id="resultModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>成绩</h2>
+          <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+        </div>
+        <div id="resultContent"></div>
+        <button
+          class="btn-primary"
+          style="width: 100%; margin-top: 16px"
+          onclick="addWrongToBook()"
+        >
+          加入错题本
+        </button>
+      </div>
+    </div>
+
+    <div class="modal" id="wrongBookModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>本篇错题</h2>
+          <span class="modal-close" onclick="closeModal('wrongBookModal')"
+            >×</span
+          >
+        </div>
+        <div id="wrongBookContent"></div>
+      </div>
+    </div>
+
+    <div class="modal" id="resetModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>重置练习</h2>
+          <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+        </div>
+        <div style="margin: 16px 0">
+          <label style="display: block; margin-bottom: 10px">
+            <input type="radio" name="resetType" value="answers" checked />
+            只清空答案
+          </label>
+          <label style="display: block">
+            <input type="radio" name="resetType" value="all" />
+            清空答案和标记
+          </label>
+        </div>
+        <button
+          class="btn-primary"
+          style="width: 100%"
+          onclick="confirmReset()"
+        >
+          确定
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const PAPER_ID = "P2_BIRD_MIGRATION";
+
+      let t = 0;
+      const timerEl = document.getElementById("timer");
+      setInterval(() => {
+        t++;
+        timerEl.textContent =
+          String(Math.floor(t / 60)).padStart(2, "0") +
+          ":" +
+          String(t % 60).padStart(2, "0");
+      }, 1000);
+
+      const divider = document.getElementById("divider"),
+        left = document.getElementById("left"),
+        right = document.getElementById("right");
+      let dragging = false;
+      divider.onmousedown = () => {
+        dragging = true;
+        document.body.style.cursor = "ew-resize";
+      };
+      window.onmousemove = (e) => {
+        if (!dragging) return;
+        const c = document.querySelector(".shell").getBoundingClientRect();
+        let x = e.clientX - c.left;
+        x = Math.max(280, Math.min(c.width - 280, x));
+        left.style.flex = "0 0 " + x + "px";
+        right.style.flex = "1 1 auto";
+      };
+      window.onmouseup = () => {
+        dragging = false;
+        document.body.style.cursor = "";
+      };
+
+      const selbar = document.getElementById("selbar"),
+        btnHL = document.getElementById("btnHL"),
+        btnUH = document.getElementById("btnUH"),
+        btnNote = document.getElementById("btnNote");
+      let lastRange = null,
+        currentHlNode = null;
+
+      function posSelbar(r) {
+        selbar.style.display = "flex";
+        const t = window.scrollY + r.top - selbar.offsetHeight - 8;
+        const l =
+          window.scrollX + r.left + r.width / 2 - selbar.offsetWidth / 2;
+        selbar.style.top = (t > 0 ? t : window.scrollY + r.bottom + 8) + "px";
+        selbar.style.left = Math.max(8, l) + "px";
+      }
+
+      function updSel() {
+        const s = window.getSelection();
+        if (!s || s.rangeCount === 0 || s.isCollapsed) {
+          if (!currentHlNode) selbar.style.display = "none";
+          return;
+        }
+        const r = s.getRangeAt(0);
+        lastRange = r.cloneRange();
+        currentHlNode = null;
+        btnNote.style.display = "block";
+        btnHL.style.display = "block";
+        btnUH.style.display = "none";
+        posSelbar(r.getBoundingClientRect());
+      }
+
+      left.onmouseup = updSel;
+      right.onmouseup = updSel;
+      document.onselectionchange = () => {
+        const s = window.getSelection();
+        if ((!s || s.rangeCount === 0 || s.isCollapsed) && !currentHlNode)
+          selbar.style.display = "none";
+      };
+      document.addEventListener(
+        "click",
+        (e) => {
+          if (
+            e.target.classList &&
+            (e.target.classList.contains("hl") ||
+              e.target.classList.contains("note"))
+          ) {
+            currentHlNode = e.target;
+            lastRange = null;
+            btnNote.style.display = "none";
+            btnHL.style.display = "none";
+            btnUH.style.display = "block";
+            posSelbar(e.target.getBoundingClientRect());
+            const s = window.getSelection();
+            if (s) s.removeAllRanges();
+          }
+        },
+        true
+      );
+
+      btnHL.onclick = () => {
+        if (currentHlNode || !lastRange || lastRange.collapsed) return;
+        const s = document.createElement("span");
+        s.className = "hl";
+        try {
+          lastRange.surroundContents(s);
+        } catch (e) {
+          const w = document.createElement("span");
+          w.className = "hl";
+          w.appendChild(lastRange.cloneContents());
+          lastRange.deleteContents();
+          lastRange.insertNode(w);
+        }
+        selbar.style.display = "none";
+        saveHighlights();
+      };
+
+      btnNote.onclick = () => {
+        if (currentHlNode || !lastRange || lastRange.collapsed) return;
+        const s = document.createElement("span");
+        s.className = "note";
+        try {
+          lastRange.surroundContents(s);
+        } catch (e) {
+          const w = document.createElement("span");
+          w.className = "note";
+          w.appendChild(lastRange.cloneContents());
+          lastRange.deleteContents();
+          lastRange.insertNode(w);
+        }
+        selbar.style.display = "none";
+        saveHighlights();
+      };
+
+      btnUH.onclick = () => {
+        if (currentHlNode) {
+          const p = currentHlNode.parentNode;
+          while (currentHlNode.firstChild)
+            p.insertBefore(currentHlNode.firstChild, currentHlNode);
+          p.removeChild(currentHlNode);
+          p.normalize();
+          currentHlNode = null;
+          selbar.style.display = "none";
+          saveHighlights();
+        } else if (lastRange) {
+          const sR = lastRange.getBoundingClientRect();
+          const w = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_ELEMENT
+          );
+          const tr = [];
+          while (w.nextNode()) {
+            const n = w.currentNode;
+            if (
+              n.classList &&
+              (n.classList.contains("hl") || n.classList.contains("note"))
+            ) {
+              const r = n.getBoundingClientRect();
+              if (
+                !(
+                  r.right < sR.left ||
+                  r.left > sR.right ||
+                  r.bottom < sR.top ||
+                  r.top > sR.bottom
+                )
+              )
+                tr.push(n);
+            }
+          }
+          tr.forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          selbar.style.display = "none";
+          saveHighlights();
+        }
+      };
+
+      document.querySelectorAll(".flag-btn").forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          btn.classList.toggle("active");
+          saveFlags();
+        };
+      });
+
+      const answerKey = {
+        q14: "iv",
+        q15: "v",
+        q16: "ii",
+        q17: "x",
+        q18: "vii",
+        q19: "i",
+        q20: "viii",
+        q21: "A",
+        q22: "C",
+        q23: "parental guidance",
+        q24: "compass",
+        q25: "daytime predators",
+        q26: "visible",
+      };
+      let lastResults = [];
+
+      function saveAnswers() {
+        const data = {};
+        Object.keys(answerKey).forEach((q) => {
+          const el = document.querySelector(`input[name="${q}"]`);
+          if (!el) {
+            const textInput = document.getElementById(q);
+            if (textInput && textInput.value.trim())
+              data[q] = textInput.value.trim();
+          } else if (el.type === "radio") {
+            const ch = document.querySelector(`input[name="${q}"]:checked`);
+            if (ch) data[q] = ch.value;
+          }
+        });
+        localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+      }
+
+      function loadAnswers() {
+        const data = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_answers`) || "{}"
+        );
+        Object.keys(data).forEach((q) => {
+          const radio = document.querySelector(
+            `input[name="${q}"][value="${data[q]}"]`
+          );
+          if (radio) {
+            radio.checked = true;
+          } else {
+            const textInput = document.getElementById(q);
+            if (textInput) textInput.value = data[q];
+          }
+        });
+      }
+
+      function saveFlags() {
+        const flags = [...document.querySelectorAll(".flag-btn.active")].map(
+          (b) => b.dataset.q
+        );
+        localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+      }
+
+      function loadFlags() {
+        const flags = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_flags`) || "[]"
+        );
+        flags.forEach((q) =>
+          document.querySelector(`[data-q="${q}"]`)?.classList.add("active")
+        );
+      }
+
+      function saveHighlights() {
+        const highlights = { left: [], right: [] };
+
+        // 左侧
+        document.querySelectorAll("#left .hl, #left .note").forEach((el) => {
+          highlights.left.push({
+            type: el.classList.contains("hl") ? "hl" : "note",
+            text: el.textContent,
+          });
+        });
+
+        // 右侧
+        document.querySelectorAll("#right .hl, #right .note").forEach((el) => {
+          highlights.right.push({
+            type: el.classList.contains("hl") ? "hl" : "note",
+            text: el.textContent,
+          });
+        });
+
+        localStorage.setItem(
+          `${PAPER_ID}_highlights`,
+          JSON.stringify(highlights)
+        );
+      }
+
+      function loadHighlights() {
+        const data = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_highlights`) || "{}"
+        );
+
+        if (!data.left && !data.right) return;
+
+        // 恢复左侧
+        restoreHighlightSide(left, data.left || []);
+
+        // 恢复右侧
+        restoreHighlightSide(right, data.right || []);
+      }
+
+      function restoreHighlightSide(container, items) {
+        items.forEach((item) => {
+          const walker = document.createTreeWalker(
+            container,
+            NodeFilter.SHOW_TEXT
+          );
+          let node;
+
+          while ((node = walker.nextNode())) {
+            const idx = node.textContent.indexOf(item.text);
+            if (idx !== -1) {
+              const span = document.createElement("span");
+              span.className = item.type;
+
+              const text = node.textContent;
+              const before = text.substring(0, idx);
+              const match = text.substring(idx, idx + item.text.length);
+              const after = text.substring(idx + item.text.length);
+
+              const parent = node.parentNode;
+
+              parent.insertBefore(document.createTextNode(before), node);
+              span.textContent = match;
+              parent.insertBefore(span, node);
+              parent.insertBefore(document.createTextNode(after), node);
+              parent.removeChild(node);
+              break;
+            }
+          }
+        });
+      }
+
+      document.querySelectorAll('input[type="radio"]').forEach((radio) => {
+        radio.addEventListener("change", saveAnswers);
+      });
+      document.querySelectorAll('input[type="text"]').forEach((input) => {
+        input.addEventListener("input", saveAnswers);
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        loadAnswers();
+        loadFlags();
+        loadHighlights();
+      });
+
+      function submitAnswers() {
+        const res = [];
+        let cor = 0;
+        Object.keys(answerKey).forEach((q) => {
+          let uA = "";
+          const radio = document.querySelector(`input[name="${q}"]:checked`);
+          if (radio) {
+            uA = radio.value;
+          } else {
+            const textInput = document.getElementById(q);
+            if (textInput) uA = textInput.value.trim().toLowerCase();
+          }
+          const cA = answerKey[q];
+          let iC = false;
+
+// 正确答案
+const correct = cA;
+
+// 用户答案（trim）
+const user = (uA || "").trim();
+
+// 1) 多选题（A–E）
+if (/^[A-E]$/.test(correct)) {
+    iC = user.toUpperCase() === correct;
+
+// 2) Headings（i–x，全是小写）
+} else if (/^(i|ii|iii|iv|v|vi|vii|viii|ix|x)$/.test(correct)) {
+    iC = user.toLowerCase() === correct;
+
+// 3) 填空题（单词）
+} else {
+    iC = user.toLowerCase() === correct.toLowerCase();
+}
+
+          if (iC) cor++;
+          res.push({
+            id: q,
+            userAns: uA || "(未作答)",
+            correctAns: cA,
+            isCorrect: iC,
+          });
+        });
+        lastResults = res;
+        const tot = Object.keys(answerKey).length;
+        const pct = ((cor / tot) * 100).toFixed(1);
+          localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+        document.getElementById(
+          "resultContent"
+        ).innerHTML = `<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res
+          .map(
+            (r) =>
+              `<div class="result-item ${
+                r.isCorrect ? "correct" : "incorrect"
+              }"><div><strong>${r.id}</strong> ${
+                r.isCorrect ? "✓" : "✗"
+              }</div><div>你的答案: ${r.userAns}</div>${
+                !r.isCorrect ? `<div>正确答案: ${r.correctAns}</div>` : ""
+              }</div>`
+          )
+          .join("")}`;
+        document.getElementById("resultModal").classList.add("active");
+      }
+
+      function resetForm() {
+        document.getElementById("resetModal").classList.add("active");
+      }
+
+      function confirmReset() {
+        const tp = document.querySelector(
+          'input[name="resetType"]:checked'
+        ).value;
+        document
+          .querySelectorAll('input[type="radio"]')
+          .forEach((i) => (i.checked = false));
+        document
+          .querySelectorAll('input[type="text"]')
+          .forEach((i) => (i.value = ""));
+        localStorage.removeItem(`${PAPER_ID}_answers`);
+
+        if (tp === "all") {
+          document.querySelectorAll(".hl").forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          document.querySelectorAll(".note").forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          document
+            .querySelectorAll(".flag-btn")
+            .forEach((b) => b.classList.remove("active"));
+          localStorage.removeItem(`${PAPER_ID}_highlights`);
+          localStorage.removeItem(`${PAPER_ID}_flags`);
+        }
+        closeModal("resetModal");
+      }
+
+      function addWrongToBook() {
+        const wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        const wr = lastResults.filter((r) => !r.isCorrect);
+        wr.forEach((r) => {
+          const en = {
+            paperId: PAPER_ID,
+            title: "Bird Migration",
+            questionId: r.id,
+            correctAnswer: r.correctAns,
+            myAnswer: r.userAns,
+            date: new Date().toISOString().split("T")[0],
+          };
+          const ix = wb.findIndex(
+            (i) => i.paperId === en.paperId && i.questionId === en.questionId
+          );
+          if (ix >= 0) wb[ix] = en;
+          else wb.push(en);
+        });
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        alert(`已添加 ${wr.length} 道错题`);
+        closeModal("resultModal");
+      }
+
+      function deleteWrongItem(pId, qId) {
+        if (!confirm("确定删除这道错题？")) return;
+        let wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        wb = wb.filter((i) => !(i.paperId === pId && i.questionId === qId));
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        openWrongBook();
+      }
+
+      function clearCurrentWrongBook() {
+        if (!confirm("确定清空本篇所有错题？")) return;
+        let wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        wb = wb.filter((i) => i.paperId !== PAPER_ID);
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        openWrongBook();
+      }
+
+      function openWrongBook() {
+        const wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        const cu = wb.filter((i) => i.paperId === PAPER_ID);
+        const ct = document.getElementById("wrongBookContent");
+        if (cu.length === 0)
+          ct.innerHTML =
+            '<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>';
+        else
+          ct.innerHTML = `<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu
+            .map(
+              (i) =>
+                `<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`
+            )
+            .join("")}`;
+        document.getElementById("wrongBookModal").classList.add("active");
+      }
+
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("active");
+      }
+    </script>
+  </body>
+</html>

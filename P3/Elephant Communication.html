@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P3 – Elephant Communication</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .diagram-container { text-align:center; margin:20px 0; }
+  .diagram-container img { max-width:100%; height:auto; }
+  
+  .input-question { 
+    display:flex; 
+    align-items:center; 
+    margin:12px 0; 
+    padding:10px; 
+    background:#f9f9f9; 
+    border-radius:6px; 
+  }
+  .input-question .q-num { 
+    font-weight:600; 
+    margin-right:12px; 
+    min-width:30px; 
+  }
+  .input-question .q-text { 
+    flex:1; 
+    font-size:14px; 
+  }
+  .input-question input[type="text"] { 
+    width:200px; 
+    padding:6px 10px; 
+    margin-left:12px; 
+    border:1px solid #ddd; 
+    border-radius:4px; 
+    font-size:14px;
+  }
+  .input-question input[type="text"]:focus { 
+    outline:none; 
+    border-color:#0066cc; 
+  }
+  
+  .summary-box { padding:16px; background:#f9f9f9; border-radius:6px; margin:16px 0; line-height:2; }
+  .summary-input { 
+    display:inline-flex;
+    min-width:150px;
+    padding:4px 8px; 
+    margin:0 4px;
+    border:1px solid #ddd; 
+    border-radius:4px; 
+    font-size:14px;
+    vertical-align:middle;
+  }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+  
+  .group ol { margin-left:20px; }
+  .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+  .group ol li label { display:inline-block; margin-right:8px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 3</h2>
+<p>You should spend about 20 minutes on Questions 27–40, which are based on Reading Passage 3 below.</p>
+<h3>Elephant Communication</h3>
+
+<p>O' Connell-Rodwell, a post-doctoral fellow at Stanford University, has traveled to Namibia's first-ever wildlife reserve to explore the mystical and complicated realm of elephant communication. She, along with her colleagues, is part of a scientific revolution that started almost 20 years ago. This revolution has made a stunning revelation: elephants are capable of communicating with one another over long distances by means of low-frequency sounds, also known as infrasound, which are too deep for humans to hear.</p>
+
+<p>As might be expected, African elephants' ability to detect seismic sound may have something to do with their ears. The hammer bone in an elephant's inner ear is proportionally huge for a mammal, but it is normal for animals that use vibrational signals. Thus, it may be a sign that elephants can use seismic sounds to communicate.</p>
+
+<p>Other aspects of elephant anatomy also support this ability. First, their massive bodies, which enable them to give out low-frequency sounds almost as powerful as the sound a jet makes during take-off, serve as ideal frames for receiving ground vibrations and transmitting them to the inner ear. Second, the elephant's toe bones are set in a fatty pad, which might help focus vibrations from the ground into the bone. Finally, the elephant has an enormous brain that sits in the cranial cavity behind the eyes, in line with the auditory canal. The front of the skull is riddled with sinus cavities, which might function as resonating chambers for ground vibrations.</p>
+
+<p>It remains unclear how elephants detect such vibrations, but O' Connell-Rodwell suggests that the pachyderms are 'listening' with their trunks and feet instead of (or in addition to) their ears. The elephant trunk may be the most versatile appendage in nature: it is used for drinking, bathing, smelling, feeding and scratching. Both trunk and feet contain two types of nerve endings that are sensitive to pressure—one detects infrasonic vibration and the other responds to vibrations of slightly higher frequencies. As O' Connell-Rodwell sees it, this research has a boundless and unpredictable future. 'Our work is really at the interface of geophysics, neurophysiology and ecology,' she says. 'We're raising questions that have never even been considered before.'</p>
+
+<p>Scientists have long known that seismic communication is widespread among small animals such as spiders, scorpions, insects and many vertebrates, including white-lipped frogs, blind mole-rats, kangaroo rats and golden moles. Nevertheless, O' Connell-Rodwell was the first to argue that a giant land animal is also sending and receiving seismic signals. 'I used to lay a male planthopper on a stem and replay the calling sound of a female; the male would exhibit the same kind of behaviour that happens in elephants: he would freeze, press down on his legs, move forward a little, then stay still again. I found it fascinating, and it made me think that perhaps auditory communication is not the only thing going on.'</p>
+
+<p>Scientists have confirmed that an elephant's capacity to communicate over long distances is essential for survival, especially in places like Etosha, where more than 2,400 savanna elephants range over an area larger than New Jersey. It is already difficult for an elephant to find a mate in such a vast wilderness, and elephant reproductive biology only complicates matters. Breeding herds also adopt low-frequency sounds to warn of predators. Even though adult elephants have no enemies other than human beings, calves are vulnerable and susceptible to attacks from lions and hyenas. At the sight of a predator, older herd members clump together to protect the young before running away.</p>
+
+<p>We now know that elephants can respond to warning calls in the air, but can they detect signals transmitted solely through the ground? To investigate, the research team designed an experiment in 2002 that used electronic devices to send signals through the ground at Mushara. 'The outcomes of our 2002 study revealed that elephants could indeed sense warning signals through the ground,' O' Connell-Rodwell observes.</p>
+
+<p>Last year, an experiment was set up to pursue the problem further. It used three different recordings: the 1994 warning call from Mushara, an anti-predator call recorded by scientist Joyce Poole in Kenya, and a made-up warble tone. 'The data I've observed so far imply that the elephants responded exactly as I expected. However, the fascinating finding is that the anti-predator call from Kenya—unfamiliar to them—caused them to gather, tense up and rumble aggressively as well; but they didn't always flee. I didn't expect the results to be that clear-cut.'</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 28-31</h4>
+      <p>Label the diagram below.</p>
+      <p>Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>28-31</strong> on your answer sheet.</p>
+
+      <div class="diagram-container">
+        <svg width="400" height="300" viewBox="0 0 400 300">
+          <!-- 大象简图 -->
+          <ellipse cx="200" cy="150" rx="120" ry="80" fill="#ddd" stroke="#666" stroke-width="2"/>
+          <circle cx="150" cy="120" r="40" fill="#ddd" stroke="#666" stroke-width="2"/>
+          <ellipse cx="120" cy="100" rx="15" ry="25" fill="#ddd" stroke="#666" stroke-width="2"/>
+          <path d="M 120 125 Q 100 160 80 180" stroke="#666" stroke-width="4" fill="none"/>
+          <rect x="180" y="210" width="15" height="50" fill="#ddd" stroke="#666"/>
+          <rect x="220" y="210" width="15" height="50" fill="#ddd" stroke="#666"/>
+          
+          <!-- 标注线和文字 -->
+          <line x1="150" y1="80" x2="150" y2="30" stroke="#333" stroke-width="1"/>
+          <text x="155" y="25" font-size="12" fill="#333">28 _____ bones in inner ear</text>
+          
+          <line x1="200" y1="130" x2="280" y2="80" stroke="#333" stroke-width="1"/>
+          <text x="285" y="75" font-size="12" fill="#333">an extremely large</text>
+          <text x="285" y="90" font-size="12" fill="#333">29 _____</text>
+          
+          <line x1="200" y1="230" x2="280" y2="230" stroke="#333" stroke-width="1"/>
+          <text x="285" y="230" font-size="12" fill="#333">toe and fatty 30 _____</text>
+          
+          <line x1="160" y1="100" x2="60" y2="50" stroke="#333" stroke-width="1"/>
+          <text x="10" y="40" font-size="12" fill="#333">big sized brain skull with</text>
+          <text x="10" y="55" font-size="12" fill="#333">many 31 _____</text>
+        </svg>
+      </div>
+
+      <div class="input-question">
+        <span class="flag-btn" data-q="q28"></span>
+        <span class="q-num">28</span>
+        <span class="q-text">_____ bones in inner ear</span>
+        <input type="text" data-q="q28" placeholder="Answer">
+      </div>
+
+      <div class="input-question">
+        <span class="flag-btn" data-q="q29"></span>
+        <span class="q-num">29</span>
+        <span class="q-text">an extremely large _____</span>
+        <input type="text" data-q="q29" placeholder="Answer">
+      </div>
+
+      <div class="input-question">
+        <span class="flag-btn" data-q="q30"></span>
+        <span class="q-num">30</span>
+        <span class="q-text">toe and fatty _____</span>
+        <input type="text" data-q="q30" placeholder="Answer">
+      </div>
+
+      <div class="input-question">
+        <span class="flag-btn" data-q="q31"></span>
+        <span class="q-num">31</span>
+        <span class="q-text">big sized brain skull with many _____</span>
+        <input type="text" data-q="q31" placeholder="Answer">
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 32–38</h4>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>NO MORE THAN THREE WORDS</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>32–38</strong> on your answer sheet.</p>
+
+      <div class="summary-box">
+        <p>How the elephants sense these sound vibrations is still unknown, but O'Connell-Rodwell, a post-doctoral researcher at Stanford University, proposes that elephants are 'listening' with their <span class="flag-btn" data-q="q32" style="position:relative;left:0;top:0;transform:none;margin-right:4px;"></span><input type="text" class="summary-input" data-q="q32" placeholder="32"> by two kinds of nerve endings that respond to vibrations with both <span class="flag-btn" data-q="q33" style="position:relative;left:0;top:0;transform:none;margin-right:4px;"></span><input type="text" class="summary-input" data-q="q33" placeholder="33"> frequency and slightly higher frequencies. O'Connell-Rodwell's work is at the combination of geophysics, neurophysiology and <span class="flag-btn" data-q="q34" style="position:relative;left:0;top:0;transform:none;margin-right:4px;"></span><input type="text" class="summary-input" data-q="q34" placeholder="34">.</p>
+
+        <p>It was known that seismic communication existed extensively within small animals, but O'Connell-Rodwell was the first person to indicate that a large land animal would send and receive <span class="flag-btn" data-q="q35" style="position:relative;left:0;top:0;transform:none;margin-right:4px;"></span><input type="text" class="summary-input" data-q="q35" placeholder="35"> too. Also, she noticed the freezing behaviour by putting a male planthopper on a stem and playing back a female call, which might prove the existence of other communicative approaches besides <span class="flag-btn" data-q="q36" style="position:relative;left:0;top:0;transform:none;margin-right:4px;"></span><input type="text" class="summary-input" data-q="q36" placeholder="36">.</p>
+
+        <p>Scientists have determined that an elephant's ability to communicate over long distances is essential, especially when elephant herds are finding a <span class="flag-btn" data-q="q37" style="position:relative;left:0;top:0;transform:none;margin-right:4px;"></span><input type="text" class="summary-input" data-q="q37" placeholder="37"> or are warning of predators. Finally, the results of our 2002 study showed us that elephants could detect warning calls through the <span class="flag-btn" data-q="q38" style="position:relative;left:0;top:0;transform:none;margin-right:4px;"></span><input type="text" class="summary-input" data-q="q38" placeholder="38">.</p>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 39–40</h4>
+      <p>Choose the correct letter, <strong>A, B, C or D</strong>.</p>
+      <p>Write the correct letter in boxes <strong>39–40</strong> on your answer sheet.</p>
+
+      <ol start="39">
+        <li><span class="flag-btn" data-q="q39" style="left:-20px;"></span>According to the passage, it is determined that an elephant needs to communicate over long distances for its survival<br>
+          <label><input type="radio" name="q39" value="A"> A</label> when a threatening predator appears.<br>
+          <label><input type="radio" name="q39" value="B"> B</label> when young elephants meet humans.<br>
+          <label><input type="radio" name="q39" value="C"> C</label> when older members of the herd want to flee from the group.<br>
+          <label><input type="radio" name="q39" value="D"> D</label> when a female elephant is in estrus.
+        </li>
+        <li><span class="flag-btn" data-q="q40" style="left:-20px;"></span>What is the author's attitude toward the experiment using three different recordings in the last paragraph?<br>
+          <label><input type="radio" name="q40" value="A"> A</label> The outcome is definitely out of the original expectation.<br>
+          <label><input type="radio" name="q40" value="B"> B</label> The data cannot be very clearly obtained.<br>
+          <label><input type="radio" name="q40" value="C"> C</label> The result can be somewhat undecided or inaccurate.<br>
+          <label><input type="radio" name="q40" value="D"> D</label> The result can be unfamiliar to the public.
+        </li>
+      </ol>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P3_ELEPHANT';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey={q28:"hammer bone",q29:"body",q30:"pad",q31:"sinus cavities",q32:"trunks and feet",q33:"infrasonic",q34:"ecology",q35:"seismic signals",q36:"auditory communication",q37:"mate",q38:"ground",q39:"A",q40:"A"};
+let lastResults=[];
+
+function normalizeAnswer(ans) {
+  return ans.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+function saveAnswers() {
+  const data = {};
+  document.querySelectorAll('input[type="text"]').forEach(inp => {
+    if(inp.value.trim()) data[inp.dataset.q] = inp.value.trim();
+  });
+  Object.keys(answerKey).forEach(q => {
+    const ch = document.querySelector(`input[name="${q}"]:checked`);
+    if(ch) data[q] = ch.value;
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const inp = document.querySelector(`input[type="text"][data-q="${q}"]`);
+    if(inp) inp.value = data[q];
+    const radio = document.querySelector(`input[name="${q}"][value="${data[q]}"]`);
+    if(radio) radio.checked = true;
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  if(data.left && data.left.length > 0) {
+    data.left.forEach(item => {
+      const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+  
+  if(data.right && data.right.length > 0) {
+    data.right.forEach(item => {
+      const walker = document.createTreeWalker(right, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+document.querySelectorAll('input[type="text"]').forEach(inp => {
+  inp.addEventListener('input', saveAnswers);
+});
+
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; 
+  let cor=0; 
+  Object.keys(answerKey).forEach(q=>{ 
+    let uA="";
+    const inp = document.querySelector(`input[type="text"][data-q="${q}"]`);
+    if(inp && inp.value.trim()) uA = inp.value.trim();
+    const ch = document.querySelector(`input[name="${q}"]:checked`);
+    if(ch) uA = ch.value;
+    
+    const cA=answerKey[q]; 
+    const iC = normalizeAnswer(uA) === normalizeAnswer(cA);
+    if(iC)cor++; 
+    res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); 
+  }); 
+  lastResults=res; 
+  const tot=Object.keys(answerKey).length; 
+  const pct=((cor/tot)*100).toFixed(1); 
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value='');
+  document.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false);
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const wr=lastResults.filter(r=>!r.isCorrect); wr.forEach(r=>{ const en={paperId:PAPER_ID,title:'Elephant Communication',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); if(ix>=0)wb[ix]=en; else wb.push(en); }); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); alert(`已添加 ${wr.length} 道错题`); closeModal('resultModal'); }
+
+function deleteWrongItem(pId,qId){ if(!confirm('确定删除这道错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function clearCurrentWrongBook(){ if(!confirm('确定清空本篇所有错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>i.paperId!==PAPER_ID); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function openWrongBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const cu=wb.filter(i=>i.paperId===PAPER_ID); const ct=document.getElementById('wrongBookContent'); if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; document.getElementById('wrongBookModal').classList.add('active'); }
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

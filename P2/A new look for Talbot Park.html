@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – A new look for Talbot Park</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .headings { background:#f9f9f9; padding:12px; margin:12px 0; border-radius:4px; }
+  .headings ol { margin-left:20px; }
+  .headings li { margin:4px 0; font-size:13px; }
+  
+  table { border-collapse: collapse; width:100%; margin:12px 0; }
+  th, td { border:1px solid #ddd; padding:8px; text-align:left; font-size:13px; position:relative; }
+  th { background:#f5f5f5; font-weight:600; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  tr td:first-child { padding-left:16px; }
+  
+  .q-row { margin:12px 0; font-size:14px; line-height:1.6; position:relative; padding-left:24px; }
+  .q-row .flag-btn { left:0; top:8px; }
+  
+  select { padding:6px; border:1px solid #999; border-radius:4px; font-size:14px; width:100%; max-width:400px; margin-top:4px; }
+  input[type="text"] { padding:6px; border:1px solid #999; border-radius:4px; font-size:14px; width:100%; max-width:300px; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>A new look for Talbot Park</h3>
+
+<p>Talbot Park, a housing project in Auckland, New Zealand, was once described as a ghetto, troubled by high rates of crime and vandalism. However, it has just been rebuilt at a cost of $48 m and the project reflects some new thinking about urban design.</p>
+
+<h4>Paragraph A</h4>
+<p>The new Talbot Park is immediately eye-catching because the buildings look quite different to other state-housing projects in Auckland. 'There is no reason why state housing should look cheap in my view,' says architect Neil Cotton, one of the design team. 'In fact, I was anticipating a backlash by those who objected to the quality of what is provided with government money.' The tidy brick and wood apartments and townhouses would not look out of place in some of the city's most affluent suburbs, and this is a central theme of the Talbot Park philosophy.</p>
+
+<h4>Paragraph B</h4>
+<p>Talbot Park is a triangle of government-owned land, which in the early 1960s was developed for state housing built around a linear garden that ran through the middle. Initially, there was a strong sense of neighbourliness. Former residents recall how the garden played a big part in their childhoods — a place where kids came together to play softball, cricket and bullrush. 'We had respect for our neighbours and addressed them by title — Mr and Mrs so-and-so,' recalls Georgie Thompson, who grew up there in the 1960s.</p>
+
+<h4>Paragraph C</h4>
+<p>Exactly what went wrong with Talbot Park is unclear. The community began to change in the late 1970s as more immigrants moved in. The new arrivals didn't always integrate with the community and a 'them and us' mentality developed. In the process, standards dropped and the neighbourhood began to look shabbier. The buildings themselves were also deteriorating and becoming run-down, petty crime was on the rise and the garden was considered unsafe. In 2002, Housing New Zealand decided the properties needed upgrading. The question was, how to avoid repeating the mistakes of the past?</p>
+
+<h4>Paragraph D</h4>
+<p>One controversial aspect of the upgrade is that the new development has actually made the density of housing in Talbot Park greater, putting 52 more homes on the same site. Doing this required a fresh approach that can be summed up as 'mix and match'. The first priority was to mix up the housing by employing a variety of plans by different architects: some of the accommodation is free-standing houses, some semi-detached, some low-level, multi-apartment blocks. By doing this, the development avoids the uniform appearance of so many state-housing projects, which residents complain denies them any sense of individual identity. The next goal was to prevent overspending by using efficient designs to maximise the sense of space from minimum room sizes. There was also a no-frills, industrial approach to kitchens, bathrooms and flooring, to optimise durability and ensure the project did not go over budget. Architecturally, the buildings are relatively conservative: fairly plain houses standing in a small garden. There's a slight reflection of the traditional Pacific beach house (a fale) but it's not over-played. 'It seems to us that low-cost housing is about getting as much amenity as you can for the money,' says architect Michael Thompson. Another key aspect of the 'mix and match' approach is openness: one that not only lets residents see what is going on but also lets them know they are seen. The plan ensures there are no cul-de-sacs or properties hidden from view, that the gardens are not enclosed by trees and that most boundary fences are see-through — a community contained but without walls.</p>
+
+<h4>Paragraph E</h4>
+<p>The population today is cosmopolitan: 50% Pacific Islanders, 20% Māori, 15% Asian, 10% New Zealand European and the rest composed of immigrants from Russia, Ukraine and Iran. 'It was important that the buildings were sufficiently flexible to cater for the needs of people from a wide variety of cultural backgrounds,' explains designer James Lundy.</p>
+
+<h4>Paragraph F</h4>
+<p>Despite the quality of the buildings, however, there should be no doubt that Talbot Park and its surrounding suburb of Tāmaki are low socio-economic areas. Of the 5,000 houses there, 55% are state houses, 28% privately owned (compared to about 65% nationally) and 17% private rental. The area has a high density of households with incomes in the $5,000 to $15,000 range and very few with an income over $70,000. That's in sharp contrast to the more affluent suburbs in Auckland.</p>
+
+<h4>Paragraph G</h4>
+<p>Another important part of the new development is what Housing New Zealand calls 'intensive tenancy management'. Opponents of the project call it social control. 'The focus is on frequent inspections and setting clear guidelines and boundaries regarding the sort of behaviour we expect from tenants,' says Graham Bodman, Housing New Zealand's regional manager. The result is a code of sometimes strict rules: no loud parties after 10 pm; no washing hung over balcony rails; and a requirement to mow lawns and keep the property tidy. The Tenancy Manager walks the site every day, knows everyone by name and deals with problems quickly. 'It's all based on the intensification,' says project manager Stuart Bracey. 'We acknowledge that if you are going to ask people to live in these quite tightly-packed communities, you have to actually help them to get to know each other by organising morning teas and street barbecues.' So far it seems to be working and many involved in the project believe Talbot Park represents the way forward for state housing.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–20</h4>
+      <p>Reading Passage 2 has seven paragraphs, A–G.</p>
+      <p>Choose the correct heading for each paragraph from the list of headings below.</p>
+      <p>Write the correct number, <strong>i–x</strong>, in boxes <strong>14–20</strong> on your answer sheet.</p>
+
+      <div class="headings">
+        <strong>List of Headings</strong>
+        <ol type="i">
+          <li>Some of the problems that developed at Talbot Park</li>
+          <li>Where the residents lived while the work was being completed</li>
+          <li>The ethnic makeup of the new Talbot Park</li>
+          <li>The unexpectedly high standard of the housing</li>
+          <li>Financial hardship in Talbot Park and a neighbouring community</li>
+          <li>The experiences of one family living at Talbot Park today</li>
+          <li>How to co-ordinate and assist the people who live at Talbot Park</li>
+          <li>Raising the money to pay for the makeover</li>
+          <li>A close community in the original Talbot Park development</li>
+          <li>Details of the style of buildings used in the makeover</li>
+        </ol>
+      </div>
+
+      <div class="q-row">
+        <span class="flag-btn" data-q="q14"></span>
+        <strong>14</strong> Paragraph A<br>
+        <select name="q14">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+          <option value="viii">viii</option>
+          <option value="ix">ix</option>
+          <option value="x">x</option>
+        </select>
+      </div>
+
+      <div class="q-row">
+        <span class="flag-btn" data-q="q15"></span>
+        <strong>15</strong> Paragraph B<br>
+        <select name="q15">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+          <option value="viii">viii</option>
+          <option value="ix">ix</option>
+          <option value="x">x</option>
+        </select>
+      </div>
+
+      <div class="q-row">
+        <span class="flag-btn" data-q="q16"></span>
+        <strong>16</strong> Paragraph C<br>
+        <select name="q16">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+          <option value="viii">viii</option>
+          <option value="ix">ix</option>
+          <option value="x">x</option>
+        </select>
+      </div>
+
+      <div class="q-row">
+        <span class="flag-btn" data-q="q17"></span>
+        <strong>17</strong> Paragraph D<br>
+        <select name="q17">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+          <option value="viii">viii</option>
+          <option value="ix">ix</option>
+          <option value="x">x</option>
+        </select>
+      </div>
+
+      <div class="q-row">
+        <span class="flag-btn" data-q="q18"></span>
+        <strong>18</strong> Paragraph E<br>
+        <select name="q18">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+          <option value="viii">viii</option>
+          <option value="ix">ix</option>
+          <option value="x">x</option>
+        </select>
+      </div>
+
+      <div class="q-row">
+        <span class="flag-btn" data-q="q19"></span>
+        <strong>19</strong> Paragraph F<br>
+        <select name="q19">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+          <option value="viii">viii</option>
+          <option value="ix">ix</option>
+          <option value="x">x</option>
+        </select>
+      </div>
+
+      <div class="q-row">
+        <span class="flag-btn" data-q="q20"></span>
+        <strong>20</strong> Paragraph G<br>
+        <select name="q20">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+          <option value="viii">viii</option>
+          <option value="ix">ix</option>
+          <option value="x">x</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 21–23</h4>
+      <p>Look at the following people (Questions 21–23) and the list of ideas below.</p>
+      <p>Match each person with the correct idea, <strong>A–F</strong>.</p>
+      <p>Write the correct letter, <strong>A–F</strong>, in boxes <strong>21–23</strong> on your answer sheet.</p>
+
+      <div class="headings">
+        <strong>List of Ideas</strong>
+        <ol type="A">
+          <li>Good tenant management involves supervision and regulation.</li>
+          <li>State housing must be built at minimum expense to the public.</li>
+          <li>Organising social events helps tenants to live close together.</li>
+          <li>Mixed-race communities require adaptable and responsive designs.</li>
+          <li>Complaints were expected about the high standard of the development.</li>
+          <li>Too many rules and regulations will cause resentment from tenants.</li>
+        </ol>
+      </div>
+
+      <div class="q-row">
+        <span class="flag-btn" data-q="q21"></span>
+        <strong>21</strong> James Lundy<br>
+        <select name="q21">
+          <option value="">-- Select --</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+        </select>
+      </div>
+
+      <div class="q-row">
+        <span class="flag-btn" data-q="q22"></span>
+        <strong>22</strong> Graham Bodman<br>
+        <select name="q22">
+          <option value="">-- Select --</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+        </select>
+      </div>
+
+      <div class="q-row">
+        <span class="flag-btn" data-q="q23"></span>
+        <strong>23</strong> Stuart Bracey<br>
+        <select name="q23">
+          <option value="">-- Select --</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 24–26</h4>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>24–26</strong> on your answer sheet.</p>
+
+      <p style="margin-top:16px;"><strong>The 'mix and match' strategy</strong></p>
+      <p>One aspect of the Talbot Park project that some critics are concerned about is that the higher <span class="flag-btn" data-q="q24" style="position:relative;display:inline-block;"></span><strong>24</strong> <input type="text" name="q24" placeholder="Answer"> of accommodation would lead to the old social problems returning. To prevent this, a team of various <span class="flag-btn" data-q="q25" style="position:relative;display:inline-block;"></span><strong>25</strong> <input type="text" name="q25" placeholder="Answer"> worked on the project to ensure the buildings were not uniform. Further, they created pleasant, functional interiors that could still be built within their <span class="flag-btn" data-q="q26" style="position:relative;display:inline-block;"></span><strong>26</strong> <input type="text" name="q26" placeholder="Answer">. Finally, the absence of walls means Talbot Park is characterised by openness, making it easier to regulate behaviour within the community.</p>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_TALBOT_PARK';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey={q14:"iv",q15:"ix",q16:"i",q17:"x",q18:"iii",q19:"v",q20:"vii",q21:"D",q22:"A",q23:"C",q24:"density",q25:"architects",q26:"budget"};
+let lastResults=[];
+
+function saveAnswers() {
+  const data = {};
+  document.querySelectorAll('select').forEach(sel => {
+    if(sel.value) data[sel.name] = sel.value;
+  });
+  document.querySelectorAll('input[type="text"]').forEach(inp => {
+    if(inp.value) data[inp.name] = inp.value.trim().toLowerCase();
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const sel = document.querySelector(`select[name="${q}"]`);
+    if(sel) sel.value = data[q];
+    const inp = document.querySelector(`input[name="${q}"]`);
+    if(inp) inp.value = data[q];
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  if(data.left && data.left.length > 0) {
+    data.left.forEach(item => {
+      const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+  
+  if(data.right && data.right.length > 0) {
+    data.right.forEach(item => {
+      const walker = document.createTreeWalker(right, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+document.querySelectorAll('select, input[type="text"]').forEach(el => {
+  el.addEventListener('change', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ const res=[]; let cor=0; Object.keys(answerKey).forEach(q=>{ let uA=""; const sel=document.querySelector('select[name="'+q+'"]'); const inp=document.querySelector('input[name="'+q+'"]'); if(sel)uA=sel.value; if(inp)uA=inp.value.trim().toLowerCase(); const cA=answerKey[q]; const iC=uA===cA; if(iC)cor++; res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); }); lastResults=res; const tot=Object.keys(answerKey).length; const pct=((cor/tot)*100).toFixed(1);localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`); document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; document.getElementById('resultModal').classList.add('active'); }
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('select').forEach(s=>s.value='');
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value='');
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const wr=lastResults.filter(r=>!r.isCorrect); wr.forEach(r=>{ const en={paperId:PAPER_ID,title:'A new look for Talbot Park',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); if(ix>=0)wb[ix]=en; else wb.push(en); }); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); alert(`已添加 ${wr.length} 道错题`); closeModal('resultModal'); }
+
+function deleteWrongItem(pId,qId){ if(!confirm('确定删除这道错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function clearCurrentWrongBook(){ if(!confirm('确定清空本篇所有错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>i.paperId!==PAPER_ID); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function openWrongBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const cu=wb.filter(i=>i.paperId===PAPER_ID); const ct=document.getElementById('wrongBookContent'); if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; document.getElementById('wrongBookModal').classList.add('active'); }
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

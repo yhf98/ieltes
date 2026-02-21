@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – The plan to bring an asteroid to Earth</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  table { border-collapse: collapse; width:100%; margin:12px 0; }
+  th, td { border:1px solid #ddd; padding:8px; font-size:13px; position:relative; }
+  th { background:#f5f5f5; font-weight:600; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  tr td:first-child { padding-left:16px; }
+  
+  .q-item { margin:12px 0; padding-left:20px; position:relative; }
+  .q-item .flag-btn { left:-20px; top:8px; }
+  .q-label { display:block; margin-bottom:6px; font-weight:600; }
+  
+  select, input[type="text"] { 
+    padding:6px 10px; 
+    border:1px solid #ccc; 
+    border-radius:4px; 
+    font-size:14px; 
+    width:100%;
+    max-width:400px;
+  }
+  
+  .heading-box { background:#f9f9f9; padding:12px; margin:12px 0; border-radius:4px; border:1px solid #e0e0e0; }
+  .heading-box div { margin:6px 0; font-size:13px; line-height:1.5; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>The plan to bring an asteroid to Earth</h3>
+<p style="font-style:italic; margin-bottom:20px;">Moving in orbit around our Sun are millions of rocks known as asteroids. Now scientists have plans to capture one.</p>
+
+<h4>Section A</h4>
+<p>Send a robot into space, catch an asteroid and bring it back to Earth's orbit. This, say scientists and engineers at the California Institute of Technology (Caltech), could be feasible. A four-day workshop was dedicated to investigating the feasibility of capturing a near-Earth asteroid, bringing it closer to our planet and using it as a base for future manned space-flight missions.</p>
+
+<p>This is not something the scientists are imagining could be done someday in the future. It is possible with the technology we have today and could be accomplished within a decade. A robotic probe could anchor to an asteroid with simple magnets or grab it with specialised claws. Alternatively, a large spacecraft could use its gravitational field to shift the orbit of a larger asteroid, sending it towards Earth.</p>
+
+<p>'Once you get over the initial reaction — You want to do what?! — it actually starts to seem like a reasonable idea,' says engineer John Brophy, who helped organise the workshop. In fact, many of these ideas have been on the drawing board for years as part of NASA's planetary-defence programme against large space-based objects that might threaten Earth. And there's no shortage of potential targets: NASA estimates there are 19 500 asteroids at least 100 metres wide within 45 million kilometres of Earth.</p>
+
+<h4>Section B</h4>
+<p>Though rearranging the heavens may seem an excessive undertaking, this US mission has its merits. The US already has plans to send astronauts to a near-Earth asteroid, a mission that would mean confining them in a tiny capsule for three to six months and would involve all the risks of a deep-space voyage. Instead, robots could bring an asteroid close enough for them to get there in just a month.</p>
+
+<p>An asteroid would provide a stationary base from which to launch missions further into space. There are several advantages to this. For one, launching missions carrying materials from Earth requires a lot of power, fuel and, consequently, money, because of our planet's strong force of gravity. Since this would be far weaker on an asteroid, materials mined there could be more easily taken off the asteroid and shuttled around the solar system.</p>
+
+<p>Many asteroids have a lot to offer. Some are rich in metals, which can be mined and used to build space-based habitats, or brought back to Earth. Others are up to one-quarter water, which could be used for life-support or broken down into hydrogen and oxygen to make fuel. Astronomers would also have the chance to get a close-up look at one of the solar system's earliest relics, generating important scientific data. 'Executing the asteroid-retrieval plan would help demonstrate and greatly expand mankind's space-based engineering capabilities,' says engineer Louis Friedman, another co-organiser of the Caltech workshop. For instance, the mission would teach engineers how to capture an unco-operative target, which could be useful practice for planetary-defence missions in the event of a threat from a meteoroid or comet approaching our planet,' he adds.</p>
+
+<h4>Section C</h4>
+<p>Former astronaut Rusty Schweickart, co-founder of the B612 Foundation, an organisation dedicated to protecting Earth from asteroid strikes, points out that although it would be technically feasible, shifting such a hefty and substantial target would not be easy: 'You're moving the largest mother-lode imaginable,' he says.</p>
+
+<p>Engineers would need to be absolutely certain they could control such a potentially dangerous object. 'It's the opposite of planetary defence; if you do something wrong you have a Tunguska event,' says engineer Marco Tantardini from the Planetary Society, referring to the powerful 1908 explosion above a remote Russian region thought to have been caused by a meteoroid or comet.</p>
+
+<h4>Section D</h4>
+<p>Still, these obstacles only add to the appeal of the project for engineers, who love to go over every potential difficulty in order to solve it. And if the challenges posed by a large asteroid seem too daunting, researchers could always start with a smaller asteroid, perhaps two to ten metres across. Last year, Brophy helped conduct a study to look at the feasibility of bringing a two-metre, 1 000-kilogram asteroid — of which there might conceivably be millions — to the International Space Station. The study suggested the asteroid could be captured robotically in something as simple as a large bag. Of course, such a small object might not have the same emotional impact as a larger target. 'NASA isn't going to want to go to something that is smaller than our spaceships,' says engineer Dan Mazanek from NASA's Langley Research Center.</p>
+
+<h4>Section E</h4>
+<p>No matter the size of the asteroid, these plans would require hefty investments. Even capturing a small asteroid would consume at least a billion dollars. Convincing taxpayers to foot such a bill could be difficult. However, private industry might be interested in getting involved. One possibility would be to push the asteroid into near-Earth orbit and then invite anyone who wants to develop the capabilities to reach and mine the object.</p>
+
+<p>However, although the undertaking might be scientifically exciting and provide great insight into the solar system's formation, this is not enough on its own to justify the expense of bringing an asteroid to Earth. Investigations of asteroids can be done much more cheaply with an unmanned spacecraft, says chemist Joseph A. Nuth from NASA's Goddard Space Flight Center. According to Brophy, ultimately we would be working towards bringing an asteroid closer to Earth in order to help humanity move out into the solar system.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–18</h4>
+      <p>Reading Passage 2 has five sections, <strong>A–E</strong>.</p>
+      <p>Choose the correct heading for each section from the list of headings below.</p>
+      <p>Write the correct number, <strong>i–viii</strong>, in boxes <strong>14–18</strong> on your answer sheet.</p>
+
+      <div class="heading-box">
+        <strong>List of Headings</strong>
+        <div><strong>i</strong> The need for skill and care</div>
+        <div><strong>ii</strong> Choosing the richest asteroid</div>
+        <div><strong>iii</strong> The safest way to protect an asteroid</div>
+        <div><strong>iv</strong> Obtaining support for the project</div>
+        <div><strong>v</strong> An achievable goal, not an impossible dream</div>
+        <div><strong>vi</strong> The need for global cooperation</div>
+        <div><strong>vii</strong> Beginning with a less challenging task</div>
+        <div><strong>viii</strong> Practical, economic and research justifications</div>
+      </div>
+
+      <div class="q-item">
+        <span class="flag-btn" data-q="q14"></span>
+        <label class="q-label">14 Section A</label>
+        <select name="q14">
+          <option value="">-- Select heading --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+          <option value="viii">viii</option>
+        </select>
+      </div>
+
+      <div class="q-item">
+        <span class="flag-btn" data-q="q15"></span>
+        <label class="q-label">15 Section B</label>
+        <select name="q15">
+          <option value="">-- Select heading --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+          <option value="viii">viii</option>
+        </select>
+      </div>
+
+      <div class="q-item">
+        <span class="flag-btn" data-q="q16"></span>
+        <label class="q-label">16 Section C</label>
+        <select name="q16">
+          <option value="">-- Select heading --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+          <option value="viii">viii</option>
+        </select>
+      </div>
+
+      <div class="q-item">
+        <span class="flag-btn" data-q="q17"></span>
+        <label class="q-label">17 Section D</label>
+        <select name="q17">
+          <option value="">-- Select heading --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+          <option value="viii">viii</option>
+        </select>
+      </div>
+
+      <div class="q-item">
+        <span class="flag-btn" data-q="q18"></span>
+        <label class="q-label">18 Section E</label>
+        <select name="q18">
+          <option value="">-- Select heading --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+          <option value="viii">viii</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 19–22</h4>
+      <p>Look at the following experts (Questions 19–22) and the list of statements below.</p>
+      <p>Match each expert with the correct statement, <strong>A–G</strong>.</p>
+      <p>Write the correct letter, <strong>A–G</strong>, in boxes <strong>19–22</strong> on your answer sheet.</p>
+
+      <div class="heading-box">
+        <strong>List of statements</strong>
+        <div><strong>A</strong> A mistake could have serious consequences for Earth.</div>
+        <div><strong>B</strong> It might be difficult to arouse interest in an asteroid of limited size.</div>
+        <div><strong>C</strong> The project could be an early step in space exploration.</div>
+        <div><strong>D</strong> An asteroid's weight makes the project extremely challenging.</div>
+        <div><strong>E</strong> The skill gained could save Earth from future danger.</div>
+        <div><strong>F</strong> An asteroid could be a useful landing place for a spaceship.</div>
+        <div><strong>G</strong> Capturing an asteroid would not be an efficient method of research.</div>
+      </div>
+
+      <div class="q-item">
+        <span class="flag-btn" data-q="q19"></span>
+        <label class="q-label">19 Louis Friedman</label>
+        <select name="q19">
+          <option value="">-- Select statement --</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="G">G</option>
+        </select>
+      </div>
+
+      <div class="q-item">
+        <span class="flag-btn" data-q="q20"></span>
+        <label class="q-label">20 Rusty Schweickart</label>
+        <select name="q20">
+          <option value="">-- Select statement --</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="G">G</option>
+        </select>
+      </div>
+
+      <div class="q-item">
+        <span class="flag-btn" data-q="q21"></span>
+        <label class="q-label">21 Dan Mazanek</label>
+        <select name="q21">
+          <option value="">-- Select statement --</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="G">G</option>
+        </select>
+      </div>
+
+      <div class="q-item">
+        <span class="flag-btn" data-q="q22"></span>
+        <label class="q-label">22 Joseph A. Nuth</label>
+        <select name="q22">
+          <option value="">-- Select statement --</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="G">G</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 23–26</h4>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>23–26</strong> on your answer sheet.</p>
+
+      <div style="background:#f9f9f9; padding:16px; margin:12px 0; border-radius:6px; line-height:1.8;">
+        <strong>The merits of the US mission</strong><br><br>
+        Capture of an asteroid would reduce the time that astronauts travelling to it needed to spend in space. An asteroid could also act as a <input type="text" name="q23" style="width:120px; display:inline-block; margin:0 4px;"> for further space travel and exploration. The fact that an asteroid would have weaker <input type="text" name="q24" style="width:120px; display:inline-block; margin:0 4px;"> would allow easier movement of resources.<br><br>
+        These resources include <input type="text" name="q25" style="width:120px; display:inline-block; margin:0 4px;"> which could be used in space or on Earth, and <input type="text" name="q26" style="width:120px; display:inline-block; margin:0 4px;"> which could be consumed or used as a source of power.<br><br>
+        The mission could provide data on the history of our Sun and planets. It could also be good practice if there was a threat to Earth from a body from space.
+      </div>
+
+      <div style="display:flex; gap:12px; margin-top:12px;">
+        <div class="q-item" style="flex:1;">
+          <span class="flag-btn" data-q="q23"></span>
+          <label class="q-label">23</label>
+        </div>
+        <div class="q-item" style="flex:1;">
+          <span class="flag-btn" data-q="q24"></span>
+          <label class="q-label">24</label>
+        </div>
+        <div class="q-item" style="flex:1;">
+          <span class="flag-btn" data-q="q25"></span>
+          <label class="q-label">25</label>
+        </div>
+        <div class="q-item" style="flex:1;">
+          <span class="flag-btn" data-q="q26"></span>
+          <label class="q-label">26</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_ASTEROID';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey={q14:"v",q15:"viii",q16:"i",q17:"vii",q18:"iv",q19:"E",q20:"D",q21:"B",q22:"G",q23:"base",q24:"gravity",q25:"metals",q26:"water"};
+let lastResults=[];
+
+function saveAnswers() {
+  const data = {};
+  document.querySelectorAll('select').forEach(s => {
+    if(s.value) data[s.name] = s.value;
+  });
+  document.querySelectorAll('input[type="text"]').forEach(i => {
+    if(i.value.trim()) data[i.name] = i.value.trim().toLowerCase();
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(name => {
+    const el = document.querySelector(`[name="${name}"]`);
+    if(el) el.value = data[name];
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  if(data.left && data.left.length > 0) {
+    data.left.forEach(item => {
+      const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+  
+  if(data.right && data.right.length > 0) {
+    data.right.forEach(item => {
+      const walker = document.createTreeWalker(right, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+document.querySelectorAll('select, input[type="text"]').forEach(el => {
+  el.addEventListener('change', saveAnswers);
+  el.addEventListener('input', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; 
+  let cor=0; 
+  Object.keys(answerKey).forEach(q=>{ 
+    const el=document.querySelector('[name="'+q+'"]'); 
+    const uA=el?(el.tagName==='SELECT'?el.value:el.value.trim().toLowerCase()):""; 
+    const cA=answerKey[q]; 
+    const iC = uA.toLowerCase() === cA.toLowerCase();
+    if(iC)cor++; 
+    res.push({id:q,userAns:uA||'(未作答)',correctAns:cA,isCorrect:iC}); 
+  }); 
+  lastResults=res; 
+  const tot=Object.keys(answerKey).length; 
+  const pct=((cor/tot)*100).toFixed(1); 
+   localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('select').forEach(s=>s.value=''); 
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value=''); 
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const wr=lastResults.filter(r=>!r.isCorrect); 
+  wr.forEach(r=>{ 
+    const en={paperId:PAPER_ID,title:'The plan to bring an asteroid to Earth',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns,date:new Date().toISOString().split('T')[0]}; 
+    const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); 
+    if(ix>=0)wb[ix]=en; else wb.push(en); 
+  }); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  alert(`已添加 ${wr.length} 道错题`); 
+  closeModal('resultModal'); 
+}
+
+function deleteWrongItem(pId,qId){ 
+  if(!confirm('确定删除这道错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function clearCurrentWrongBook(){ 
+  if(!confirm('确定清空本篇所有错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>i.paperId!==PAPER_ID); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function openWrongBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const cu=wb.filter(i=>i.paperId===PAPER_ID); 
+  const ct=document.getElementById('wrongBookContent'); 
+  if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; 
+  else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; 
+  document.getElementById('wrongBookModal').classList.add('active'); 
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

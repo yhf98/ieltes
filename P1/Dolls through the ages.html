@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P1 – Dolls through the ages</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  table { border-collapse: collapse; width:100%; margin:12px 0; }
+  th, td { border:1px solid #ddd; padding:6px; text-align:left; font-size:13px; position:relative; }
+  th { background:#f5f5f5; font-weight:600; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .question-item { padding:12px 0; border-top:1px dashed #ddd; position:relative; padding-left:20px; }
+  .question-item:first-child { border-top:none; }
+  
+  input.blank { 
+    border:none;
+    border-bottom:1px solid #666;
+    padding:4px 8px;
+    margin:0 4px;
+    min-width:120px;
+    font-size:14px;
+  }
+  input.blank:focus { outline:none; border-bottom:2px solid #0066cc; }
+  
+  .answer-option { display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; }
+  .answer-option label { cursor:pointer; display:flex; align-items:center; gap:4px; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+  
+  .note-section { background:#f9f9f9; padding:12px; margin:12px 0; border-left:3px solid #0066cc; }
+  .note-section ul { margin-left:20px; margin-top:8px; }
+  .note-section li { margin:6px 0; line-height:1.6; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 1</h2>
+<p>You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.</p>
+<h3>Dolls through the ages</h3>
+
+<p>What is today a simple children's toy has a surprisingly rich history. Dolls have been a part of humankind for thousands of years. Often depicting religious figures, or used as playthings, early dolls were probably made from primitive materials such as clay, fur, or wood.</p>
+
+<p>Dolls constructed of flat pieces of wood, painted with various designs, and with 'hair' made of clay, have often been found in Egyptian graves dating back to 2000 BC. Egyptian tombs of wealthy families have included pottery dolls. Dolls being placed in these graves leads some to believe that they were cherished possessions.</p>
+
+<p>Girls from ancient Greece and Rome offered their wooden dolls to goddesses after they were too 'grown-up' to play with dolls. Most ancient dolls that were found in tombs were very simple creations, often made from such materials as clay, rags, wood, or bone. Some of the more unique dolls were made with ivory or wax. The main goal was to make the doll as lifelike as possible. That ideal led to the creation of dolls with movable limbs and removable garments, dating back to 600 BC.</p>
+
+<p>Following the era of the ancient dolls, Europe became a major hub for doll production. These dolls were primarily made of wood. Fewer than 30 examples of primitive wooden stump dolls from England survive today. The Grodnertal area of Germany produced many peg wooden dolls, a type of doll that has very simple peg joints and resembles a clothespin (a device for hanging washing on a clothesline). An alternative to wood was developed in the 1800s.</p>
+
+<p>'Composition' is a collective term for mixtures of pulped wood or paper that were used to make doll heads and bodies. These mixtures were moulded under pressure, creating a durable doll that could be mass-produced. Manufacturers closely guarded the recipes for their mixtures, sometimes using strange ingredients like ash or eggshells. Papier-mâché, a type of composition, was one of the most popular mixtures.</p>
+
+<p>In addition to wooden dolls, wax dolls grew in popularity in the 17th and 18th centuries. Munich in Germany was a major manufacturing centre for wax dolls. Wax dollmakers would model a doll's head in wax or clay, and then cover it with plaster to create a mould. Then they would pour melted wax into the cast. The wax for the head would be very thin, no more than 3 mm. Some of the most distinctive wax dolls were created in England between 1850 and 1930. One of the first dolls that portrayed a baby was made in England from wax at the beginning of the 19th century.</p>
+
+<p>Around the same time, porcelain became popular. It is made by firing special clays in a kiln at more than 2372 degrees Fahrenheit (1300°C), and only a few clays can withstand firing at such high temperatures. Porcelain is used generically to refer to both china and bisque dolls; china is glazed, whereas bisque is unglazed. Germany, France, and Denmark started creating china heads for dolls in the 1840s. These china heads were replaced in the 1860s by ones made of bisque. Bisque, which is porcelain fired twice with colour added to it after the first firing, looked more like skin than china did.</p>
+
+<p>In France, the bébé was popular in the 1880s, and it has become a highly sought-after doll today. The bébé, first made in the 1850s, was different from its predecessors because it depicted a younger girl. Until then, most French dolls were representations of adults. Although the French dolls were unrivalled in their artistry, German bisque dolls became quite popular because they were not as expensive. Kammer & Reinhardt introduced a bisque character doll in the 1900s, starting a trend of creating realistic dolls.</p>
+
+<p>For many centuries, rag dolls were made by mothers for their children. The term 'rag doll' refers generically to dolls made of any fabric. 'Cloth doll' refers to a subset of rag dolls made of linen or cotton. Commercially produced rag dolls were first introduced in the 1850s by English and American manufacturers. Although not as sophisticated as dolls made from other materials, rag dolls were well loved, often as a child's first toy.</p>
+
+<p>Dollmaking did not become an industry in the United States until after the Civil War in the 1860s. Doll production was concentrated in the New England region of the United States, with dolls made from a variety of materials such as leather, rubber, papier-mâché, and cloth. Celluloid was developed in the state of New Jersey in the late 1860s and was used to manufacture dolls until the mid-1950s. German, French, American, and Japanese factories churned out cheaply produced celluloid dolls in mass quantities. However, celluloid fell out of favour because of its extreme flammability and propensity to fade in bright light.</p>
+
+<p>After World War I, dollmakers experimented with plastics. Hard plastic dolls were manufactured in the 1940s. They resembled composition dolls, but they were much more durable. Other materials used in doll manufacturing included rubber, foam rubber, and vinyl in the 1950s and 1960s. Vinyl changed dollmaking, allowing dollmakers to root hair into the head, rather than using wigs or painting the hair. Although most dolls are now mass-manufactured using these modern materials, many modern dollmakers are still using the traditional materials of the past to make collectible dolls.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 1–6</h4>
+      <p>Complete the notes below.</p>
+      <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes 1–6 on your answer sheet.</p>
+
+      <h4 style="margin-top:16px;">Dolls</h4>
+      
+      <div class="note-section">
+        <strong>Earliest known dolls</strong>
+        <ul>
+          <li>represented religious figures</li>
+          <li>used as toys</li>
+        </ul>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q1"></span>
+        <strong>Egypt, 2000 BC</strong>
+        <ul style="margin-left:20px; margin-top:8px;">
+          <li>bodies were made of wood</li>
+          <li>1. <input type="text" class="blank" id="q1"> was used for the hair</li>
+        </ul>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q2"></span>
+        <strong>Ancient Greece and Rome</strong>
+        <ul style="margin-left:20px; margin-top:8px;">
+          <li>dolls were given to 2. <input type="text" class="blank" id="q2"> by older girls</li>
+        </ul>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q3"></span>
+        <strong>600 BC</strong>
+        <ul style="margin-left:20px; margin-top:8px;">
+          <li>realistic dolls had separate clothes and 3. <input type="text" class="blank" id="q3"> that could be put in different positions</li>
+        </ul>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q4"></span>
+        <span class="flag-btn" data-q="q5" style="left:2px; top:calc(50% + 30px);"></span>
+        <strong>17th and 18th centuries</strong>
+        <ul style="margin-left:20px; margin-top:8px;">
+          <li>dolls made of 4. <input type="text" class="blank" id="q4"> became more common</li>
+          <li>moulds made of 5. <input type="text" class="blank" id="q5"></li>
+        </ul>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q6"></span>
+        <strong>1800s</strong>
+        <ul style="margin-left:20px; margin-top:8px;">
+          <li>new manufacturing process developed</li>
+          <li>new group of mixtures known as 6. <input type="text" class="blank" id="q6"></li>
+          <li>recipes for these mixtures kept secret</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 7–13</h4>
+      <p>Do the following statements agree with the information in Reading Passage 1?</p>
+      <p>In boxes 7–13 on your answer sheet, write</p>
+
+      <table style="margin:12px 0;">
+        <tr>
+          <th>TRUE</th>
+          <td>if the statement agrees with the information</td>
+        </tr>
+        <tr>
+          <th>FALSE</th>
+          <td>if the statement contradicts the information</td>
+        </tr>
+        <tr>
+          <th>NOT GIVEN</th>
+          <td>if there is no information on this</td>
+        </tr>
+      </table>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q7"></span>
+        <p><strong>7.</strong> Bisque dolls appear less realistic than dolls made of china.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q7" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q7" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q7" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q8"></span>
+        <p><strong>8.</strong> French dolls tended to cost more than German bisque dolls.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q8" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q8" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q8" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q9"></span>
+        <p><strong>9.</strong> The first rag dolls were made in the 1850s.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q9" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q9" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q9" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q10"></span>
+        <p><strong>10.</strong> Only dolls made of cotton or linen are classified as cloth dolls.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q10" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q10" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q10" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q11"></span>
+        <p><strong>11.</strong> Dolls made of celluloid tended to lose their colour.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q11" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q11" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q11" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q12"></span>
+        <p><strong>12.</strong> Composition dolls lasted longer than the plastic dolls that were made in the 1940s.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q12" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q12" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q12" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q13"></span>
+        <p><strong>13.</strong> Doll collectors prefer a doll to be dressed in its original clothing.</p>
+        <div class="answer-option">
+          <label><input type="radio" name="q13" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q13" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q13" value="NOT GIVEN"> NOT GIVEN</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P1_DOLLS';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey={q1:"clay",q2:"goddesses",q3:"limbs",q4:"wax",q5:"plaster",q6:"composition",q7:"FALSE",q8:"TRUE",q9:"FALSE",q10:"TRUE",q11:"TRUE",q12:"FALSE",q13:"NOT GIVEN"};
+let lastResults=[];
+
+function saveAnswers() {
+  const data = {};
+  for(let i=1; i<=6; i++) {
+    const input = document.getElementById('q'+i);
+    if(input && input.value.trim()) data['q'+i] = input.value.trim();
+  }
+  for(let i=7; i<=13; i++) {
+    const ch = document.querySelector(`input[name="q${i}"]:checked`);
+    if(ch) data['q'+i] = ch.value;
+  }
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+
+  Object.keys(data).forEach(q => {
+    if (/^q[1-6]$/.test(q)) {  
+      const input = document.getElementById(q);
+      if (input) input.value = data[q];
+    } else {
+      const radio = document.querySelector(`input[name="${q}"][value="${data[q]}"]`);
+      if (radio) radio.checked = true;
+    }
+  });
+}
+
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = [];
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '[]');
+  if(data.length === 0) return;
+  
+  data.forEach(item => {
+    const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+    let node;
+    while(node = walker.nextNode()) {
+      if(node.textContent.includes(item.text)) {
+        const span = document.createElement('span');
+        span.className = item.type;
+        const parent = node.parentNode;
+        const text = node.textContent;
+        const idx = text.indexOf(item.text);
+        if(idx >= 0) {
+          const before = text.substring(0, idx);
+          const match = text.substring(idx, idx + item.text.length);
+          const after = text.substring(idx + item.text.length);
+          
+          parent.insertBefore(document.createTextNode(before), node);
+          span.textContent = match;
+          parent.insertBefore(span, node);
+          parent.insertBefore(document.createTextNode(after), node);
+          parent.removeChild(node);
+          break;
+        }
+      }
+    }
+  });
+}
+
+document.querySelectorAll('input[type="text"]').forEach(input => {
+  input.addEventListener('input', saveAnswers);
+});
+
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; 
+  let cor=0; 
+  
+  for(let i=1; i<=6; i++) {
+    const input = document.getElementById('q'+i);
+    const uA = input ? input.value.trim().toLowerCase() : "";
+    const cA = answerKey['q'+i].toLowerCase();
+    const iC = uA === cA;
+    if(iC) cor++;
+    res.push({id:'q'+i, userAns:uA||'(未作答)', correctAns:answerKey['q'+i], isCorrect:iC});
+  }
+  
+  for(let i=7; i<=13; i++) {
+    const ch = document.querySelector(`input[name="q${i}"]:checked`);
+    const uA = ch ? ch.value : "";
+    const cA = answerKey['q'+i];
+    const iC = uA === cA;
+    if(iC) cor++;
+    res.push({id:'q'+i, userAns:uA||'(未作答)', correctAns:cA, isCorrect:iC});
+  }
+  
+  lastResults=res; 
+  const tot=13;
+  const pct=((cor/tot)*100).toFixed(1); 
+   localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  
+  for(let i=1; i<=6; i++) {
+    const input = document.getElementById('q'+i);
+    if(input) input.value = '';
+  }
+  document.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false); 
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const wr=lastResults.filter(r=>!r.isCorrect); 
+  wr.forEach(r=>{ 
+    const en={
+      paperId:PAPER_ID,
+      title:'Dolls through the ages',
+      questionId:r.id,
+      correctAnswer:r.correctAns,
+      myAnswer:r.userAns,
+      date:new Date().toISOString().split('T')[0]
+    }; 
+    const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); 
+    if(ix>=0)wb[ix]=en; 
+    else wb.push(en); 
+  }); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  alert(`已添加 ${wr.length} 道错题`); 
+  closeModal('resultModal'); 
+}
+
+function deleteWrongItem(pId,qId){ 
+  if(!confirm('确定删除这道错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function clearCurrentWrongBook(){ 
+  if(!confirm('确定清空本篇所有错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>i.paperId!==PAPER_ID); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function openWrongBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const cu=wb.filter(i=>i.paperId===PAPER_ID); 
+  const ct=document.getElementById('wrongBookContent'); 
+  if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; 
+  else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; 
+  document.getElementById('wrongBookModal').classList.add('active'); 
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

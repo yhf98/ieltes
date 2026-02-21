@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – The fashion industry</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .headings { background:#f9f9f9; padding:12px; margin:12px 0; border-radius:4px; }
+  .headings ol { margin-left:20px; }
+  .headings li { margin:4px 0; font-size:13px; }
+  
+  .drop-zone { min-height:40px; border:2px dashed #ccc; border-radius:6px; padding:8px; margin:8px 0; background:#f9f9f9; }
+  .drop-zone.over { border-color:#0066cc; background:#e3f2fd; }
+  .drop-item { display:inline-block; padding:6px 12px; margin:4px; background:#0066cc; color:#fff; border-radius:4px; cursor:move; user-select:none; }
+  .drop-item.placed { background:#666; }
+  
+  .options-pool { display:flex; flex-wrap:wrap; gap:8px; padding:12px; background:#fff; border:1px solid #ddd; border-radius:6px; margin:12px 0; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .question-item { position:relative; padding-left:16px; margin:16px 0; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+  
+  input[type="text"] { width:200px; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px; }
+  
+  .checkbox-group { margin:12px 0; }
+  .checkbox-group label { display:block; margin:8px 0; padding:8px; background:#f9f9f9; border-radius:4px; cursor:pointer; }
+  .checkbox-group label:hover { background:#f0f0f0; }
+  .checkbox-group input[type="checkbox"] { margin-right:8px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>The fashion industry</h3>
+
+<h4>Section A</h4>
+<p>The fashion industry is a multibillion-dollar global enterprise devoted to the business of making and selling clothes. It encompasses all types of garments, from designer fashions to ordinary everyday clothing. Because data on the industry are typically reported for national economies and expressed in terms of its many separate sectors, total figures for world production of textiles and clothing are difficult to obtain. However, by any measure, the industry accounts for a significant share of world economic output.</p>
+
+<h4>Section B</h4>
+<p>The fashion industry is a product of the modern age. Prior to the mid-19th century, virtually all clothing was handmade for individuals, either as home production or on order from dressmakers and tailors. By the beginning of the 20th century, with the development of new technologies such as the sewing machine, the factory system of production, and the growth of department stores and other retail outlets, clothing had increasingly come to be mass-produced in standard sizes and sold at fixed prices.</p>
+
+<p>Although the fashion industry developed first in Europe, today it is highly globalised, with garments often designed in one country, manufactured in another, and sold in a third. For example, an American fashion company might source fabric in China, have the clothes manufactured in Vietnam, finished in Italy, and shipped to a warehouse in the United States for distribution to retail outlets internationally.</p>
+
+<h4>Section C</h4>
+<p>One of the first accomplishments of the Industrial Revolution in the 18th century was the partial automation of the spinning and weaving of wool, cotton, silk and other natural fibres. Today, these processes are highly automated and carried out by computer-controlled, high-speed machinery, and fabrics made from both natural fibres and synthetic fibres (such as nylon, acrylic and polyester) are produced. A growing interest in sustainable fashion (or 'eco-fashion') has led to greater use of environmentally friendly fibres, such as hemp. In addition, high-tech synthetic fabrics confer such properties as moisture absorption, stain resistance, retention or dissipation of body heat, and protection against fire, weapons, cold, ultraviolet radiation and other hazards. Fabrics are also produced with a wide range of visual effects through dyeing, weaving, printing and other processes. Together with fashion forecasters, fabric manufacturers work well in advance of the clothing production cycle to create fabrics with colours, textures and other qualities that anticipate consumer demand.</p>
+
+<h4>Section D</h4>
+<p>Historically, very few fashion designers have become famous—brands such as Coco Chanel or Calvin Klein—who have been responsible for prestigious high-fashion collections. These designers are influential in the fashion world, but, contrary to popular belief, they do not dictate new fashions; rather, they endeavour to design clothes that will meet consumer demand. The vast majority of designers work anonymously for manufacturers, as part of design teams, adapting designs into marketable garments for average consumers. They draw inspiration from a wide range of sources, including film and television costumes, street clothing and active sportswear.</p>
+
+<p>The fashion industry's traditional design methods, such as paper sketches and the draping of fabric on mannequins, have been supplemented or replaced by computer-assisted design techniques. These allow designers to rapidly make changes to a proposed design and instantaneously share the proposed changes with colleagues—whether they are in the next room or on another continent.</p>
+
+<h4>Section E</h4>
+<p>An important stage in garment production is the translation of the clothing design into templates, in a range of sizes, for cutting the cloth. Because the proportions of the human body change with increases or decreases in weight, templates cannot simply be scaled up or down. Template-making was traditionally a highly skilled profession. Today, despite innovations in computer programming, designs in larger sizes are difficult to adjust for every body shape. Whatever the size, the template—whether drawn on paper or programmed as a set of computer instructions—determines how fabric is cut into the pieces that will be joined to make a garment. For all but the most expensive clothing, fabric cutting is accomplished by computer-guided knives or high-intensity lasers that can cut many layers of fabric at once.</p>
+
+<h4>Section F</h4>
+<p>The next stage of production is the assembly process. Some companies use their own production facilities for some or all of the manufacturing process, but the majority rely on separately owned manufacturing firms or contractors to produce garments to their specifications. In the field of women's clothing, manufacturers typically produce several product lines a year, which they deliver to retailers on predetermined dates. Technological innovation, including the development of computer-guided machinery, has resulted in the automation of some stages of assembly. Nevertheless, the fundamental process of sewing remains labour-intensive. In the late 20th century, China emerged as the world's largest producer of clothing because of its low labour costs and highly disciplined workforce.</p>
+
+<p>Assembled items then go through various processes collectively known as 'finishing'. These include the addition of decorative elements, fasteners, brand-name labels and other labels (often legally required) specifying fibre content, laundry instructions and country of manufacture. Finished items are then pressed and packed for shipment.</p>
+
+<h4>Section G</h4>
+<p>For much of the period following World War II, trade in textiles and garments was strictly regulated by purchasing countries, which imposed quotas and tariffs. Since the 1980s, these protectionist measures, which were intended (ultimately without success) to prevent textile and clothing production from moving from high-wage to low-wage countries, have gradually been abandoned. They have been replaced by a free-trade approach, under the regulatory control of global organisations. The advent of metal shipping containers and relatively inexpensive air freight has also made it possible for production to be closely tied to market conditions, even across globe-spanning distances.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–20</h4>
+      <p>Reading Passage 2 has seven sections, A–G.</p>
+      <p>Choose the correct heading for each section from the list of headings below.</p>
+      <p>Write the correct number, <strong>i–viii</strong>, in boxes <strong>14–20</strong> on your answer sheet.</p>
+
+      <div class="headings">
+        <strong>List of Headings</strong>
+        <ol type="i">
+          <li>How new clothing styles are created</li>
+          <li>The rise of the fashion industry</li>
+          <li>Joining the garment pieces together</li>
+          <li>Producing materials with a range of features</li>
+          <li>The importance of the fashion industry</li>
+          <li>Factors affecting international commerce</li>
+          <li>The attractions of becoming a fashion model</li>
+          <li>Making patterns for people with different figures</li>
+        </ol>
+      </div>
+
+      <div class="options-pool" id="headingsPool"></div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q14"></span>
+        <strong>14</strong> Section A
+        <div class="drop-zone" data-question="q14"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q15"></span>
+        <strong>15</strong> Section B
+        <div class="drop-zone" data-question="q15"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q16"></span>
+        <strong>16</strong> Section C
+        <div class="drop-zone" data-question="q16"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q17"></span>
+        <strong>17</strong> Section D
+        <div class="drop-zone" data-question="q17"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q18"></span>
+        <strong>18</strong> Section E
+        <div class="drop-zone" data-question="q18"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q19"></span>
+        <strong>19</strong> Section F
+        <div class="drop-zone" data-question="q19"></div>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q20"></span>
+        <strong>20</strong> Section G
+        <div class="drop-zone" data-question="q20"></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 21–24</h4>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>21–24</strong> on your answer sheet.</p>
+
+      <h4 style="margin-top:16px;">The development of a modern fashion industry</h4>
+      <p>Up until the middle of the 19th century, people generally wore handmade clothes. After that the situation changed, and by the 20th century many clothes were mass-produced. This development was partly due to inventions like the <span class="flag-btn" data-q="q21" style="position:relative;display:inline-block;width:auto;height:auto;transform:none;vertical-align:middle;"></span><strong>21</strong> <input type="text" name="q21">. It was also the result of general changes in manufacturing systems, as well as the spread of shops like <span class="flag-btn" data-q="q22" style="position:relative;display:inline-block;width:auto;height:auto;transform:none;vertical-align:middle;"></span><strong>22</strong> <input type="text" name="q22">. The changes also led to the standardisation of sizes and <span class="flag-btn" data-q="q23" style="position:relative;display:inline-block;width:auto;height:auto;transform:none;vertical-align:middle;"></span><strong>23</strong> <input type="text" name="q23">. Today, despite the fact that the fashion industry originated in <span class="flag-btn" data-q="q24" style="position:relative;display:inline-block;width:auto;height:auto;transform:none;vertical-align:middle;"></span><strong>24</strong> <input type="text" name="q24">, it has become a truly international enterprise.</p>
+    </div>
+
+    <div class="group">
+      <h4>Questions 25 and 26</h4>
+      <p>Choose <strong>TWO</strong> letters, <strong>A–E</strong>.</p>
+      <p>Write the correct letters in boxes <strong>25 and 26</strong> on your answer sheet.</p>
+      <p style="margin-top:12px;"><strong>Which TWO of the following statements does the writer make about garment assembly?</strong></p>
+
+      <div class="checkbox-group">
+        <label><span class="flag-btn" data-q="q25_26" style="position:relative;display:inline-block;width:8px;height:8px;transform:none;vertical-align:middle;margin-right:8px;"></span><input type="checkbox" name="q25_26" value="A"> <strong>A</strong> The majority of sewing is done by computer-operated machines.</label>
+        <label><input type="checkbox" name="q25_26" value="B"> <strong>B</strong> Highly skilled workers are the most important requirement.</label>
+        <label><input type="checkbox" name="q25_26" value="C"> <strong>C</strong> Most businesses use other companies to manufacture their products.</label>
+        <label><input type="checkbox" name="q25_26" value="D"> <strong>D</strong> Fasteners and labels are attached after the clothes have been made up.</label>
+        <label><input type="checkbox" name="q25_26" value="E"> <strong>E</strong> Manufacturers usually produce one range of women's clothing annually.</label>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_FASHION_INDUSTRY';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey={
+  q14:"v",q15:"ii",q16:"iv",q17:"i",q18:"viii",q19:"iii",q20:"vi",
+  q21:"sewing machine",q22:"department stores",q23:"fixed prices",q24:"europe",
+  q25_26:["C","D"]
+};
+let lastResults=[];
+
+const headingsOptions = ['i','ii','iii','iv','v','vi','vii','viii'];
+
+function initDragDrop() {
+  const pool = document.getElementById('headingsPool');
+  
+  headingsOptions.forEach(opt => {
+    const item = document.createElement('div');
+    item.className = 'drop-item';
+    item.textContent = opt;
+    item.draggable = true;
+    item.dataset.value = opt;
+    pool.appendChild(item);
+  });
+  
+  document.querySelectorAll('.drop-item').forEach(item => {
+    item.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', item.dataset.value);
+      item.style.opacity = '0.5';
+    });
+    
+    item.addEventListener('dragend', e => {
+      item.style.opacity = '1';
+    });
+  });
+  
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.classList.add('over');
+    });
+    
+    zone.addEventListener('dragleave', e => {
+      zone.classList.remove('over');
+    });
+    
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('over');
+      
+      const value = e.dataTransfer.getData('text/plain');
+      
+      while(zone.firstChild) {
+        const child = zone.firstChild;
+        child.classList.remove('placed');
+        document.getElementById('headingsPool').appendChild(child);
+      }
+      
+      const item = document.querySelector(`.drop-item[data-value="${value}"]`);
+      if(item && !item.classList.contains('placed')) {
+        zone.appendChild(item);
+        item.classList.add('placed');
+        saveAnswers();
+      }
+    });
+  });
+}
+
+function saveAnswers() {
+  const data = {};
+  
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    const item = zone.querySelector('.drop-item');
+    if(item) {
+      data[zone.dataset.question] = item.dataset.value;
+    }
+  });
+  
+  document.querySelectorAll('input[type="text"]').forEach(input => {
+    if(input.name && input.value.trim()) {
+      data[input.name] = input.value.trim().toLowerCase();
+    }
+  });
+  
+  const checked = [...document.querySelectorAll('input[name="q25_26"]:checked')].map(cb => cb.value);
+  if(checked.length > 0) {
+    data.q25_26 = checked;
+  }
+  
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  
+  Object.keys(data).forEach(qid => {
+    const value = data[qid];
+    
+    const zone = document.querySelector(`.drop-zone[data-question="${qid}"]`);
+    if(zone) {
+      const item = document.querySelector(`.drop-item[data-value="${value}"]`);
+      if(item) {
+        zone.appendChild(item);
+        item.classList.add('placed');
+      }
+    }
+    
+    const input = document.querySelector(`input[name="${qid}"]`);
+    if(input && input.type === 'text') {
+      input.value = value;
+    }
+    
+    if(qid === 'q25_26' && Array.isArray(value)) {
+      value.forEach(v => {
+        const cb = document.querySelector(`input[name="q25_26"][value="${v}"]`);
+        if(cb) cb.checked = true;
+      });
+    }
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  ['left','right'].forEach(pane=>{
+    document.querySelectorAll(`#${pane} .hl, #${pane} .note`).forEach((el,idx)=>{
+      highlights[pane].push({
+        type: el.classList.contains('hl') ? 'hl' : 'note',
+        text: el.textContent,
+        index: idx
+      });
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  ['left','right'].forEach(pane=>{
+    if(!data[pane]) return;
+    data[pane].forEach(item=>{
+      const walker = document.createTreeWalker(document.getElementById(pane), NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()){
+        const idx = node.textContent.indexOf(item.text);
+        if(idx === -1) continue;
+        const parent = node.parentNode;
+        const before = node.textContent.substring(0, idx);
+        const match  = node.textContent.substring(idx, idx + item.text.length);
+        const after  = node.textContent.substring(idx + item.text.length);
+
+        parent.insertBefore(document.createTextNode(before), node);
+        const span = document.createElement('span');
+        span.className = item.type;
+        span.textContent = match;
+        parent.insertBefore(span, node);
+        parent.insertBefore(document.createTextNode(after), node);
+        parent.removeChild(node);
+        break;
+      }
+    });
+  });
+}
+
+document.querySelectorAll('input[type="text"]').forEach(input => {
+  input.addEventListener('input', saveAnswers);
+});
+
+document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const checked = document.querySelectorAll('input[name="q25_26"]:checked');
+    if(checked.length > 2) {
+      cb.checked = false;
+      alert('只能选择两个选项');
+    } else {
+      saveAnswers();
+    }
+  });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  initDragDrop();
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; 
+  let cor=0; 
+  
+  Object.keys(answerKey).forEach(q=>{ 
+    let uA = "";
+    let cA = answerKey[q];
+    
+    const zone = document.querySelector(`.drop-zone[data-question="${q}"]`);
+    if(zone) {
+      const item = zone.querySelector('.drop-item');
+      if(item) uA = item.dataset.value;
+    }
+    
+    const input = document.querySelector(`input[name="${q}"]`);
+    if(input && input.type === 'text' && input.value.trim()) {
+      uA = input.value.trim().toLowerCase();
+    }
+    
+    if(q === 'q25_26') {
+      const checked = [...document.querySelectorAll('input[name="q25_26"]:checked')].map(cb => cb.value).sort();
+      uA = checked.join(',');
+      cA = answerKey[q].sort().join(',');
+    }
+    
+    const iC = uA === cA || (typeof cA === 'string' && uA.toLowerCase() === cA.toLowerCase());
+    if(iC) cor++; 
+    res.push({id:q, userAns:uA, correctAns:Array.isArray(answerKey[q]) ? answerKey[q].join(',') : cA, isCorrect:iC}); 
+  }); 
+  
+  lastResults=res; 
+  const tot=Object.keys(answerKey).length; 
+  const pct=((cor/tot)*100).toFixed(1); 
+  localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ 
+  document.getElementById('resetModal').classList.add('active'); 
+}
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  
+  document.querySelectorAll('.drop-item.placed').forEach(item => {
+    item.classList.remove('placed');
+    document.getElementById('headingsPool').appendChild(item);
+  });
+  
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value=''); 
+  document.querySelectorAll('input[type="checkbox"]').forEach(i=>i.checked=false); 
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const wr=lastResults.filter(r=>!r.isCorrect); 
+  wr.forEach(r=>{ 
+    const en={paperId:PAPER_ID,title:'The fashion industry',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; 
+    const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); 
+    if(ix>=0)wb[ix]=en; else wb.push(en); 
+  }); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  alert(`已添加 ${wr.length} 道错题`); 
+  closeModal('resultModal'); 
+}
+
+function deleteWrongItem(pId,qId){ 
+  if(!confirm('确定删除这道错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function clearCurrentWrongBook(){ 
+  if(!confirm('确定清空本篇所有错题？'))return; 
+  let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  wb=wb.filter(i=>i.paperId!==PAPER_ID); 
+  localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+  openWrongBook(); 
+}
+
+function openWrongBook(){ 
+  const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+  const cu=wb.filter(i=>i.paperId===PAPER_ID); 
+  const ct=document.getElementById('wrongBookContent'); 
+  if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; 
+  else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; 
+  document.getElementById('wrongBookModal').classList.add('active'); 
+}
+
+function closeModal(id){ 
+  document.getElementById(id).classList.remove('active'); 
+}
+</script>
+</body>
+</html>

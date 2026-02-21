@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – How are deserts formed</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .headings { background:#f9f9f9; padding:12px; margin:12px 0; border-radius:4px; }
+  .headings ol { margin-left:20px; }
+  .headings li { margin:4px 0; font-size:13px; }
+  
+  table { border-collapse: collapse; width:100%; margin:12px 0; }
+  th, td { border:1px solid #ddd; padding:6px; text-align:center; font-size:13px; position:relative; }
+  th { background:#f5f5f5; font-weight:600; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  tr td:first-child { padding-left:16px; }
+  
+  .group ol { margin-left:20px; }
+  .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+  .group ol li label { display:inline-block; margin-right:8px; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>How are deserts formed</h3>
+
+<h4>Paragraph A</h4>
+<p>A desert refers to a barren section of land, mainly in arid and semi-arid areas, where there is almost no precipitation and the environment is hostile for any creature to inhabit. Deserts have been classified in a number of ways, generally combining total precipitation, how many days the rainfall occurs, temperature, humidity, and sometimes additional factors. In some places, deserts have clear boundaries marked by rivers, mountains or other landforms, while in other places there are no clear-cut borders between deserts and other landscape features.</p>
+
+<h4>Paragraph B</h4>
+<p>In arid areas where there is no covering of vegetation to protect the land, sand and dust storms frequently take place. This phenomenon often occurs along the desert margins rather than within the deserts, where there is already no finer material left. When a steady wind starts to blow, fine particles on the open ground begin vibrating. As the wind picks up, some of the particles are lifted into the air. When they fall onto the ground, they hit other particles, which are then jerked into the air in their turn, initiating a chain reaction.</p>
+
+<h4>Paragraph C</h4>
+<p>There has been a great deal of publicity about how severe desertification can be, but the academic circle has never agreed on its causes. A common misunderstanding is that a shortage of precipitation causes desertification—yet land in some barren areas will soon recover after rain falls. In fact, more often than not, human activities are responsible. It is widely accepted that the explosion in world population, especially in developing countries, is the primary cause of soil degradation and desertification. As populations become denser, the cultivation of crops has expanded into progressively drier areas. These regions are especially likely to go through periods of severe drought, which explains why crop failures are common. The raising of most crops requires the natural vegetation cover to be removed first; when crop failures occur, extensive tracts of land are left devoid of plant cover and thus susceptible to wind and water erosion. Throughout the 1990s, dry-land areas experienced a population growth of 18.5 per cent, mostly in severely impoverished developing countries.</p>
+
+<h4>Paragraph D</h4>
+<p>Livestock farming in semi-arid areas accelerates soil erosion and becomes one of the reasons for advancing desertification. In such areas, where the vegetation is dominated by grasses, the breeding of livestock is a major economic activity. Grasses are necessary for anchoring barren topsoil in a dry-land area. When a specific field is used to graze an excessive herd, it loses vegetation cover, and the soil is trampled as well as pulverised, leaving the topsoil exposed to destructive forces such as wind and unexpected thunderstorms. For centuries, nomads have grazed their flocks and herds wherever pasture could be found, and oases have offered opportunities for a more settled way of living. For some nomads, wherever they move, the desert follows.</p>
+
+<h4>Paragraph E</h4>
+<p>Trees are of great importance when it comes to maintaining topsoil and slowing down wind speed. In many Asian countries, firewood is the chief fuel used for cooking and heating, which has caused uncontrolled clear-cutting of forests in dry-land ecosystems. When too many trees are cut down, windstorms and dust storms tend to occur.</p>
+
+<h4>Paragraph F</h4>
+<p>What is worse, political conflicts and wars can also contribute to desertification. To escape invading enemies, refugees often move into some of the most vulnerable ecosystems on the planet. They bring along their traditional cultivation practices, which may not be suitable for their new settlements.</p>
+
+<h4>Paragraph G</h4>
+<p>In the 20th century, one state in the United States had a large section of farmland that turned into desert. Since then, measures have been enforced so that such a phenomenon will not happen again. To avoid the recurrence of desertification, people must find livelihoods that do not rely on traditional land uses, are less demanding on local natural resources, yet can still generate viable income. Such livelihoods include, but are not limited to, dry-land aquaculture for the raising of fish, crustaceans and industrial compounds derived from micro-algae, greenhouse agriculture, and activities related to tourism. Another way to prevent desertification is to create economic prospects in the city centres of dry-lands and in areas outside them. Changing the wider economic and institutional structures so that people have new ways to support themselves would help alleviate the pressures that drive desertification.</p>
+
+<h4>Paragraph H</h4>
+<p>In today's society, new technologies are being used to address the problems brought about by desertification. Satellites, for example, have been utilised to investigate the influence that people and livestock have on our planet. However, this does not mean that alternative technologies are not needed to help tackle the processes of desertification.</p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–20</h4>
+      <p>Reading Passage 2 has eight paragraphs, A–H.</p>
+      <p>Which paragraph contains the following information?</p>
+      <p>Write the correct letter, <strong>A–H</strong>, in boxes <strong>14–20</strong> on your answer sheet.</p>
+      <p><strong>NB</strong> You may use any letter more than once.</p>
+
+      <ol start="14">
+        <li><span class="flag-btn" data-q="q14" style="left:-20px;"></span>a reference to the irregular movement of particles<br>
+          <label><input type="radio" name="q14" value="A"> A</label>
+          <label><input type="radio" name="q14" value="B"> B</label>
+          <label><input type="radio" name="q14" value="C"> C</label>
+          <label><input type="radio" name="q14" value="D"> D</label>
+          <label><input type="radio" name="q14" value="E"> E</label>
+          <label><input type="radio" name="q14" value="F"> F</label>
+          <label><input type="radio" name="q14" value="G"> G</label>
+          <label><input type="radio" name="q14" value="H"> H</label>
+        </li>
+        <li><span class="flag-btn" data-q="q15" style="left:-20px;"></span>mention of productive land turning into desert in the 20th century<br>
+          <label><input type="radio" name="q15" value="A"> A</label>
+          <label><input type="radio" name="q15" value="B"> B</label>
+          <label><input type="radio" name="q15" value="C"> C</label>
+          <label><input type="radio" name="q15" value="D"> D</label>
+          <label><input type="radio" name="q15" value="E"> E</label>
+          <label><input type="radio" name="q15" value="F"> F</label>
+          <label><input type="radio" name="q15" value="G"> G</label>
+          <label><input type="radio" name="q15" value="H"> H</label>
+        </li>
+        <li><span class="flag-btn" data-q="q16" style="left:-20px;"></span>types of deserts<br>
+          <label><input type="radio" name="q16" value="A"> A</label>
+          <label><input type="radio" name="q16" value="B"> B</label>
+          <label><input type="radio" name="q16" value="C"> C</label>
+          <label><input type="radio" name="q16" value="D"> D</label>
+          <label><input type="radio" name="q16" value="E"> E</label>
+          <label><input type="radio" name="q16" value="F"> F</label>
+          <label><input type="radio" name="q16" value="G"> G</label>
+          <label><input type="radio" name="q16" value="H"> H</label>
+        </li>
+        <li><span class="flag-btn" data-q="q17" style="left:-20px;"></span>mention of technical methods used to tackle the problems of deserts<br>
+          <label><input type="radio" name="q17" value="A"> A</label>
+          <label><input type="radio" name="q17" value="B"> B</label>
+          <label><input type="radio" name="q17" value="C"> C</label>
+          <label><input type="radio" name="q17" value="D"> D</label>
+          <label><input type="radio" name="q17" value="E"> E</label>
+          <label><input type="radio" name="q17" value="F"> F</label>
+          <label><input type="radio" name="q17" value="G"> G</label>
+          <label><input type="radio" name="q17" value="H"> H</label>
+        </li>
+        <li><span class="flag-btn" data-q="q18" style="left:-20px;"></span>the influence of migration on desertification<br>
+          <label><input type="radio" name="q18" value="A"> A</label>
+          <label><input type="radio" name="q18" value="B"> B</label>
+          <label><input type="radio" name="q18" value="C"> C</label>
+          <label><input type="radio" name="q18" value="D"> D</label>
+          <label><input type="radio" name="q18" value="E"> E</label>
+          <label><input type="radio" name="q18" value="F"> F</label>
+          <label><input type="radio" name="q18" value="G"> G</label>
+          <label><input type="radio" name="q18" value="H"> H</label>
+        </li>
+        <li><span class="flag-btn" data-q="q19" style="left:-20px;"></span>lack of agreement among scientists about the causes of desertification<br>
+          <label><input type="radio" name="q19" value="A"> A</label>
+          <label><input type="radio" name="q19" value="B"> B</label>
+          <label><input type="radio" name="q19" value="C"> C</label>
+          <label><input type="radio" name="q19" value="D"> D</label>
+          <label><input type="radio" name="q19" value="E"> E</label>
+          <label><input type="radio" name="q19" value="F"> F</label>
+          <label><input type="radio" name="q19" value="G"> G</label>
+          <label><input type="radio" name="q19" value="H"> H</label>
+        </li>
+        <li><span class="flag-btn" data-q="q20" style="left:-20px;"></span>a description of the harmful effects of farming practices<br>
+          <label><input type="radio" name="q20" value="A"> A</label>
+          <label><input type="radio" name="q20" value="B"> B</label>
+          <label><input type="radio" name="q20" value="C"> C</label>
+          <label><input type="radio" name="q20" value="D"> D</label>
+          <label><input type="radio" name="q20" value="E"> E</label>
+          <label><input type="radio" name="q20" value="F"> F</label>
+          <label><input type="radio" name="q20" value="G"> G</label>
+          <label><input type="radio" name="q20" value="H"> H</label>
+        </li>
+      </ol>
+    </div>
+
+    <div class="group">
+      <h4>Questions 21–26</h4>
+      <p>Do the following statements agree with the information given in Reading Passage 2?</p>
+      <p>In boxes <strong>21–26</strong> on your answer sheet, write</p>
+      <div style="margin-left:20px; margin-top:8px;">
+        <div><strong>TRUE</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if the statement agrees with the information</div>
+        <div><strong>FALSE</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if the statement contradicts the information</div>
+        <div><strong>NOT GIVEN</strong>&nbsp;&nbsp;if there is no information on this</div>
+      </div>
+
+      <ol start="21">
+        <li><span class="flag-btn" data-q="q21" style="left:-20px;"></span>It is difficult to ascertain where deserts end in some areas.<br>
+          <label><input type="radio" name="q21" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q21" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q21" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q22" style="left:-20px;"></span>The media is uninterested in the problems of desertification.<br>
+          <label><input type="radio" name="q22" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q22" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q22" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q23" style="left:-20px;"></span>The most common cause of desertification is a lack of rainfall.<br>
+          <label><input type="radio" name="q23" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q23" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q23" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q24" style="left:-20px;"></span>Farming animals in semi-arid areas will increase soil erosion.<br>
+          <label><input type="radio" name="q24" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q24" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q24" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q25" style="left:-20px;"></span>People in Asian countries no longer use firewood as their chief fuel.<br>
+          <label><input type="radio" name="q25" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q25" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q25" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q26" style="left:-20px;"></span>Technology for studying the relationship between people, livestock and desertification has not yet been invented.<br>
+          <label><input type="radio" name="q26" value="TRUE"> TRUE</label>
+          <label><input type="radio" name="q26" value="FALSE"> FALSE</label>
+          <label><input type="radio" name="q26" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+      </ol>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_DESERTS';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey={q14:"B",q15:"G",q16:"A",q17:"H",q18:"F",q19:"C",q20:"D",q21:"TRUE",q22:"FALSE",q23:"FALSE",q24:"TRUE",q25:"FALSE",q26:"FALSE"};
+let lastResults=[];
+
+function saveAnswers() {
+  const data = {};
+  Object.keys(answerKey).forEach(q => {
+    const ch = document.querySelector(`input[name="${q}"]:checked`);
+    if(ch) data[q] = ch.value;
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const radio = document.querySelector(`input[name="${q}"][value="${data[q]}"]`);
+    if(radio) radio.checked = true;
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  // 恢复左侧高亮
+  if(data.left && data.left.length > 0) {
+    data.left.forEach(item => {
+      const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+  
+  // 恢复右侧高亮
+  if(data.right && data.right.length > 0) {
+    data.right.forEach(item => {
+      const walker = document.createTreeWalker(right, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ const res=[]; let cor=0; Object.keys(answerKey).forEach(q=>{ const ch=document.querySelector('input[name="'+q+'"]:checked'); const uA=ch?ch.value:""; const cA=answerKey[q]; const iC=uA===cA; if(iC)cor++; res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); }); lastResults=res; const tot=Object.keys(answerKey).length; const pct=((cor/tot)*100).toFixed(1); localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; document.getElementById('resultModal').classList.add('active'); }
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false); 
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const wr=lastResults.filter(r=>!r.isCorrect); wr.forEach(r=>{ const en={paperId:PAPER_ID,title:'How are deserts formed',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); if(ix>=0)wb[ix]=en; else wb.push(en); }); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); alert(`已添加 ${wr.length} 道错题`); closeModal('resultModal'); }
+
+function deleteWrongItem(pId,qId){ if(!confirm('确定删除这道错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function clearCurrentWrongBook(){ if(!confirm('确定清空本篇所有错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>i.paperId!==PAPER_ID); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function openWrongBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const cu=wb.filter(i=>i.paperId===PAPER_ID); const ct=document.getElementById('wrongBookContent'); if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; document.getElementById('wrongBookModal').classList.add('active'); }
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

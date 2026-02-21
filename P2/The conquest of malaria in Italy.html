@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – The conquest of malaria in Italy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+ * { box-sizing: border-box; margin:0; padding:0; }
+ html,body { height:100%; }
+ body { font-family: Arial, sans-serif; background:#f5f5f5; }
+ 
+ #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+ 
+ .shell { display:flex; height:100vh; width:100%; }
+ .pane { background:#fff; overflow:auto; padding:24px; }
+ #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+ #right { flex: 1 1 auto; background:#fafafa; }
+ #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+ #divider:hover { background:#999; }
+ 
+ h2,h3,h4 { margin:0 0 12px; color:#333; }
+ h2 { font-size:20px; }
+ h3 { font-size:18px; color:#0066cc; }
+ h4 { font-size:15px; font-weight:600; margin-top:20px; }
+ 
+ #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+ 
+ .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+ .group h4 { margin-top:0; color:#0066cc; }
+ .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+ 
+ .group ol { margin-left:20px; }
+ .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+ .group ol li label { display:inline-block; margin-right:8px; }
+ 
+ .gap-fill { margin:12px 0; line-height:2; }
+ .gap-fill input { width:120px; padding:4px 8px; border:1px solid #999; border-radius:4px; margin:0 4px; }
+ 
+ .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+ button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+ button:hover { background:#f0f0f0; }
+ .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+ .btn-primary:hover { background:#0052a3; }
+ .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+ .btn-danger:hover { background:#c82333; }
+ 
+ .flag-btn { 
+   position:absolute; 
+   left:-20px; 
+   top:50%;
+   transform:translateY(-50%);
+   width:8px;
+   height:8px;
+   border-radius:50%;
+   background:#ddd;
+   cursor:pointer;
+   z-index:10;
+ }
+ .flag-btn:hover { background:#999; }
+ .flag-btn.active { background:#ff5722; }
+ 
+ .hl { background:#fff59d; cursor:pointer; }
+ .hl:hover { background:#ffeb3b; }
+ .note { background:#b3d9ff; cursor:pointer; }
+ .note:hover { background:#99ccff; }
+ 
+ #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+ #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+ #selbar button:hover { background:#f5f5f5; color:#333; }
+ 
+ .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+ .modal.active { display:flex; }
+ .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+ 
+ .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+ .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+ .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+ .modal-close:hover { color: #333; }
+ 
+ .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+ .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+ .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+ .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+ .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+ 
+ .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+ .wrong-item-content { flex:1; }
+ .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+ .btn-delete:hover { background:#c82333; }
+ .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+ <section class="pane" id="left">
+   
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+<h3>The conquest of malaria in Italy</h3>
+<p style="font-style:italic; margin-bottom:20px;">A review of Frank M Snowden's masterly history of a country's fight to eradicate a deadly disease</p>
+
+<h4>Paragraph A</h4>
+<p>The word 'malaria' means 'bad air' in Italian, and this terrible disease marked the life of the people of that country for thousands of years. Yet by 1962, Italy was officially declared malaria-free, and it has remained so ever since. Frank Snowden's study of this successful endeavour is a remarkable piece of historical work. Original, crystal clear, analytical and passionate, Snowden takes us to areas historians have rarely visited before.</p>
+
+<h4>Paragraph B</h4>
+<p>Everybody now knows that malaria is carried by mosquitoes. But in the 19th century most experts subscribed to the theory of 'miasma' or 'poisoning of the air'. Others made a link between swamps, water and malaria, but did not make the further leap towards insects. The consequence of these theories was that little was done to combat the disease before the end of that century. The situation was so serious that from a total population of 25m Italians, 11m were 'permanently at risk'. In warm, damp, malarial zones, the life expectancy of land workers was a terrifying 22.5 years. The economic impact of the disease was immense. Epidemics were blamed on people who originated from the hotter parts of Italy, given the widespread belief that malaria was hereditary.</p>
+
+<h4>Paragraph C</h4>
+<p>One of the first breakthroughs in the war against malaria came in 1898 when the zoologist Giovanni Battista Grassi demonstrated that the micro-organisms causing the disease were carried in the digestive tract of the mosquito. By releasing mosquitoes into rooms to drink the blood of healthy human volunteers, Grassi was able to make the direct link between the insects and the disease. Definitive proof of this theory was obtained after an extraordinary series of experiments in Italy, where healthy people were introduced into malarial zones but kept free of mosquito bites – and remained well. The recently formed Italian state at last had the necessary information to begin tackling the disease.</p>
+
+<h4>Paragraph D</h4>
+<p>A complicated approach was adopted, which made use of quinine – a drug obtained from tree bark which had long been used to combat fever, but was now seen as a crucial part of the war on malaria. Italy introduced a quinine law and a quinine tax in 1904, and the drug was administered to large numbers of rural workers. Despite its often terrible side effects, the drug was successful in limiting the spread of the disease, and in breaking cycles of infection. In addition, Italy set up rural health centres and invested heavily in education programmes. Malaria, as Snowden shows, was not just a medical problem, but a social and regional issue, and could only be defeated through multi-layered strategies.</p>
+
+<h4>Paragraph E</h4>
+<p>It was originally decided to give quinine to all those in vulnerable regions – even healthy people. However, peasants were often suspicious of medicine being forced upon them, and doctors were frequently met with hostility and stubborn refusal to accept the treatment offered. But despite the refusals, the strategy as a whole was hugely successful. Deaths from malaria fell by some 80% in the first decade of the 20th century and some areas escaped altogether from the scourge of the disease.</p>
+
+<h4>Paragraph F</h4>
+<p>The 1915-18 war delayed the campaign, as funds were diverted to the battlefields. In the 1920s and 1930s the draining of the damp, unhealthy marshlands around Rome had a certain impact on the spread of malaria. However, as war swept through the drained lands in the 1940s, the disease returned with a vengeance. Yet the country's leading malariologist Alberto Missiroli refused to order the distribution of quinine, so allowing the epidemic to spread unchecked. According to Snowden, he did this in order to create the ideal conditions for a new strategy, supported by the US Rockefeller Foundation – a massive experiment involving the extermination of mosquitoes with the chemical DDT. It is estimated that more than a third of the inhabitants in the affected area contracted malaria and countless thousands died.</p>
+
+<h4>Paragraph G</h4>
+<p>With the end of the war in 1945, the US government and the Rockefeller Foundation were free to experiment. DDT was sprayed from the air, and 3m Italians had their bodies covered with the chemical. The effects were immense, and by 1962 malaria was more or less gone from the whole country. One of the final victims to die of the disease in Italy was the popular cyclist, Fausto Coppi. He had contracted malaria in Africa in 1960, and the failure of doctors in Italy to spot the disease was a sign of the times. A few decades earlier, they would have immediately noticed the telltale signs; it was later claimed that a small dose of quinine would have saved his life.</p>
+
+<h4>Paragraph H</h4>
+<p>As there are still more than 1m deaths every year from malaria worldwide, Snowden's book also has contemporary relevance. This is a disease that affects every level of the societies where it is rampant. The economic miracle of the 1950s and 1960s which made Italy into a modern industrial nation would not have been possible without the eradication of malaria. Moreover, this book convincingly argues that the disease was 'an integral part of the big picture of modern Italian history'. This magnificent study, beautifully written and impeccably documented, deserves an audience beyond specialists in history, or in Italy.</p>
+
+ </section>
+
+ <div id="divider" title="Drag to resize"></div>
+
+ <section class="pane" id="right">
+   <h3>Questions</h3>
+
+   <div class="group">
+     <h4>Questions 14–17</h4>
+     <p>Complete the summary below.</p>
+     <p>Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for each answer.</p>
+     <p>Write your answers in boxes <strong>14–17</strong> on your answer sheet.</p>
+     
+     <h4 style="margin-top:20px;">Malaria in 19th-century Italy</h4>
+     <div class="gap-fill">
+       <p>Up until the late nineteenth century, experts failed to make the connection between malaria and <span class="flag-btn" data-q="q14"></span><input type="text" name="q14" placeholder="14"> . The most popular belief at the time was the <span class="flag-btn" data-q="q15"></span><input type="text" name="q15" placeholder="15"> theory, which upheld the idea that diseases were carried by unclean air. Another common idea was that malaria was a <span class="flag-btn" data-q="q16"></span><input type="text" name="q16" placeholder="16"> disease, and as a result people from certain parts of the country were often held responsible for the spread of epidemics. Malaria was particularly widespread in rural regions, where <span class="flag-btn" data-q="q17"></span><input type="text" name="q17" placeholder="17"> could be extremely short.</p>
+     </div>
+   </div>
+
+   <div class="group">
+     <h4>Questions 18–20</h4>
+     <p>Do the following statements agree with the information given in Reading Passage 2?</p>
+     <p>In boxes <strong>18–20</strong> on your answer sheet, write</p>
+     <div style="margin-left:20px; margin-top:8px;">
+       <div><strong>TRUE</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if the statement agrees with the information</div>
+       <div><strong>FALSE</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if the statement contradicts the information</div>
+       <div><strong>NOT GIVEN</strong>&nbsp;&nbsp;if there is no information on this</div>
+     </div>
+
+     <ol start="18">
+       <li><span class="flag-btn" data-q="q18"></span>The volunteers in Giovanni Battista Grassi's research came from all parts of Italy.<br>
+         <label><input type="radio" name="q18" value="TRUE"> TRUE</label>
+         <label><input type="radio" name="q18" value="FALSE"> FALSE</label>
+         <label><input type="radio" name="q18" value="NOT GIVEN"> NOT GIVEN</label>
+       </li>
+       <li><span class="flag-btn" data-q="q19"></span>Experiments in Italy proved that it was possible to remain healthy despite being in malarial zones.<br>
+         <label><input type="radio" name="q19" value="TRUE"> TRUE</label>
+         <label><input type="radio" name="q19" value="FALSE"> FALSE</label>
+         <label><input type="radio" name="q19" value="NOT GIVEN"> NOT GIVEN</label>
+       </li>
+       <li><span class="flag-btn" data-q="q20"></span>In the early twentieth century, quinine was successfully administered to all inhabitants of vulnerable regions.<br>
+         <label><input type="radio" name="q20" value="TRUE"> TRUE</label>
+         <label><input type="radio" name="q20" value="FALSE"> FALSE</label>
+         <label><input type="radio" name="q20" value="NOT GIVEN"> NOT GIVEN</label>
+       </li>
+     </ol>
+   </div>
+
+   <div class="group">
+     <h4>Questions 21–26</h4>
+     <p>Reading Passage 2 has eight paragraphs, <strong>A–H</strong>.</p>
+     <p>Which paragraph contains the following information?</p>
+     <p>Write the correct letter, <strong>A–H</strong>, in boxes <strong>21–26</strong> on your answer sheet.</p>
+
+     <ol start="21">
+       <li><span class="flag-btn" data-q="q21"></span>a figure showing the dramatic results of an anti-malarial drug programme<br>
+         <label><input type="radio" name="q21" value="A"> A</label>
+         <label><input type="radio" name="q21" value="B"> B</label>
+         <label><input type="radio" name="q21" value="C"> C</label>
+         <label><input type="radio" name="q21" value="D"> D</label>
+         <label><input type="radio" name="q21" value="E"> E</label>
+         <label><input type="radio" name="q21" value="F"> F</label>
+         <label><input type="radio" name="q21" value="G"> G</label>
+         <label><input type="radio" name="q21" value="H"> H</label>
+       </li>
+       <li><span class="flag-btn" data-q="q22"></span>an important discovery about how malaria is spread<br>
+         <label><input type="radio" name="q22" value="A"> A</label>
+         <label><input type="radio" name="q22" value="B"> B</label>
+         <label><input type="radio" name="q22" value="C"> C</label>
+         <label><input type="radio" name="q22" value="D"> D</label>
+         <label><input type="radio" name="q22" value="E"> E</label>
+         <label><input type="radio" name="q22" value="F"> F</label>
+         <label><input type="radio" name="q22" value="G"> G</label>
+         <label><input type="radio" name="q22" value="H"> H</label>
+       </li>
+       <li><span class="flag-btn" data-q="q23"></span>mention of an expert's decision not to halt the spread of the disease<br>
+         <label><input type="radio" name="q23" value="A"> A</label>
+         <label><input type="radio" name="q23" value="B"> B</label>
+         <label><input type="radio" name="q23" value="C"> C</label>
+         <label><input type="radio" name="q23" value="D"> D</label>
+         <label><input type="radio" name="q23" value="E"> E</label>
+         <label><input type="radio" name="q23" value="F"> F</label>
+         <label><input type="radio" name="q23" value="G"> G</label>
+         <label><input type="radio" name="q23" value="H"> H</label>
+       </li>
+       <li><span class="flag-btn" data-q="q24"></span>the significance of the malaria story for today's readers<br>
+         <label><input type="radio" name="q24" value="A"> A</label>
+         <label><input type="radio" name="q24" value="B"> B</label>
+         <label><input type="radio" name="q24" value="C"> C</label>
+         <label><input type="radio" name="q24" value="D"> D</label>
+         <label><input type="radio" name="q24" value="E"> E</label>
+         <label><input type="radio" name="q24" value="F"> F</label>
+         <label><input type="radio" name="q24" value="G"> G</label>
+         <label><input type="radio" name="q24" value="H"> H</label>
+       </li>
+       <li><span class="flag-btn" data-q="q25"></span>examples of false assumptions which held back scientific understanding of malaria<br>
+         <label><input type="radio" name="q25" value="A"> A</label>
+         <label><input type="radio" name="q25" value="B"> B</label>
+         <label><input type="radio" name="q25" value="C"> C</label>
+         <label><input type="radio" name="q25" value="D"> D</label>
+         <label><input type="radio" name="q25" value="E"> E</label>
+         <label><input type="radio" name="q25" value="F"> F</label>
+         <label><input type="radio" name="q25" value="G"> G</label>
+         <label><input type="radio" name="q25" value="H"> H</label>
+       </li>
+       <li><span class="flag-btn" data-q="q26"></span>a reference to legislation to support the fight against malaria<br>
+         <label><input type="radio" name="q26" value="A"> A</label>
+         <label><input type="radio" name="q26" value="B"> B</label>
+         <label><input type="radio" name="q26" value="C"> C</label>
+         <label><input type="radio" name="q26" value="D"> D</label>
+         <label><input type="radio" name="q26" value="E"> E</label>
+         <label><input type="radio" name="q26" value="F"> F</label>
+         <label><input type="radio" name="q26" value="G"> G</label>
+         <label><input type="radio" name="q26" value="H"> H</label>
+       </li>
+     </ol>
+   </div>
+
+   <div class="bottom-bar">
+     <button class="btn-primary" onclick="submitAnswers()">提交</button>
+     <button onclick="resetForm()">重置</button>
+     <button onclick="openWrongBook()">本篇错题</button>
+   </div>
+ </section>
+</div>
+
+<div id="selbar">
+ <button id="btnNote">Note</button>
+ <button id="btnHL">Highlight</button>
+ <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+ <div class="modal-content">
+   <div class="modal-header">
+     <h2>成绩</h2>
+     <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+   </div>
+   <div id="resultContent"></div>
+   <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+ </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+ <div class="modal-content">
+   <div class="modal-header">
+     <h2>本篇错题</h2>
+     <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+   </div>
+   <div id="wrongBookContent"></div>
+ </div>
+</div>
+
+<div class="modal" id="resetModal">
+ <div class="modal-content">
+   <div class="modal-header">
+     <h2>重置练习</h2>
+     <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+   </div>
+   <div style="margin:16px 0;">
+     <label style="display:block; margin-bottom:10px;">
+       <input type="radio" name="resetType" value="answers" checked>
+       只清空答案
+     </label>
+     <label style="display:block;">
+       <input type="radio" name="resetType" value="all">
+       清空答案和标记
+     </label>
+   </div>
+   <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+ </div>
+</div>
+
+<script>
+const PAPER_ID='P2_MALARIA';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+ btn.onclick = e => {
+   e.stopPropagation();
+   btn.classList.toggle('active');
+   saveFlags();
+ };
+});
+
+function normalizeAnswer(ans) {
+ return ans.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+const answerKey={
+ q14:"mosquitoes",q15:"miasma",q16:"hereditary",q17:"life expectancy",
+ q18:"NOT GIVEN",q19:"TRUE",q20:"FALSE",
+ q21:"E",q22:"C",q23:"F",q24:"H",q25:"B",q26:"D"
+};
+
+let lastResults=[];
+
+function saveAnswers() {
+ const data = {};
+ Object.keys(answerKey).forEach(q => {
+   const input = document.querySelector(`input[name="${q}"]`);
+   if(input && input.type === 'text') {
+     data[q] = input.value;
+   } else {
+     const ch = document.querySelector(`input[name="${q}"]:checked`);
+     if(ch) data[q] = ch.value;
+   }
+ });
+ localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+ const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+ Object.keys(data).forEach(q => {
+   const input = document.querySelector(`input[name="${q}"]`);
+   if(input && input.type === 'text') {
+     input.value = data[q];
+   } else {
+     const radio = document.querySelector(`input[name="${q}"][value="${data[q]}"]`);
+     if(radio) radio.checked = true;
+   }
+ });
+}
+
+function saveFlags() {
+ const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+ localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+ const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+ flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  // 恢复左侧高亮
+  if(data.left && data.left.length > 0) {
+    data.left.forEach(item => {
+      const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+  
+  // 恢复右侧高亮
+  if(data.right && data.right.length > 0) {
+    data.right.forEach(item => {
+      const walker = document.createTreeWalker(right, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ const res=[]; let cor=0; Object.keys(answerKey).forEach(q=>{ const ch=document.querySelector('input[name="'+q+'"]:checked'); const uA=ch?ch.value:""; const cA=answerKey[q]; const iC=uA===cA; if(iC)cor++; res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); }); lastResults=res; const tot=Object.keys(answerKey).length; const pct=((cor/tot)*100).toFixed(1); localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; document.getElementById('resultModal').classList.add('active'); }
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false); 
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const wr=lastResults.filter(r=>!r.isCorrect); wr.forEach(r=>{ const en={paperId:PAPER_ID,title:'How are deserts formed',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); if(ix>=0)wb[ix]=en; else wb.push(en); }); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); alert(`已添加 ${wr.length} 道错题`); closeModal('resultModal'); }
+
+function deleteWrongItem(pId,qId){ if(!confirm('确定删除这道错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function clearCurrentWrongBook(){ if(!confirm('确定清空本篇所有错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>i.paperId!==PAPER_ID); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function openWrongBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const cu=wb.filter(i=>i.paperId===PAPER_ID); const ct=document.getElementById('wrongBookContent'); if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; document.getElementById('wrongBookModal').classList.add('active'); }
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

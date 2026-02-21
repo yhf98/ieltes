@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P3 – The Costs of Brand Loyalty</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:2px; 
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .group ol { margin-left:20px; }
+  .group ol li { margin:12px 0; font-size:14px; line-height:1.6; position:relative; }
+  .group ol li label { display:inline-block; margin-right:8px; cursor: pointer; }
+  
+  .summary-box { border:1px solid #333; padding:15px; margin:15px 0; font-size:14px; line-height:1.8; background:#fff; }
+  .options-box { border:1px solid #ddd; background:#f9f9f9; padding:10px; margin-top:10px; display:flex; flex-wrap:wrap; gap:12px; font-size:13px; }
+  .option-item { flex: 0 0 30%; }
+
+  select { padding:2px 4px; border:1px solid #ccc; border-radius:4px; margin:0 4px; font-weight:bold; }
+
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 3</h2>
+<p>You should spend about 20 minutes on Questions 27–40, which are based on Reading Passage 3 below.</p>
+<h3>The Costs of Brand Loyalty</h3>
+
+<p>A Londoner with a sudden urge for giant African snails could do worse than head to the bustling marketplace in Brixton, a part of south London that is home to many people from Africa. Markets like Brixton Market that cater to migrants are a testament to the fact that people often retain very strong preferences for the kinds of food they grew up eating. Just ask the expatriate Britons who flock to ‘Tea and Sympathy’ in New York’s Greenwich Village for pots of Marmite, a yeast-based spread whose delights baffle other nationalities (and many of their own compatriots).</p>
+
+<p>Past research has shown that people are often willing to pay much more for a favoured brand than for seemingly identical alternatives. It is not always obvious why. However, there is ample evidence to support the theory that certain food preferences form in childhood. Children have a predisposition to fear new foods, which is only overcome when they are repeatedly presented with, and encouraged to consume, a particular food. Evidence shows that children’s instinctive wariness of new foods dates back to the times when humans had to forage for food, and it was important that they learnt which foods were safe to eat. In the modern world, people routinely express a strong liking for a brand even though they are unable to tell the brand apart from rival brands in blind tests, and many studies have found that advertising alone cannot explain the strength of brand loyalty.</p>
+
+<p>A new study by economists from the universities of Tilburg and Chicago tracks the consumption patterns of 38,000 US households over two years, and confirms the theory that such brand loyalty is widespread, deep and long-lasting. There were clear local patterns in consumption, although the same brands were available everywhere. But 16% of people studied were migrants: they had grown up in one state and moved to another. These migrants had the same options, in terms of what was on offer and at what price, as everyone else in their adopted home, but although they consumed local favourites, they bought fewer than longtime residents. This gap between purchases of migrants and those of the locally born was quite stubborn: although it faded the longer a person lived in their new state, it still took 20 years to halve in magnitude. Even 50 years on, it was still large enough to show up in the data. This could mean that the benefits of being the first brand into a market could last longer than might be assumed.</p>
+
+<p>David Atkin of Yale University has identified some important implications of local food favourites. He suggests in a recent paper that the effects of people being loyal to known brands may also lead economists to rethink the way they calculate the benefits resulting from trade. This is because opening up to trade is in some ways very similar to migrating, as it changes the composition and prices of the foods that are available to a person. In particular, trade can cause local foods to become relatively more expensive. Atkin’s data show something many economists do not take into account: when a traditional food has to compete with imported foods, it may no longer be the cheapest food available for people to choose to eat. Atkin decided to look at this situation in the context of developing countries.</p>
+
+<p>To illustrate his point, Atkin uses detailed data about people’s food choices in India. India is a good choice because it covers a large number of climatic zones where different specialised crops are grown. Despite being part of the same country, the prevalence of internal barriers to trade means that its regions are best thought of as being only partially open to trade. Atkin’s data show that the foods a region specialises in producing are instead cheaper in that region.</p>
+
+<p>However, there has been some opening up of internal trade in India in recent years, and this has revealed that for every rupee spent on food, people’s intake of calories declined most in regions where prices of local favourite foods had risen. In theory, when there is a greater choice of types of food, people should adjust their food habits and purchase the cheapest option so that they boost their calorie intake. However, in practice, food habits mean that consumers keep buying the things they know and like even though these foods have become relatively expensive. Atkin calculates that if all barriers to internal trade in India were abolished, the average Indian household would have to generate a rise of 3.3 percent in income to maintain their calorie intake.</p>
+
+<p>In developing countries where there is a high prevalence of undernutrition, such as in sub-Saharan Africa, the habit of continuing to eat favourite foods could have a serious effect on development. There is clear evidence that nutritional shortfalls in children can affect their ability to work and earn as adults, and also have detrimental effects on their long-term health.</p>
+
+<p>Consequently, the nutritional declines that can occur as a result of the opening up of trade are of serious concern, because an entire generation that is malnourished as children will continue to suffer irreversible consequences for the rest of their lives, which could hinder the development of their country due to a lack of a quality workforce.</p>
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 27–30</h4>
+      <p>Choose the correct letter, <strong>A, B, C or D</strong>.</p>
+      <p>Write the correct letter in boxes 27–30 on your answer sheet.</p>
+
+      <ol start="27">
+        <li><span class="flag-btn" data-q="q27" style="left:-20px;"></span>In the first paragraph, the writer’s purpose is to<br>
+          <label><input type="radio" name="q27" value="A"> A show that London has a multicultural society.</label><br>
+          <label><input type="radio" name="q27" value="B"> B point out that people grow up eating food from markets.</label><br>
+          <label><input type="radio" name="q27" value="C"> C give examples of the wide variety of food available in Britain.</label><br>
+          <label><input type="radio" name="q27" value="D"> D illustrate the way adults enjoy eating food from their childhood.</label>
+        </li>
+        <li><span class="flag-btn" data-q="q28" style="left:-20px;"></span>Economists from the universities of Tilburg and Chicago found that people who have migrated from one American state to another<br>
+          <label><input type="radio" name="q28" value="A"> A were poorer than longtime residents of the new state.</label><br>
+          <label><input type="radio" name="q28" value="B"> B sometimes returned to their home states to buy their favourite foods.</label><br>
+          <label><input type="radio" name="q28" value="C"> C bought only some of the brands which were popular in their new state.</label><br>
+          <label><input type="radio" name="q28" value="D"> D were particularly sensitive to price increases on food items.</label>
+        </li>
+        <li><span class="flag-btn" data-q="q29" style="left:-20px;"></span>Atkin’s research shows that<br>
+          <label><input type="radio" name="q29" value="A"> A trade makes favourite foods hard to find.</label><br>
+          <label><input type="radio" name="q29" value="B"> B trade results in increasing levels of migration.</label><br>
+          <label><input type="radio" name="q29" value="C"> C imported food is of a higher quality than local food.</label><br>
+          <label><input type="radio" name="q29" value="D"> D economists fail to understand all the effects of increased trade.</label>
+        </li>
+        <li><span class="flag-btn" data-q="q30" style="left:-20px;"></span>The writer thinks Atkin was wise to choose India for his study because<br>
+          <label><input type="radio" name="q30" value="A"> A trade barriers create food shortages between regions.</label><br>
+          <label><input type="radio" name="q30" value="B"> B food is cheap in India in comparison to developed countries.</label><br>
+          <label><input type="radio" name="q30" value="C"> C cultural variation results in a wide range of food preferences.</label><br>
+          <label><input type="radio" name="q30" value="D"> D the varying weather patterns have resulted in regional crop types.</label>
+        </li>
+      </ol>
+    </div>
+
+    <div class="group">
+      <h4>Questions 31–35</h4>
+      <p>Do the following statements agree with the views of the writer in Reading Passage 3?</p>
+      <p>In boxes 31–35 on your answer sheet, write</p>
+      <div style="margin-left:20px; margin-top:8px; margin-bottom:12px;">
+        <div><strong>YES</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if the statement agrees with the views of the writer</div>
+        <div><strong>NO</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if the statement contradicts the views of the writer</div>
+        <div><strong>NOT GIVEN</strong>&nbsp;&nbsp;&nbsp;if it is impossible to say what the writer thinks about this</div>
+      </div>
+
+      <ol start="31">
+        <li><span class="flag-btn" data-q="q31" style="left:-20px;"></span>The Tilburg and Chicago study shows that brand loyalty is greater in some states of the United States than in others.<br>
+          <label><input type="radio" name="q31" value="YES"> YES</label>
+          <label><input type="radio" name="q31" value="NO"> NO</label>
+          <label><input type="radio" name="q31" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q32" style="left:-20px;"></span>The study shows that the differences in shopping habits between migrants and native residents increased in the first 20 years.<br>
+          <label><input type="radio" name="q32" value="YES"> YES</label>
+          <label><input type="radio" name="q32" value="NO"> NO</label>
+          <label><input type="radio" name="q32" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q33" style="left:-20px;"></span>First brands to enter a new market only hold their advantage if they are supported by advertising.<br>
+          <label><input type="radio" name="q33" value="YES"> YES</label>
+          <label><input type="radio" name="q33" value="NO"> NO</label>
+          <label><input type="radio" name="q33" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q34" style="left:-20px;"></span>Atkin originally chose India as a case study because trade within the country was unrestricted.<br>
+          <label><input type="radio" name="q34" value="YES"> YES</label>
+          <label><input type="radio" name="q34" value="NO"> NO</label>
+          <label><input type="radio" name="q34" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+        <li><span class="flag-btn" data-q="q35" style="left:-20px;"></span>In India, if a region focuses on certain foods, the cost of those foods remains comparatively low.<br>
+          <label><input type="radio" name="q35" value="YES"> YES</label>
+          <label><input type="radio" name="q35" value="NO"> NO</label>
+          <label><input type="radio" name="q35" value="NOT GIVEN"> NOT GIVEN</label>
+        </li>
+      </ol>
+    </div>
+
+    <div class="group">
+      <h4>Questions 36–40</h4>
+      <p>Complete the summary using the list of words and phrases, <strong>A–I</strong>, below.</p>
+      <p>Write the correct letter, <strong>A–I</strong>, in boxes 36–40 on your answer sheet.</p>
+
+      <div class="summary-box">
+        <h4 style="text-align:center;">Food habits and trade in developing countries</h4>
+        <p>Trade is not always beneficial for the citizens of developing countries. Data show that a wider <span class="flag-btn" data-q="q36" style="left:-20px;"></span><strong>36</strong> <select name="q36"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option></select> of foods does not necessarily result in a corresponding <span class="flag-btn" data-q="q37" style="left:-20px;"></span><strong>37</strong> <select name="q37"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option></select> in the amount of calories in people’s diets. This is because people’s <span class="flag-btn" data-q="q38" style="left:-20px;"></span><strong>38</strong> <select name="q38"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option></select> on continuing to eat the foods they grew up eating could result in insufficient calories in their diets if the cost of these foods rises as a result of more open trade conditions. This is especially true in countries where adequate <span class="flag-btn" data-q="q39" style="left:-20px;"></span><strong>39</strong> <select name="q39"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option></select> is already a problem and could result in a whole section of society being unable to contribute fully to their country’s <span class="flag-btn" data-q="q40" style="left:-20px;"></span><strong>40</strong> <select name="q40"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option></select> in the future.</p>
+      </div>
+
+      <div class="options-box">
+        <div class="option-item"><strong>A</strong> nutrition</div>
+        <div class="option-item"><strong>B</strong> range</div>
+        <div class="option-item"><strong>C</strong> progress</div>
+        <div class="option-item"><strong>D</strong> dislike</div>
+        <div class="option-item"><strong>E</strong> incentive</div>
+        <div class="option-item"><strong>F</strong> increase</div>
+        <div class="option-item"><strong>G</strong> independence</div>
+        <div class="option-item"><strong>H</strong> production</div>
+        <div class="option-item"><strong>I</strong> insistence</div>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P3_BRAND_LOYALTY';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey = {
+  q27: "D", q28: "C", q29: "D", q30: "D",
+  q31: "NOT GIVEN", q32: "NO", q33: "NO", q34: "NO", q35: "YES",
+  q36: "B", q37: "F", q38: "I", q39: "A", q40: "C"
+};
+let lastResults=[];
+
+function saveAnswers() {
+  const data = {};
+  document.querySelectorAll('input[type="radio"]:checked').forEach(r => data[r.name] = r.value);
+  document.querySelectorAll('select').forEach(s => { if(s.value) data[s.name] = s.value; });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const radio = document.querySelector(`input[name="${q}"][value="${data[q]}"]`);
+    if(radio) radio.checked = true;
+    const select = document.querySelector(`select[name="${q}"]`);
+    if(select) select.value = data[q];
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({ type: el.classList.contains('hl') ? 'hl' : 'note', text: el.textContent, index: idx });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({ type: el.classList.contains('hl') ? 'hl' : 'note', text: el.textContent, index: idx });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  const restore = (pane, items) => {
+    if(items && items.length > 0) {
+      items.forEach(item => {
+        const walker = document.createTreeWalker(pane, NodeFilter.SHOW_TEXT);
+        let node;
+        while(node = walker.nextNode()) {
+          if(node.textContent.includes(item.text)) {
+            const span = document.createElement('span');
+            span.className = item.type;
+            const parent = node.parentNode;
+            const text = node.textContent;
+            const idx = text.indexOf(item.text);
+            if(idx >= 0) {
+              const before = text.substring(0, idx);
+              const match = text.substring(idx, idx + item.text.length);
+              const after = text.substring(idx + item.text.length);
+              parent.insertBefore(document.createTextNode(before), node);
+              span.textContent = match;
+              parent.insertBefore(span, node);
+              parent.insertBefore(document.createTextNode(after), node);
+              parent.removeChild(node);
+              break;
+            }
+          }
+        }
+      });
+    }
+  };
+  restore(left, data.left);
+  restore(right, data.right);
+}
+
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('change', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; let cor=0; 
+  Object.keys(answerKey).forEach(q=>{ 
+    let uA = "";
+    const rad = document.querySelector(`input[name="${q}"]:checked`);
+    const sel = document.querySelector(`select[name="${q}"]`);
+    if(rad) uA = rad.value;
+    else if(sel) uA = sel.value;
+    
+    const cA = answerKey[q];
+    const iC = (uA === cA);
+    if(iC) cor++; 
+    res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); 
+  }); 
+  lastResults=res; 
+  const tot=Object.keys(answerKey).length; 
+  const pct=((cor/tot)*100).toFixed(1); 
+  localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id.replace('q','')}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+  document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ document.getElementById('resetModal').classList.add('active'); }
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false); 
+  document.querySelectorAll('select').forEach(s=>s.value=""); 
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const wr=lastResults.filter(r=>!r.isCorrect); wr.forEach(r=>{ const en={paperId:PAPER_ID,title:'The Costs of Brand Loyalty',questionId:r.id.replace('q',''),correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]}; const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); if(ix>=0)wb[ix]=en; else wb.push(en); }); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); alert(`已添加 ${wr.length} 道错题`); closeModal('resultModal'); }
+
+function deleteWrongItem(pId,qId){ if(!confirm('确定删除这道错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function clearCurrentWrongBook(){ if(!confirm('确定清空本篇所有错题？'))return; let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); wb=wb.filter(i=>i.paperId!==PAPER_ID); localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); openWrongBook(); }
+
+function openWrongBook(){ const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); const cu=wb.filter(i=>i.paperId===PAPER_ID); const ct=document.getElementById('wrongBookContent'); if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`; document.getElementById('wrongBookModal').classList.add('active'); }
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+</body>
+</html>

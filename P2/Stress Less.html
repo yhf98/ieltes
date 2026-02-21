@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>P2 – Stress Less</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+      }
+      #timer {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #0066cc;
+        z-index: 1000;
+      }
+      .shell {
+        display: flex;
+        height: 100vh;
+        width: 100%;
+      }
+      .pane {
+        background: #fff;
+        overflow: auto;
+        padding: 24px;
+      }
+      #left {
+        flex: 0 0 50%;
+        border-right: 1px solid #ddd;
+      }
+      #right {
+        flex: 1 1 auto;
+        background: #fafafa;
+      }
+      #divider {
+        flex: 0 0 5px;
+        background: #ddd;
+        cursor: ew-resize;
+      }
+      #divider:hover {
+        background: #999;
+      }
+      h2,
+      h3,
+      h4 {
+        margin: 0 0 12px;
+        color: #333;
+      }
+      h2 {
+        font-size: 20px;
+      }
+      h3 {
+        font-size: 18px;
+        color: #0066cc;
+      }
+      h4 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-top: 20px;
+      }
+      #left p {
+        margin: 0 0 14px;
+        line-height: 1.7;
+        text-align: justify;
+      }
+      .group {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .group h4 {
+        margin-top: 0;
+        color: #0066cc;
+      }
+      .group p {
+        margin: 8px 0;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .flag-btn {
+        position: absolute;
+        left: 2px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ddd;
+        cursor: pointer;
+        z-index: 10;
+      }
+      .flag-btn:hover {
+        background: #999;
+      }
+      .flag-btn.active {
+        background: #ff5722;
+      }
+      .group ol {
+        margin-left: 20px;
+      }
+      .group ol li {
+        margin: 12px 0;
+        font-size: 14px;
+        line-height: 1.6;
+        position: relative;
+      }
+      .group ol li label {
+        display: inline-block;
+        margin-right: 8px;
+      }
+      input[type="text"] {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 14px;
+        width: 160px;
+        background: #fdfdfd;
+      }
+      input[type="text"]:focus {
+        border-color: #0066cc;
+        outline: none;
+        background: #fff;
+      }
+      .bottom-bar {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      button {
+        padding: 10px 20px;
+        border: 1px solid #999;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover {
+        background: #f0f0f0;
+      }
+      .btn-primary {
+        background: #0066cc;
+        color: #fff;
+        border-color: #0066cc;
+      }
+      .btn-primary:hover {
+        background: #0052a3;
+      }
+      .btn-danger {
+        background: #dc3545;
+        color: #fff;
+        border-color: #dc3545;
+      }
+      .btn-danger:hover {
+        background: #c82333;
+      }
+      .hl {
+        background: #fff59d;
+        cursor: pointer;
+      }
+      .hl:hover {
+        background: #ffeb3b;
+      }
+      .note {
+        background: #b3d9ff;
+        cursor: pointer;
+      }
+      .note:hover {
+        background: #99ccff;
+      }
+      #selbar {
+        position: fixed;
+        display: none;
+        z-index: 2000;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 8px;
+        gap: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        flex-direction: column;
+        min-width: 120px;
+      }
+      #selbar button {
+        background: #fff;
+        color: #666;
+        border: none;
+        padding: 3px 0px;
+        cursor: pointer;
+        font-size: 14px;
+        text-align: center;
+        border-radius: 4px;
+      }
+      #selbar button:hover {
+        background: #f5f5f5;
+        color: #333;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 3000;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal.active {
+        display: flex;
+      }
+      .modal-content {
+        background: #fff;
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+      .modal-header h2 {
+        font-size: 28px;
+        color: #333;
+        margin: 0;
+      }
+      .modal-close {
+        font-size: 32px;
+        cursor: pointer;
+        color: #999;
+        line-height: 1;
+      }
+      .modal-close:hover {
+        color: #333;
+      }
+      .result-summary {
+        text-align: center;
+        padding: 20px;
+        background: #f0f0f0;
+        margin-bottom: 16px;
+        border-radius: 6px;
+      }
+      .result-score {
+        font-size: 36px;
+        font-weight: 600;
+        color: #0066cc;
+      }
+      .result-item {
+        padding: 10px;
+        margin: 8px 0;
+        border-left: 3px solid #ddd;
+        background: #f9f9f9;
+        font-size: 13px;
+      }
+      .result-item.correct {
+        border-left-color: #28a745;
+        background: #e8f5e9;
+      }
+      .result-item.incorrect {
+        border-left-color: #dc3545;
+        background: #ffebee;
+      }
+      .wrong-item {
+        background: #fff3e0;
+        padding: 16px;
+        margin: 8px 0;
+        border-radius: 8px;
+        border-left: 4px solid #ff9800;
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+      }
+      .wrong-item-content {
+        flex: 1;
+      }
+      .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        margin-left: 12px;
+      }
+      .btn-delete:hover {
+        background: #c82333;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .headings-box {
+        background: #f9f9f9;
+        padding: 12px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        margin-bottom: 12px;
+      }
+      .headings-box h5 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: #333;
+      }
+      .headings-box ol {
+        margin-left: 20px;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="timer">00:00</div>
+    <div class="shell">
+      <section class="pane" id="left">
+        <h2>READING PASSAGE 2</h2>
+        <p>
+          You should spend about 20 minutes on Questions 14–26, which are based
+          on Reading Passage 2 below.
+        </p>
+        <h3>Stress Less</h3>
+        <p>
+          How busy is too busy? For some it means sometimes having to have a
+          short lunch; for others it may mean missing lunch altogether. For a
+          few, it is not being able to take a day off once a month. Then there
+          is a group of people for whom working every evening and weekend is
+          normal, and feeling stressed is taken for granted. For most senior
+          executives, workloads swing between extremely busy and frenzied. Neil
+          Plumridge, vice-president of a management consultancy company, says
+          that his weeks vary from a ‘manageable’ 45 hours to 80 hours, but
+          average 60 hours.
+        </p>
+        <p>
+          Three signs warn Plumridge about his workload: sleep, scheduling and
+          family. He knows he is doing too much when he gets less than six
+          hours’ sleep for three consecutive nights, when he is constantly
+          having to reschedule appointments, and when he misses a family
+          birthday or anniversary. ‘Then,’ he says, ‘I know things are out of
+          control.’ Plumridge states that stress is often caused by his having
+          unrealistic expectations of himself. ‘I’ll promise a client that I’ll
+          do something tomorrow, and then I’ll promise another client that I’ll
+          do the same thing, when I know it’s not going to happen. I could have
+          said: “Why don’t I give that to you in 48 hours?” The client wouldn’t
+          care.’
+        </p>
+        <p>
+          Over-committing is something people experience as an individual
+          problem. However, new research indicates that people may be designed
+          to over-commit. A study in the Journal of Experimental Psychology
+          shows that people always believe that they will be less busy in the
+          future. This is a misapprehension according to the authors of the
+          report, Gal Zauberman of the University of North Carolina and John
+          Lynch of Duke University. ‘On average, an individual will be just as
+          busy two weeks or a month from now as he or she is today. But that is
+          not how it appears in everyday life,’ they say. ‘People make
+          commitments long in advance that they would never make if the same
+          commitments required immediate action. They discount future time
+          investments relatively steeply.’
+        </p>
+        <p>
+          Being ‘too busy’ is highly subjective, but for any individual there
+          are some concrete signs of stress: disturbed sleep and declining
+          mental and physical health are the most common examples. Figures for
+          National Workers’ Compensation (insurance against injury caused by
+          work) show that stress causes the most loss of time of any workplace
+          injury: employees suffering stress are absent from work for an average
+          of 16.6 weeks. The effects of stress are also expensive. The
+          Australian Government insurer reports that, in 2003–2004, claims for
+          stress-related psychological injury accounted for 7% of insurance
+          claims, but almost 27% of the amount paid out in claim payments.
+        </p>
+        <p>
+          Experts say the key to dealing with stress is not to focus on relief —
+          a game of golf or a massage — but to reassess workloads. Neil
+          Plumridge says he makes it a priority to work out what has to change:
+          that might mean allocating extra staff to a job, allowing more time,
+          or changing expectations. He also relies on the advice of colleagues,
+          saying that his peers coach each other on business problems: ‘Just a
+          fresh pair of eyes over an issue can help,’ he states.
+        </p>
+        <p>
+          Executive stress is not confined to big organisations. Vanessa Stoykov
+          has been running her own advertising agency and public relations
+          business for seven years. Her company has grown so fast that it
+          appeared on the Business Review Weekly ‘Fast 100’ list of fastest
+          growing small enterprises in 2004, just after Stoykov had her first
+          child. In 2005, revenue was projected to double to $2.4 million. She
+          had just had her second child. With a fast growing business and two
+          small children, Stoykov says she has mastered the art of caring for
+          children, typing, and talking on the phone at the same time. But,
+          unlike many others, she appears to thrive on the mental stimulation of
+          running her own business, despite the stress.
+        </p>
+        <p>
+          Jan Elsner, a psychologist who specialises in executive coaching, says
+          that doing well on a demanding workload is typical of senior
+          executives. Some people work best with high adrenaline periods
+          followed by quieter times, while others thrive under sustained
+          pressure. Elsner’s practice is based on a movement known as positive
+          psychology, a school of thought that argues that positive experiences
+          — feeling engaged and challenged, for example — do not balance out
+          negative experiences such as stress; instead they help people increase
+          their resilience over time. Elsner says that many of the senior
+          business people she coaches are increasingly relying more on
+          regulating stress through methods such as meditation. She points to
+          research showing that meditation can alter the biochemistry of the
+          brain and the way that brains and bodies react to stress.
+        </p>
+        <p>
+          Some experts believe there is too much emphasis on treating job stress
+          as an individual problem. Tony LaMontagne, of the University of
+          Melbourne, says that while personality traits do have some effect on
+          stress, it is systemic stressors — qualities of job roles and
+          organisations themselves — that have a far greater effect. His recent
+          research shows that the major predictor of stress is the level of job
+          control a person has. The best type of job combines challenging work
+          with high autonomy. The worst jobs combine challenging work and low
+          control. People with demanding jobs but little autonomy have up to
+          four times the probability of depression and more than double the risk
+          of heart attack.
+        </p>
+      </section>
+      <div id="divider"></div>
+      <section class="pane" id="right">
+        <h3>Questions</h3>
+        <div class="group">
+          <h4>Questions 14–18</h4>
+          <p>
+            Match each statement with the correct person, <strong>A–D</strong>.
+          </p>
+          <div class="headings-box">
+            <h5>List of People</h5>
+            <div style="margin-left: 10px">
+              <strong>A</strong> Neil Plumridge<br />
+              <strong>B</strong> Gal Zauberman and John Lynch<br />
+              <strong>C</strong> Jan Elsner<br />
+              <strong>D</strong> Tony LaMontagne
+            </div>
+          </div>
+          <ol start="14">
+            <li>
+              <span class="flag-btn" data-q="q14" style="left: -20px"></span
+              >High-level workers tend to react positively to stress<br />
+              <label><input type="radio" name="q14" value="A" /> A</label>
+              <label><input type="radio" name="q14" value="B" /> B</label>
+              <label><input type="radio" name="q14" value="C" /> C</label>
+              <label><input type="radio" name="q14" value="D" /> D</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q15" style="left: -20px"></span
+              >Stress levels are increased by trying to please customers<br />
+              <label><input type="radio" name="q15" value="A" /> A</label>
+              <label><input type="radio" name="q15" value="B" /> B</label>
+              <label><input type="radio" name="q15" value="C" /> C</label>
+              <label><input type="radio" name="q15" value="D" /> D</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q16" style="left: -20px"></span
+              >Support from other workers may relieve stress<br />
+              <label><input type="radio" name="q16" value="A" /> A</label>
+              <label><input type="radio" name="q16" value="B" /> B</label>
+              <label><input type="radio" name="q16" value="C" /> C</label>
+              <label><input type="radio" name="q16" value="D" /> D</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q17" style="left: -20px"></span
+              >Lack of independence at work is often responsible for stress<br />
+              <label><input type="radio" name="q17" value="A" /> A</label>
+              <label><input type="radio" name="q17" value="B" /> B</label>
+              <label><input type="radio" name="q17" value="C" /> C</label>
+              <label><input type="radio" name="q17" value="D" /> D</label>
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q18" style="left: -20px"></span
+              >Workers commonly expect their workloads to lessen over time<br />
+              <label><input type="radio" name="q18" value="A" /> A</label>
+              <label><input type="radio" name="q18" value="B" /> B</label>
+              <label><input type="radio" name="q18" value="C" /> C</label>
+              <label><input type="radio" name="q18" value="D" /> D</label>
+            </li>
+          </ol>
+        </div>
+        <div class="group">
+          <h4>Questions 19–21</h4>
+          <p>Choose the correct letter, <strong>A, B, C or D</strong>.</p>
+          <ol start="19">
+            <li>
+              <span class="flag-btn" data-q="q19" style="left: -20px"></span
+              >Which of the following is NOT mentioned by Neil Plumridge as an
+              indication that his workload is too heavy?<br />
+              <label
+                ><input type="radio" name="q19" value="A" /> A. an inability to
+                keep to his schedule</label
+              ><br />
+              <label
+                ><input type="radio" name="q19" value="B" /> B. inattention to
+                family celebrations</label
+              ><br />
+              <label
+                ><input type="radio" name="q19" value="C" /> C. a lack of
+                concentration on a task</label
+              ><br />
+              <label
+                ><input type="radio" name="q19" value="D" /> D. a period of
+                insufficient sleep</label
+              >
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q20" style="left: -20px"></span
+              >Which method of lessening work stress is NOT suggested by Neil
+              Plumridge?<br />
+              <label
+                ><input type="radio" name="q20" value="A" /> A. rethinking ideas
+                of what can be achieved</label
+              ><br />
+              <label
+                ><input type="radio" name="q20" value="B" /> B. extending the
+                deadline for completing the task</label
+              ><br />
+              <label
+                ><input type="radio" name="q20" value="C" /> C. using more
+                workers on a project</label
+              ><br />
+              <label
+                ><input type="radio" name="q20" value="D" /> D. taking more time
+                off for sport or other recreation</label
+              >
+            </li>
+            <li>
+              <span class="flag-btn" data-q="q21" style="left: -20px"></span
+              >According to Jan Elsner, meditation offers a method of<br />
+              <label
+                ><input type="radio" name="q21" value="A" /> A. taking a
+                worker’s mind off his troubles.</label
+              ><br />
+              <label
+                ><input type="radio" name="q21" value="B" /> B. changing the
+                physical response to stress.</label
+              ><br />
+              <label
+                ><input type="radio" name="q21" value="C" /> C. resting more
+                effectively.</label
+              ><br />
+              <label
+                ><input type="radio" name="q21" value="D" /> D. encouraging
+                executives to take breaks.</label
+              >
+            </li>
+          </ol>
+        </div>
+        <div class="group">
+          <h4>Questions 22–26</h4>
+          <p>
+            Complete the summary below. Choose
+            <strong>NO MORE THAN TWO WORDS AND/OR A NUMBER</strong> from the
+            passage for each answer.
+          </p>
+          <div
+            style="
+              background: #f9f9f9;
+              padding: 15px;
+              border-radius: 4px;
+              line-height: 2;
+            "
+          >
+            <strong>Stress: its effects and how to reduce it</strong><br />
+            Statistics on workers’ compensation show that people take more time
+            off work due to stress than for any other <strong>22</strong>
+            <span
+              class="flag-btn"
+              data-q="q22"
+              style="
+                left: inherit;
+                display: inline-block;
+                position: relative;
+                vertical-align: middle;
+                margin-left: 5px;
+              "
+            ></span>
+            <input type="text" name="q22" /> at work. On average, workers who
+            take time off because of stress stay away for <strong>23</strong>
+            <span
+              class="flag-btn"
+              data-q="q23"
+              style="
+                left: inherit;
+                display: inline-block;
+                position: relative;
+                vertical-align: middle;
+                margin-left: 5px;
+              "
+            ></span>
+            <input type="text" name="q23" />. This absence comes at a high price
+            — while the number of insurance claims due to stress amount to only
+            <strong>24</strong>
+            <span
+              class="flag-btn"
+              data-q="q24"
+              style="
+                left: inherit;
+                display: inline-block;
+                position: relative;
+                vertical-align: middle;
+                margin-left: 5px;
+              "
+            ></span>
+            <input type="text" name="q24" /> of the total, they account for a
+            much higher proportion of the cost of claim payments.<br />
+            Experts believe that seeking to relieve stress through physical
+            therapies such as sport or <strong>25</strong>
+            <span
+              class="flag-btn"
+              data-q="q25"
+              style="
+                left: inherit;
+                display: inline-block;
+                position: relative;
+                vertical-align: middle;
+                margin-left: 5px;
+              "
+            ></span>
+            <input type="text" name="q25" /> may be less effective than simply
+            reviewing your <strong>26</strong>
+            <span
+              class="flag-btn"
+              data-q="q26"
+              style="
+                left: inherit;
+                display: inline-block;
+                position: relative;
+                vertical-align: middle;
+                margin-left: 5px;
+              "
+            ></span>
+            <input type="text" name="q26" />.
+          </div>
+        </div>
+        <div class="bottom-bar">
+          <button class="btn-primary" onclick="submitAnswers()">提交</button>
+          <button onclick="resetForm()">重置</button>
+          <button onclick="openWrongBook()">本篇错题</button>
+        </div>
+      </section>
+    </div>
+    <div id="selbar">
+      <button id="btnNote">Note</button>
+      <button id="btnHL">Highlight</button>
+      <button id="btnUH" style="display: none">Clear Highlight</button>
+    </div>
+    <div class="modal" id="resultModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>成绩</h2>
+          <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+        </div>
+        <div id="resultContent"></div>
+        <button
+          class="btn-primary"
+          style="width: 100%; margin-top: 16px"
+          onclick="addWrongToBook()"
+        >
+          加入错题本
+        </button>
+      </div>
+    </div>
+    <div class="modal" id="wrongBookModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>本篇错题</h2>
+          <span class="modal-close" onclick="closeModal('wrongBookModal')"
+            >×</span
+          >
+        </div>
+        <div id="wrongBookContent"></div>
+      </div>
+    </div>
+    <div class="modal" id="resetModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>重置练习</h2>
+          <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+        </div>
+        <div style="margin: 16px 0">
+          <label style="display: block; margin-bottom: 10px"
+            ><input type="radio" name="resetType" value="answers" checked />
+            只清空答案</label
+          >
+          <label style="display: block"
+            ><input type="radio" name="resetType" value="all" />
+            清空答案和标记</label
+          >
+        </div>
+        <button
+          class="btn-primary"
+          style="width: 100%"
+          onclick="confirmReset()"
+        >
+          确定
+        </button>
+      </div>
+    </div>
+    <script>
+      const PAPER_ID = "P2_STRESS_LESS";
+      let t = 0;
+      const timerEl = document.getElementById("timer");
+      setInterval(() => {
+        t++;
+        timerEl.textContent =
+          String(Math.floor(t / 60)).padStart(2, "0") +
+          ":" +
+          String(t % 60).padStart(2, "0");
+      }, 1000);
+      const divider = document.getElementById("divider"),
+        left = document.getElementById("left"),
+        right = document.getElementById("right");
+      let dragging = false;
+      divider.onmousedown = () => {
+        dragging = true;
+        document.body.style.cursor = "ew-resize";
+      };
+      window.onmousemove = (e) => {
+        if (!dragging) return;
+        const c = document.querySelector(".shell").getBoundingClientRect();
+        let x = e.clientX - c.left;
+        x = Math.max(280, Math.min(c.width - 280, x));
+        left.style.flex = "0 0 " + x + "px";
+        right.style.flex = "1 1 auto";
+      };
+      window.onmouseup = () => {
+        dragging = false;
+        document.body.style.cursor = "";
+      };
+      const selbar = document.getElementById("selbar"),
+        btnHL = document.getElementById("btnHL"),
+        btnUH = document.getElementById("btnUH"),
+        btnNote = document.getElementById("btnNote");
+      let lastRange = null,
+        currentHlNode = null;
+      function posSelbar(r) {
+        selbar.style.display = "flex";
+        const t = window.scrollY + r.top - selbar.offsetHeight - 8;
+        const l =
+          window.scrollX + r.left + r.width / 2 - selbar.offsetWidth / 2;
+        selbar.style.top = (t > 0 ? t : window.scrollY + r.bottom + 8) + "px";
+        selbar.style.left = Math.max(8, l) + "px";
+      }
+      function updSel() {
+        const s = window.getSelection();
+        if (!s || s.rangeCount === 0 || s.isCollapsed) {
+          if (!currentHlNode) selbar.style.display = "none";
+          return;
+        }
+        const r = s.getRangeAt(0);
+        lastRange = r.cloneRange();
+        currentHlNode = null;
+        btnNote.style.display = "block";
+        btnHL.style.display = "block";
+        btnUH.style.display = "none";
+        posSelbar(r.getBoundingClientRect());
+      }
+      left.onmouseup = updSel;
+      right.onmouseup = updSel;
+      document.onselectionchange = () => {
+        const s = window.getSelection();
+        if ((!s || s.rangeCount === 0 || s.isCollapsed) && !currentHlNode)
+          selbar.style.display = "none";
+      };
+      document.addEventListener(
+        "click",
+        (e) => {
+          if (
+            e.target.classList &&
+            (e.target.classList.contains("hl") ||
+              e.target.classList.contains("note"))
+          ) {
+            currentHlNode = e.target;
+            lastRange = null;
+            btnNote.style.display = "none";
+            btnHL.style.display = "none";
+            btnUH.style.display = "block";
+            posSelbar(e.target.getBoundingClientRect());
+            const s = window.getSelection();
+            if (s) s.removeAllRanges();
+          }
+        },
+        true
+      );
+      btnHL.onclick = () => {
+        if (currentHlNode || !lastRange || lastRange.collapsed) return;
+        const s = document.createElement("span");
+        s.className = "hl";
+        try {
+          lastRange.surroundContents(s);
+        } catch (e) {
+          const w = document.createElement("span");
+          w.className = "hl";
+          w.appendChild(lastRange.cloneContents());
+          lastRange.deleteContents();
+          lastRange.insertNode(w);
+        }
+        selbar.style.display = "none";
+        saveHighlights();
+      };
+      btnNote.onclick = () => {
+        if (currentHlNode || !lastRange || lastRange.collapsed) return;
+        const s = document.createElement("span");
+        s.className = "note";
+        try {
+          lastRange.surroundContents(s);
+        } catch (e) {
+          const w = document.createElement("span");
+          w.className = "note";
+          w.appendChild(lastRange.cloneContents());
+          lastRange.deleteContents();
+          lastRange.insertNode(w);
+        }
+        selbar.style.display = "none";
+        saveHighlights();
+      };
+      btnUH.onclick = () => {
+        if (currentHlNode) {
+          const p = currentHlNode.parentNode;
+          while (currentHlNode.firstChild)
+            p.insertBefore(currentHlNode.firstChild, currentHlNode);
+          p.removeChild(currentHlNode);
+          p.normalize();
+          currentHlNode = null;
+          selbar.style.display = "none";
+          saveHighlights();
+        } else if (lastRange) {
+          const sR = lastRange.getBoundingClientRect();
+          const w = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_ELEMENT
+          );
+          const tr = [];
+          while (w.nextNode()) {
+            const n = w.currentNode;
+            if (
+              n.classList &&
+              (n.classList.contains("hl") || n.classList.contains("note"))
+            ) {
+              const r = n.getBoundingClientRect();
+              if (
+                !(
+                  r.right < sR.left ||
+                  r.left > sR.right ||
+                  r.bottom < sR.top ||
+                  r.top > sR.bottom
+                )
+              )
+                tr.push(n);
+            }
+          }
+          tr.forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          selbar.style.display = "none";
+          saveHighlights();
+        }
+      };
+      document.querySelectorAll(".flag-btn").forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          btn.classList.toggle("active");
+          saveFlags();
+        };
+      });
+      const answerKey = {
+        q14: "C",
+        q15: "A",
+        q16: "A",
+        q17: "D",
+        q18: "B",
+        q19: "C",
+        q20: "D",
+        q21: "B",
+        q22: "injury",
+        q23: "16.6 weeks",
+        q24: "7%",
+        q25: "massage",
+        q26: "workloads",
+      };
+      let lastResults = [];
+      function saveAnswers() {
+        const data = {};
+        Object.keys(answerKey).forEach((q) => {
+          const radio = document.querySelector(
+            `input[name="${q}"][type="radio"]:checked`
+          );
+          const text = document.querySelector(
+            `input[name="${q}"][type="text"]`
+          );
+          if (radio) data[q] = radio.value;
+          else if (text) data[q] = text.value;
+        });
+        localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+      }
+      function loadAnswers() {
+        const data = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_answers`) || "{}"
+        );
+        Object.keys(data).forEach((q) => {
+          const radio = document.querySelector(
+            `input[name="${q}"][value="${data[q]}"]`
+          );
+          const text = document.querySelector(
+            `input[name="${q}"][type="text"]`
+          );
+          if (radio) radio.checked = true;
+          else if (text) text.value = data[q];
+        });
+      }
+      function saveFlags() {
+        const flags = [...document.querySelectorAll(".flag-btn.active")].map(
+          (b) => b.dataset.q
+        );
+        localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+      }
+      function loadFlags() {
+        const flags = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_flags`) || "[]"
+        );
+        flags.forEach((q) =>
+          document.querySelector(`[data-q="${q}"]`)?.classList.add("active")
+        );
+      }
+      function saveHighlights() {
+        const highlights = { left: [], right: [] };
+        document
+          .querySelectorAll("#left .hl, #left .note")
+          .forEach((el, idx) => {
+            highlights.left.push({
+              type: el.classList.contains("hl") ? "hl" : "note",
+              text: el.textContent,
+              index: idx,
+            });
+          });
+        document
+          .querySelectorAll("#right .hl, #right .note")
+          .forEach((el, idx) => {
+            highlights.right.push({
+              type: el.classList.contains("hl") ? "hl" : "note",
+              text: el.textContent,
+              index: idx,
+            });
+          });
+        localStorage.setItem(
+          `${PAPER_ID}_highlights`,
+          JSON.stringify(highlights)
+        );
+      }
+      function loadHighlights() {
+        const data = JSON.parse(
+          localStorage.getItem(`${PAPER_ID}_highlights`) ||
+            '{"left":[],"right":[]}'
+        );
+        const restore = (pane, items) => {
+          if (!items || items.length === 0) return;
+          items.forEach((item) => {
+            const walker = document.createTreeWalker(
+              pane,
+              NodeFilter.SHOW_TEXT
+            );
+            let node;
+            while ((node = walker.nextNode())) {
+              if (node.textContent.includes(item.text)) {
+                const span = document.createElement("span");
+                span.className = item.type;
+                const parent = node.parentNode;
+                const text = node.textContent;
+                const idx = text.indexOf(item.text);
+                if (idx >= 0) {
+                  const before = text.substring(0, idx);
+                  const match = text.substring(idx, idx + item.text.length);
+                  const after = text.substring(idx + item.text.length);
+                  parent.insertBefore(document.createTextNode(before), node);
+                  span.textContent = match;
+                  parent.insertBefore(span, node);
+                  parent.insertBefore(document.createTextNode(after), node);
+                  parent.removeChild(node);
+                  break;
+                }
+              }
+            }
+          });
+        };
+        restore(left, data.left);
+        restore(right, data.right);
+      }
+      document.querySelectorAll("input").forEach((inp) => {
+        inp.addEventListener("change", saveAnswers);
+        if (inp.type === "text") inp.addEventListener("input", saveAnswers);
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+        loadAnswers();
+        loadFlags();
+        loadHighlights();
+      });
+      function submitAnswers() {
+        const res = [];
+        let cor = 0;
+        Object.keys(answerKey).forEach((q) => {
+          let uA = "";
+          const radio = document.querySelector(
+            `input[name="${q}"][type="radio"]:checked`
+          );
+          const text = document.querySelector(
+            `input[name="${q}"][type="text"]`
+          );
+          if (radio) uA = radio.value;
+          else if (text) uA = text.value.trim();
+          const cA = answerKey[q];
+          const iC = uA.toLowerCase() === cA.toLowerCase();
+          if (iC) cor++;
+          res.push({ id: q, userAns: uA, correctAns: cA, isCorrect: iC });
+        });
+        lastResults = res;
+        const tot = Object.keys(answerKey).length;
+        const pct = ((cor / tot) * 100).toFixed(1);
+        localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+        document.getElementById(
+          "resultContent"
+        ).innerHTML = `<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res
+          .map(
+            (r) =>
+              `<div class="result-item ${
+                r.isCorrect ? "correct" : "incorrect"
+              }"><div><strong>${r.id}</strong> ${
+                r.isCorrect ? "✓" : "✗"
+              }</div><div>你的答案: ${r.userAns || "(未作答)"}</div>${
+                !r.isCorrect ? `<div>正确答案: ${r.correctAns}</div>` : ""
+              }</div>`
+          )
+          .join("")}`;
+        document.getElementById("resultModal").classList.add("active");
+      }
+      function resetForm() {
+        document.getElementById("resetModal").classList.add("active");
+      }
+      function confirmReset() {
+        const tp = document.querySelector(
+          'input[name="resetType"]:checked'
+        ).value;
+        document.querySelectorAll("input").forEach((i) => {
+          if (i.type === "radio") i.checked = false;
+          if (i.type === "text") i.value = "";
+        });
+        localStorage.removeItem(`${PAPER_ID}_answers`);
+        if (tp === "all") {
+          document.querySelectorAll(".hl").forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          document.querySelectorAll(".note").forEach((el) => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+            p.normalize();
+          });
+          document
+            .querySelectorAll(".flag-btn")
+            .forEach((b) => b.classList.remove("active"));
+          localStorage.removeItem(`${PAPER_ID}_highlights`);
+          localStorage.removeItem(`${PAPER_ID}_flags`);
+        }
+        closeModal("resetModal");
+      }
+      function addWrongToBook() {
+        const wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        const wr = lastResults.filter((r) => !r.isCorrect);
+        wr.forEach((r) => {
+          const en = {
+            paperId: PAPER_ID,
+            title: "Stress Less",
+            questionId: r.id,
+            correctAnswer: r.correctAns,
+            myAnswer: r.userAns || "(未作答)",
+            date: new Date().toISOString().split("T")[0],
+          };
+          const ix = wb.findIndex(
+            (i) => i.paperId === en.paperId && i.questionId === en.questionId
+          );
+          if (ix >= 0) wb[ix] = en;
+          else wb.push(en);
+        });
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        alert(`已添加 ${wr.length} 道错题`);
+        closeModal("resultModal");
+      }
+      function deleteWrongItem(pId, qId) {
+        if (!confirm("确定删除这道错题？")) return;
+        let wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        wb = wb.filter((i) => !(i.paperId === pId && i.questionId === qId));
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        openWrongBook();
+      }
+      function clearCurrentWrongBook() {
+        if (!confirm("确定清空本篇所有错题？")) return;
+        let wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        wb = wb.filter((i) => i.paperId !== PAPER_ID);
+        localStorage.setItem("ielts_wrong_book", JSON.stringify(wb));
+        openWrongBook();
+      }
+      function openWrongBook() {
+        const wb = JSON.parse(localStorage.getItem("ielts_wrong_book") || "[]");
+        const cu = wb.filter((i) => i.paperId === PAPER_ID);
+        const ct = document.getElementById("wrongBookContent");
+        if (cu.length === 0)
+          ct.innerHTML =
+            '<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>';
+        else
+          ct.innerHTML = `<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" stylewidth:100%;">🗑️ 清空本篇错题</button></div>${cu
+            .map(
+              (i) =>
+                `<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`
+            )
+            .join("")}`;
+        document.getElementById("wrongBookModal").classList.add("active");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("active");
+      }
+    </script>
+  </body>
+</html>

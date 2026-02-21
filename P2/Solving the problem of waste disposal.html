@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – Solving the problem of waste disposal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .headings-list { background:#f9f9f9; padding:16px; margin:12px 0; border-radius:4px; border:1px solid #ddd; }
+  .headings-list div { margin:8px 0; font-size:13px; line-height:1.5; }
+  .headings-list strong { display:inline-block; min-width:30px; }
+  
+  .question-item { margin:16px 0; padding:12px; background:#fafafa; border-radius:4px; }
+  .question-item label { display:block; margin-bottom:6px; font-weight:600; }
+  .question-item select { width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px; }
+  
+  .opinions-list { background:#f9f9f9; padding:16px; margin:12px 0; border-radius:4px; border:1px solid #ddd; }
+  .opinions-list div { margin:8px 0; font-size:13px; line-height:1.5; }
+  .opinions-list strong { display:inline-block; min-width:20px; }
+  
+  .summary-box { background:#f9f9f9; padding:16px; margin:12px 0; border-radius:4px; border-left:3px solid #0066cc; }
+  .summary-box h4 { margin-top:0; color:#0066cc; }
+  .summary-box p { margin:12px 0; line-height:1.8; font-size:14px; }
+  .summary-box input[type="text"] { width:150px; padding:4px 8px; margin:0 4px; border:1px solid #ddd; border-radius:4px; font-size:14px; }
+  
+  .flag-btn { 
+    position:relative;
+    display:inline-block;
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    margin-right:8px;
+    vertical-align:middle;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    
+<h2>READING PASSAGE 2</h2>
+<p>You should spend about 20 minutes on Questions 14-26, which are based on Reading Passage 2 below.</p>
+<h3>Solving the problem of waste disposal</h3>
+<p style="font-style:italic;">With the amount of rubbish being produced around the world increasing, Mark Rowe asks whether a new generation of incineration plants can help to solve the problem</p>
+
+<h4>Paragraph A</h4>
+<p>For many years, burning rubbish has been portrayed as the lazy option when it comes to dealing with the problem of waste disposal, since it sends toxic fumes into the air and appears to support a consumerist, throwaway society. Norway, however, appears to be burning its way through a sizeable chunk of Europe's municipal waste, using the heat created by this process to warm and power homes in many of its cities. Norway isn't alone: Germany, Sweden, Belgium and the Netherlands all burn significant quantities of rubbish, and across Europe there are 420 plants burning municipal waste. With Europe dumping 150 million tonnes of rubbish into landfill* every year, there would seem to be a limitless supply.</p>
+
+<h4>Paragraph B</h4>
+<p>Those who support burning waste say that a new generation of incinerators has made it a more attractive option. Filters and scrubbing mechanisms now capture harmful substances such as mercury, hydrochloric acid and heavy metals. According to Ted Michaels, president of the US-based Energy Recovery Centre, 'There has been constant evolution in combustion engineering and emissions-control technology, and the output from these facilities is now minuscule.' Above all, however, supporters say that incineration is the only way of preventing the long-term impacts of landfill. In ten years' time, says the World Bank, humans will be generating 2.2 billion tonnes of solid waste per year. Advocates see incineration as a practical way to deal swiftly with an immediate problem.</p>
+
+<h4>Paragraph C</h4>
+<p>Levels of waste generation vary hugely around the world. 'It's a problem for the developed nations,' says Joergen Fenhann, a senior scientist working with the UN Environment Programme in Denmark. 'The more you develop, the more you produce, buy and throw away.' But the growth of incineration hasn't been universally welcomed. Lars Haltbrekken, chairman of Friends of the Earth in Norway, is concerned that incineration plants appear to generate demand for their services. 'The problem in Norway,' he explains, 'is that we have built too many waste-burning factories. So we've ended up importing waste from other countries. If you look at this in a very small perspective, it is, of course, better for the climate to burn rubbish from the UK rather than leave it in landfill there,' he continues. 'But in a broader perspective, it's a lazy way of getting rid of waste; you don't stimulate the goals of reducing, reusing and recycling.'</p>
+
+<h4>Paragraph D</h4>
+<p>Incineration is also at odds with EU policy, which promotes a 'recycling hierarchy': ideally, we simply produce less waste in the first place; failing that, we reuse objects more; the next step is recycling; only then should we consider incineration, while dumping in landfill is the last resort. Dealing with the problem of waste disposal involves tracing the whole process that took the material from its inception to landfill. We used to call this the 'cradle to grave' life cycle; now, the talk is of 'cradle to cradle' and an even more comprehensive concept known as 'zero waste'. 'The philosophy of cradle to cradle is about designing products that are actually good for the environment at the end of their life,' says Joan Marc Simon, European spokesman for the environmental movement GAIA. 'You design a bottle that contains no toxins, is fully recyclable and requires the minimum amount of energy to be produced.' As Simon points out, however, without the right mechanisms in place 'nothing guarantees that this bottle will end up being properly collected and treated in the appropriate recycling facility'.</p>
+
+<h4>Paragraph E</h4>
+<p>Tim Burns, policy manager at Keep Britain Tidy, says, 'In the UK alone, people waste £10 billion of food every year. You can argue about composting that, or not buying it in the first place — if you do that, then that's money the retailers don't get, so it's not always clear-cut.' The implications of zero waste are that we're going to have to take a good long look at those well-stocked supermarket shelves, too. 'Supermarkets keep their shelves stocked even when demand isn't there, which means they have to pay to dispose of a lot of food,' says Burns. 'But that cost is less to them than the cost in brand damage of having empty shelves.'</p>
+
+<h4>Paragraph F</h4>
+<p>Recent history and changes in trends in recycling suggest that we should be prepared for unexpected developments. 'If someone back in the 1980s had suggested what waste would be like now, they would be completely wrong,' says Richard Fisher, a PhD researcher at Cranfield University. 'Consumerism has developed at a pace we never expected. Nobody would have said there would be so much electronic waste. But recycling has grown, too — ten years ago nobody would have predicted today's levels of recycling.' But he points out that the need to reduce waste is still a difficult message to sell to consumers. He suggests that what people are really concerned about is their loved ones and the future they face. 'Perhaps we can align the environmental message to these deep-seated values,' he says. 'We need to look at whether it's business that drives consumers or the other way around. You need government to play a leadership role, whereas countries such as the UK seem to be stepping away from the environment in pursuit of short-term economic goals.'</p>
+
+<p style="font-size:12px; margin-top:20px;"><em>*landfill: a method of disposing of waste material by burying it</em></p>
+
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–19</h4>
+      <p>Reading Passage 2 has six paragraphs, <strong>A–F</strong>.</p>
+      <p>Choose the correct heading for each paragraph from the list of headings below.</p>
+      <p>Write the correct number, <strong>i-vii</strong>, in boxes <strong>14-19</strong> on your answer sheet.</p>
+
+      <div class="headings-list">
+        <h4 style="margin-bottom:12px;">List of headings</h4>
+        <div><strong>i</strong>&nbsp;&nbsp;&nbsp;New terminology reflecting changing attitudes to waste disposal</div>
+        <div><strong>ii</strong>&nbsp;&nbsp;&nbsp;Fundamental changes in behaviour in the past and future</div>
+        <div><strong>iii</strong>&nbsp;&nbsp;&nbsp;Ways of rewarding the public for recycling</div>
+        <div><strong>iv</strong>&nbsp;&nbsp;&nbsp;A surprising approach to waste disposal by several countries</div>
+        <div><strong>v</strong>&nbsp;&nbsp;&nbsp;Difficult choices for individuals and businesses</div>
+        <div><strong>vi</strong>&nbsp;&nbsp;&nbsp;Arguments against incineration from a country that uses it</div>
+        <div><strong>vii</strong>&nbsp;&nbsp;&nbsp;A number of justifications for the use of incineration</div>
+      </div>
+
+      <div class="question-item">
+        <label><span class="flag-btn" data-q="q14"></span><strong>14</strong> Paragraph A</label>
+        <select name="q14">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+        </select>
+      </div>
+
+      <div class="question-item">
+        <label><span class="flag-btn" data-q="q15"></span><strong>15</strong> Paragraph B</label>
+        <select name="q15">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+        </select>
+      </div>
+
+      <div class="question-item">
+        <label><span class="flag-btn" data-q="q16"></span><strong>16</strong> Paragraph C</label>
+        <select name="q16">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+        </select>
+      </div>
+
+      <div class="question-item">
+        <label><span class="flag-btn" data-q="q17"></span><strong>17</strong> Paragraph D</label>
+        <select name="q17">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+        </select>
+      </div>
+
+      <div class="question-item">
+        <label><span class="flag-btn" data-q="q18"></span><strong>18</strong> Paragraph E</label>
+        <select name="q18">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+        </select>
+      </div>
+
+      <div class="question-item">
+        <label><span class="flag-btn" data-q="q19"></span><strong>19</strong> Paragraph F</label>
+        <select name="q19">
+          <option value="">-- Select --</option>
+          <option value="i">i</option>
+          <option value="ii">ii</option>
+          <option value="iii">iii</option>
+          <option value="iv">iv</option>
+          <option value="v">v</option>
+          <option value="vi">vi</option>
+          <option value="vii">vii</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 20–23</h4>
+      <p>Look at the following people (Questions 20–23) and the list of opinions below.</p>
+      <p>Match each person with the correct opinion, <strong>A–G</strong>.</p>
+      <p>Write the correct letter, <strong>A–G</strong>, in boxes <strong>20–23</strong> on your answer sheet.</p>
+
+      <div class="opinions-list">
+        <h4 style="margin-bottom:12px;">List of Opinions</h4>
+        <div><strong>A</strong>&nbsp;&nbsp;Incineration does not encourage responsible attitudes to waste disposal.</div>
+        <div><strong>B</strong>&nbsp;&nbsp;Recycling can sometimes create serious problems for the future.</div>
+        <div><strong>C</strong>&nbsp;&nbsp;Greater consumerism leads to higher levels of waste.</div>
+        <div><strong>D</strong>&nbsp;&nbsp;Proper systems are needed for the recycling of environmentally-friendly products.</div>
+        <div><strong>E</strong>&nbsp;&nbsp;Landfill is better for the environment than incineration.</div>
+        <div><strong>F</strong>&nbsp;&nbsp;Incineration of waste is now relatively harmless to the environment.</div>
+        <div><strong>G</strong>&nbsp;&nbsp;Efforts to reduce waste may affect profits for some types of companies.</div>
+      </div>
+
+      <div class="question-item">
+        <label><span class="flag-btn" data-q="q20"></span><strong>20</strong> Ted Michaels</label>
+        <select name="q20">
+          <option value="">-- Select --</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="G">G</option>
+        </select>
+      </div>
+
+      <div class="question-item">
+        <label><span class="flag-btn" data-q="q21"></span><strong>21</strong> Joergen Fenhann</label>
+        <select name="q21">
+          <option value="">-- Select --</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="G">G</option>
+        </select>
+      </div>
+
+      <div class="question-item">
+        <label><span class="flag-btn" data-q="q22"></span><strong>22</strong> Joan Marc Simon</label>
+        <select name="q22">
+          <option value="">-- Select --</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="G">G</option>
+        </select>
+      </div>
+
+      <div class="question-item">
+        <label><span class="flag-btn" data-q="q23"></span><strong>23</strong> Tim Burns</label>
+        <select name="q23">
+          <option value="">-- Select --</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="G">G</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 24–26</h4>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes <strong>24–26</strong> on your answer sheet.</p>
+
+      <div class="summary-box">
+        <h4>What recent history tells us about recycling</h4>
+        <p>Richard Fisher, a researcher from Cranfield University, points out that the pace of consumerism has increased more quickly than was predicted in the 1980s. There has, for example, been unexpected growth in waste from <span class="flag-btn" data-q="q24"></span><strong>24</strong> <input type="text" name="q24" maxlength="20"> products. He suggests that the need to protect the environment should be linked to basic values, and adds that it might be better if consumers had more influence over <span class="flag-btn" data-q="q25"></span><strong>25</strong> <input type="text" name="q25" maxlength="20"> and more direction was provided by <span class="flag-btn" data-q="q26"></span><strong>26</strong> <input type="text" name="q26" maxlength="20">.</p>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">Submit</button>
+      <button onclick="resetForm()">Reset</button>
+      <button onclick="openWrongBook()">Wrong Answers</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Results</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">Add to Wrong Answer Book</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Wrong Answers for This Passage</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Reset Practice</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        Clear answers only
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        Clear answers and all markings
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">Confirm</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_WASTE_DISPOSAL';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+const answerKey={
+  q14:"iv",
+  q15:"vii",
+  q16:"vi",
+  q17:"i",
+  q18:"v",
+  q19:"ii",
+  q20:"F",
+  q21:"C",
+  q22:"D",
+  q23:"G",
+  q24:"electronic",
+  q25:"business",
+  q26:"government"
+};
+let lastResults=[];
+
+function normalizeAnswer(answer) {
+  if (!answer) return '';
+  return answer.toString().toLowerCase().trim().replace(/[^\w\s]/g, '');
+}
+
+function saveAnswers() {
+  const data = {};
+  Object.keys(answerKey).forEach(q => {
+    const el = document.querySelector(`[name="${q}"]`);
+    if (el) {
+      if (el.tagName === 'SELECT') {
+        data[q] = el.value;
+      } else {
+        data[q] = el.value;
+      }
+    }
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    const el = document.querySelector(`[name="${q}"]`);
+    if (el) {
+      el.value = data[q];
+    }
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({
+      type: el.classList.contains('hl') ? 'hl' : 'note',
+      text: el.textContent,
+      index: idx
+    });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  
+  if(data.left && data.left.length > 0) {
+    data.left.forEach(item => {
+      const walker = document.createTreeWalker(left, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+  
+  if(data.right && data.right.length > 0) {
+    data.right.forEach(item => {
+      const walker = document.createTreeWalker(right, NodeFilter.SHOW_TEXT);
+      let node;
+      while(node = walker.nextNode()) {
+        if(node.textContent.includes(item.text)) {
+          const span = document.createElement('span');
+          span.className = item.type;
+          const parent = node.parentNode;
+          const text = node.textContent;
+          const idx = text.indexOf(item.text);
+          if(idx >= 0) {
+            const before = text.substring(0, idx);
+            const match = text.substring(idx, idx + item.text.length);
+            const after = text.substring(idx + item.text.length);
+            
+            parent.insertBefore(document.createTextNode(before), node);
+            span.textContent = match;
+            parent.insertBefore(span, node);
+            parent.insertBefore(document.createTextNode(after), node);
+            parent.removeChild(node);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+document.querySelectorAll('select').forEach(select => {
+  select.addEventListener('change', saveAnswers);
+});
+
+document.querySelectorAll('input[type="text"]').forEach(input => {
+  input.addEventListener('input', saveAnswers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers() {
+  const res = [];
+  let cor = 0;
+  
+  Object.keys(answerKey).forEach(q => {
+    const el = document.querySelector(`[name="${q}"]`);
+    let uA = "";
+    
+    if (el) {
+      uA = el.value;
+    }
+    
+    const cA = answerKey[q];
+    let iC = false;
+    
+    // For text inputs, normalize and compare
+    if (el && el.type === 'text') {
+      iC = normalizeAnswer(uA) === normalizeAnswer(cA);
+    } else {
+      // For select elements, exact match
+      iC = uA === cA;
+    }
+    
+    if(iC) cor++;
+    res.push({id: q, userAns: uA, correctAns: cA, isCorrect: iC});
+  });
+  
+  lastResults = res;
+  const tot = Object.keys(answerKey).length;
+  const pct = ((cor/tot)*100).toFixed(1);
+   localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML = `
+    <div class="result-summary">
+      <div class="result-score">${cor} / ${tot}</div>
+      <div style="margin-top:8px;font-size:18px;">${pct}%</div>
+    </div>
+    ${res.map(r => `
+      <div class="result-item ${r.isCorrect?'correct':'incorrect'}">
+        <div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div>
+        <div>Your answer: ${r.userAns||'(not answered)'}</div>
+        ${!r.isCorrect?`<div>Correct answer: ${r.correctAns}</div>`:''}
+      </div>
+    `).join('')}
+  `;
+  
+  document.getElementById('resultModal').classList.add('active');
+}
+
+function resetForm(){ 
+  document.getElementById('resetModal').classList.add('active'); 
+}
+
+function confirmReset(){ 
+  const tp=document.querySelector('input[name="resetType"]:checked').value; 
+  document.querySelectorAll('select').forEach(s=>s.value=''); 
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value=''); 
+  localStorage.removeItem(`${PAPER_ID}_answers`);
+  
+  if(tp==='all'){ 
+    document.querySelectorAll('.hl').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.note').forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); 
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+    localStorage.removeItem(`${PAPER_ID}_highlights`);
+    localStorage.removeItem(`${PAPER_ID}_flags`);
+  } 
+  closeModal('resetModal'); 
+}
+
+function addWrongToBook() {
+  const wb = JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]');
+  const wr = lastResults.filter(r => !r.isCorrect);
+  
+  wr.forEach(r => {
+    const en = {
+      paperId: PAPER_ID,
+      title: 'Solving the problem of waste disposal',
+      questionId: r.id,
+      correctAnswer: r.correctAns,
+      myAnswer: r.userAns||'(not answered)',
+      date: new Date().toISOString().split('T')[0]
+    };
+    
+    const ix = wb.findIndex(i => i.paperId === en.paperId && i.questionId === en.questionId);
+    if(ix >= 0) wb[ix] = en;
+    else wb.push(en);
+  });
+  
+  localStorage.setItem('ielts_wrong_book', JSON.stringify(wb));
+  alert(`Added ${wr.length} wrong answer(s) to the book`);
+  closeModal('resultModal');
+}
+
+function deleteWrongItem(pId, qId) {
+  if(!confirm('Are you sure you want to delete this wrong answer?')) return;
+  let wb = JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]');
+  wb = wb.filter(i => !(i.paperId === pId && i.questionId === qId));
+  localStorage.setItem('ielts_wrong_book', JSON.stringify(wb));
+  openWrongBook();
+}
+
+function clearCurrentWrongBook() {
+  if(!confirm('Are you sure you want to clear all wrong answers for this passage?')) return;
+  let wb = JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]');
+  wb = wb.filter(i => i.paperId !== PAPER_ID);
+  localStorage.setItem('ielts_wrong_book', JSON.stringify(wb));
+  openWrongBook();
+}
+
+function openWrongBook() {
+  const wb = JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]');
+  const cu = wb.filter(i => i.paperId === PAPER_ID);
+  const ct = document.getElementById('wrongBookContent');
+  
+  if(cu.length === 0) {
+    ct.innerHTML = '<div style="text-align:center;padding:40px;color:#666;">No wrong answers yet</div>';
+  } else {
+    ct.innerHTML = `
+      <div class="modal-actions">
+        <button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">
+          🗑️ Clear all wrong answers for this passage
+        </button>
+      </div>
+      ${cu.map(i => `
+        <div class="wrong-item">
+          <div class="wrong-item-content">
+            <div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div>
+            <div style="font-size:13px;color:#666;">
+              <div>✓ Correct: ${i.correctAnswer}</div>
+              <div style="color:#d32f2f;">✗ Your answer: ${i.myAnswer}</div>
+            </div>
+          </div>
+          <button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">Delete</button>
+        </div>
+      `).join('')}
+    `;
+  }
+  
+  document.getElementById('wrongBookModal').classList.add('active');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+</script>
+</body>
+</html>

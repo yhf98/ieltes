@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>P2 – The Myth of the Eight-hour Sleep</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, sans-serif; background:#f5f5f5; }
+  
+  #timer { position:fixed; top:12px; right:12px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:16px; font-weight:600; color:#0066cc; z-index:1000; }
+  
+  .shell { display:flex; height:100vh; width:100%; }
+  .pane { background:#fff; overflow:auto; padding:24px; }
+  #left { flex: 0 0 50%; border-right:1px solid #ddd; }
+  #right { flex: 1 1 auto; background:#fafafa; }
+  #divider { flex: 0 0 5px; background:#ddd; cursor: ew-resize; }
+  #divider:hover { background:#999; }
+  
+  h2,h3,h4 { margin:0 0 12px; color:#333; }
+  h2 { font-size:20px; }
+  h3 { font-size:18px; color:#0066cc; }
+  h4 { font-size:15px; font-weight:600; margin-top:20px; }
+  
+  #left p { margin: 0 0 14px; line-height: 1.7; text-align:justify; }
+  
+  .group { background:#fff; border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:16px; }
+  .group h4 { margin-top:0; color:#0066cc; }
+  .group p { margin:8px 0; font-size:14px; line-height:1.6; }
+  
+  .headings { background:#f9f9f9; padding:12px; margin:12px 0; border-radius:4px; border: 1px solid #eee;}
+  .headings ol, .headings ul { margin-left:20px; list-style-type: none; }
+  .headings li { margin:4px 0; font-size:13px; }
+  
+  .flag-btn { 
+    position:absolute; 
+    left:-18px; 
+    top:4px;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ddd;
+    cursor:pointer;
+    z-index:10;
+  }
+  .flag-btn:hover { background:#999; }
+  .flag-btn.active { background:#ff5722; }
+  
+  .question-item { position: relative; margin-bottom: 15px; padding-left: 10px; }
+  
+  /* Radio grid for Headings/Matching */
+  .radio-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+  .radio-grid label { font-size: 12px; display: flex; align-items: center; gap: 3px; cursor: pointer; background: #f0f0f0; padding: 2px 6px; border-radius: 4px; }
+  .radio-grid label:hover { background: #e0e0e0; }
+
+  /* Fill in the blank inputs */
+  .gap-input {
+    border: none;
+    border-bottom: 1px solid #333;
+    background: #fdfdfd;
+    width: 100px;
+    padding: 0 5px;
+    font-size: 14px;
+    color: #0066cc;
+    text-align: center;
+    outline: none;
+  }
+  .gap-input:focus { border-bottom: 2px solid #0066cc; background: #fff; }
+
+  .bottom-bar { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 20px; border:1px solid #999; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; }
+  button:hover { background:#f0f0f0; }
+  .btn-primary { background:#0066cc; color:#fff; border-color:#0066cc; }
+  .btn-primary:hover { background:#0052a3; }
+  .btn-danger { background:#dc3545; color:#fff; border-color:#dc3545; }
+  .btn-danger:hover { background:#c82333; }
+  
+  .hl { background:#fff59d; cursor:pointer; }
+  .hl:hover { background:#ffeb3b; }
+  .note { background:#b3d9ff; cursor:pointer; }
+  .note:hover { background:#99ccff; }
+  
+  #selbar { position:fixed; display:none; z-index:2000; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; gap:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); flex-direction:column; min-width:120px; }
+  #selbar button { background:#fff; color:#666; border:none; padding:3px 0px; cursor:pointer; font-size:14px; text-align:center; border-radius:4px; }
+  #selbar button:hover { background:#f5f5f5; color:#333; }
+  
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center; }
+  .modal.active { display:flex; }
+  .modal-content { background:#fff; border-radius:8px; padding:24px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-size: 28px; color: #333; margin: 0; }
+  .modal-close { font-size: 32px; cursor: pointer; color: #999; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  
+  .result-summary { text-align:center; padding:20px; background:#f0f0f0; margin-bottom:16px; border-radius:6px; }
+  .result-score { font-size:36px; font-weight:600; color:#0066cc; }
+  .result-item { padding:10px; margin:8px 0; border-left:3px solid #ddd; background:#f9f9f9; font-size:13px; }
+  .result-item.correct { border-left-color:#28a745; background:#e8f5e9; }
+  .result-item.incorrect { border-left-color:#dc3545; background:#ffebee; }
+  
+  .wrong-item { background:#fff3e0; padding:16px; margin:8px 0; border-radius:8px; border-left:4px solid #ff9800; display:flex; justify-content:space-between; align-items:start; }
+  .wrong-item-content { flex:1; }
+  .btn-delete { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; margin-left:12px; }
+  .btn-delete:hover { background:#c82333; }
+  .modal-actions { display:flex; gap:10px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div id="timer">00:00</div>
+
+<div class="shell">
+  <section class="pane" id="left">
+    <h2>READING PASSAGE 2</h2>
+    <p>You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.</p>
+    
+    <h3>The Myth of the Eight-hour Sleep</h3>
+
+    <h4>Section A</h4>
+    <p>We often worry about lying awake in the middle of the night—but it could be good for you. Indications from both science and history suggest that the eight-hour sleep may not be a natural or inborn pattern for humans. In the early 1990s, psychiatrist Thomas Wehr conducted research which implies just that. Wehr kept a group of people in a darkened room for 14 hours a day for a month. It took some time for their sleep to regulate, but by the fourth week the subjects had settled into a very distinct sleeping pattern. First, they slept for four hours, then woke for one or two hours before falling into a second four-hour sleep. Though sleep scientists were impressed by the implications of the study, the idea that we must sleep for eight consecutive hours persists amongst the general public.</p>
+
+    <h4>Section B</h4>
+    <p>In 2001, historian Roger Ekirch of Virginia Tech University in the US published a paper drawn from 16 years of research, revealing historical evidence that humans used to sleep in two distinct periods of time each night. Ekirch’s research found more than 500 references to a segmented sleeping pattern—in diaries, court records, medical books and literature, from the ancient Greeks to tribes in Nigeria. Much like Wehr’s findings, these references describe a first sleep which began not long following sunset. Then there was a waking period of one or two hours and after that a second sleep. During the waking period, people could be quite active. They sometimes got up and moved around the house, although most people stayed in bed, and perhaps read or wrote if they had enough money for candles. In many historic accounts, Ekirch found that people used the time that they were awake between periods of sleep to think about and attempt to analyse their dreams. In his book, <em>Evening’s Empire</em>, historian Craig Koslofsky suggests an explanation for this divided sleep pattern in Europe. ‘Associations with night before the 17th century were not good,’ he writes. He goes on to explain that the streets of the cities and towns at night were often populated by thieves or worse. The streets at night consequently scared many people. Even the wealthy, who could afford to light their way, had better things to spend their nights on.</p>
+
+    <h4>Section C</h4>
+    <p>Ekirch found that references to the first and second sleep started to disappear during the late 17th century. The pattern began to alter first among the upper classes in northern Europe and, over the course of the next 200 years, began changing amongst the rest of Western society. By the 1920s, the idea of a first and second sleep had receded entirely from our social consciousness. Ekirch attributes the initial shift to improvements in street and home lighting. As the night became a time for all kinds of activity, the length of time people slept declined. In 1667, Paris became the first city in the world to light its streets, using wax candles in glass lamps. It was followed by another French city, Lille, in the same year and by Amsterdam in Holland two years later, where a much more efficient oil-powered lamp was developed. London didn’t light its streets until 1684, but by the end of the 17th century, more than 50 of Europe’s major towns and cities were lit at night. Coffee houses emerged as a fashionable phenomenon and many were open virtually around the clock. Going out at night became commonplace, and spending hours lying in bed was considered a waste of time. ‘People were becoming increasingly time-conscious and sensitive to efficiency, certainly before the 19th century,’ says Ekirch. ‘But the Industrial Revolution intensified that attitude considerably.’ Strong evidence of this shifting attitude is contained in a medical journal from 1829 which urged parents to force their children out of the pattern of first and second sleep.</p>
+
+    <h4>Section D</h4>
+    <p>Today, most people seem to have adapted quite well to the eight-hour sleep, but Ekirch believes many sleeping problems may have roots in the human body’s natural preference for divided sleep, as well as in difficulties caused by extended exposure to artificial light in the modern world. This could be the cause of a condition called sleep maintenance insomnia, where people wake during the night and have trouble getting back to sleep. The condition first appears in literature at the end of the 19th century, at the same time as accounts of interrupted sleep disappear.</p>
+
+    <h4>Section E</h4>
+    <p>Sleep psychologist Gregg Jacobs says that the idea that we must sleep for an extended period of time could be damaging if it makes people who wake up in the night anxious, as this anxiety can itself discourage sleep and is likely to affect waking life too. Jacobs suggests that the waking period between sleeps, when people simply rested and relaxed, could have played an important part in the human capacity to regulate stress naturally. Russell Foster, a professor of circadian (body clock) neuroscience at Oxford University in the UK, shares this point of view. ‘Over 30% of the medical problems that doctors are faced with stem directly or indirectly from sleep. But sleep has been ignored in medical training, and there are very few centres where sleep is studied,’ Foster says. He feels this needs to change.</p>
+  </section>
+
+  <div id="divider" title="Drag to resize"></div>
+
+  <section class="pane" id="right">
+    <h3>Questions</h3>
+
+    <div class="group">
+      <h4>Questions 14–18</h4>
+      <p>Reading Passage 2 has five sections, A–E.<br>Choose the correct heading for each section from the list of headings below.<br>Write the correct number, <strong>i–vii</strong>, in boxes 14–18 on your answer sheet.</p>
+      
+      <div class="headings">
+        <strong>List of Headings</strong>
+        <ul>
+            <li><strong>i</strong> Historical reasons why interrupted sleep became uncommon</li>
+            <li><strong>ii</strong> Brain structures involved in sleep patterns</li>
+            <li><strong>iii</strong> Potential health issues related to sleep</li>
+            <li><strong>iv</strong> Famous cases in literature of sleep problems</li>
+            <li><strong>v</strong> An analysis of old documents to discover sleep patterns</li>
+            <li><strong>vi</strong> Biological and environmental factors preventing people from falling asleep again</li>
+            <li><strong>vii</strong> Scientific evidence that divided sleep is a natural phenomenon</li>
+        </ul>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q14"></span>
+        <strong>14.</strong> Section A
+        <div class="radio-grid">
+            <label><input type="radio" name="q14" value="i"> i</label> <label><input type="radio" name="q14" value="ii"> ii</label> <label><input type="radio" name="q14" value="iii"> iii</label> <label><input type="radio" name="q14" value="iv"> iv</label> <label><input type="radio" name="q14" value="v"> v</label> <label><input type="radio" name="q14" value="vi"> vi</label> <label><input type="radio" name="q14" value="vii"> vii</label>
+        </div>
+      </div>
+      <div class="question-item">
+        <span class="flag-btn" data-q="q15"></span>
+        <strong>15.</strong> Section B
+        <div class="radio-grid">
+            <label><input type="radio" name="q15" value="i"> i</label> <label><input type="radio" name="q15" value="ii"> ii</label> <label><input type="radio" name="q15" value="iii"> iii</label> <label><input type="radio" name="q15" value="iv"> iv</label> <label><input type="radio" name="q15" value="v"> v</label> <label><input type="radio" name="q15" value="vi"> vi</label> <label><input type="radio" name="q15" value="vii"> vii</label>
+        </div>
+      </div>
+      <div class="question-item">
+        <span class="flag-btn" data-q="q16"></span>
+        <strong>16.</strong> Section C
+        <div class="radio-grid">
+            <label><input type="radio" name="q16" value="i"> i</label> <label><input type="radio" name="q16" value="ii"> ii</label> <label><input type="radio" name="q16" value="iii"> iii</label> <label><input type="radio" name="q16" value="iv"> iv</label> <label><input type="radio" name="q16" value="v"> v</label> <label><input type="radio" name="q16" value="vi"> vi</label> <label><input type="radio" name="q16" value="vii"> vii</label>
+        </div>
+      </div>
+      <div class="question-item">
+        <span class="flag-btn" data-q="q17"></span>
+        <strong>17.</strong> Section D
+        <div class="radio-grid">
+            <label><input type="radio" name="q17" value="i"> i</label> <label><input type="radio" name="q17" value="ii"> ii</label> <label><input type="radio" name="q17" value="iii"> iii</label> <label><input type="radio" name="q17" value="iv"> iv</label> <label><input type="radio" name="q17" value="v"> v</label> <label><input type="radio" name="q17" value="vi"> vi</label> <label><input type="radio" name="q17" value="vii"> vii</label>
+        </div>
+      </div>
+      <div class="question-item">
+        <span class="flag-btn" data-q="q18"></span>
+        <strong>18.</strong> Section E
+        <div class="radio-grid">
+            <label><input type="radio" name="q18" value="i"> i</label> <label><input type="radio" name="q18" value="ii"> ii</label> <label><input type="radio" name="q18" value="iii"> iii</label> <label><input type="radio" name="q18" value="iv"> iv</label> <label><input type="radio" name="q18" value="v"> v</label> <label><input type="radio" name="q18" value="vi"> vi</label> <label><input type="radio" name="q18" value="vii"> vii</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 19–23</h4>
+      <p>Look at the following statements (Questions 19–23) and the list of researchers below.<br>Match each statement with the correct researcher, A–E.<br>Write the correct letter, <strong>A–E</strong>, in boxes 19–23 on your answer sheet.<br><strong>NB</strong> You may use any letter more than once.</p>
+      
+      <div class="headings">
+        <strong>List of Researchers</strong>
+        <ul>
+            <li><strong>A</strong> Thomas Wehr</li>
+            <li><strong>B</strong> Roger Ekirch</li>
+            <li><strong>C</strong> Craig Koslofsky</li>
+            <li><strong>D</strong> Gregg Jacobs</li>
+            <li><strong>E</strong> Russell Foster</li>
+        </ul>
+      </div>
+
+      <div class="question-item">
+        <span class="flag-btn" data-q="q19"></span>
+        <strong>19.</strong> In certain historical periods, the threat of criminal danger led to segmented sleep.
+        <div class="radio-grid">
+           <label><input type="radio" name="q19" value="A"> A</label> <label><input type="radio" name="q19" value="B"> B</label> <label><input type="radio" name="q19" value="C"> C</label> <label><input type="radio" name="q19" value="D"> D</label> <label><input type="radio" name="q19" value="E"> E</label>
+        </div>
+      </div>
+      <div class="question-item">
+        <span class="flag-btn" data-q="q20"></span>
+        <strong>20.</strong> Physicians should learn more about treating people with sleeping difficulties.
+        <div class="radio-grid">
+           <label><input type="radio" name="q20" value="A"> A</label> <label><input type="radio" name="q20" value="B"> B</label> <label><input type="radio" name="q20" value="C"> C</label> <label><input type="radio" name="q20" value="D"> D</label> <label><input type="radio" name="q20" value="E"> E</label>
+        </div>
+      </div>
+      <div class="question-item">
+        <span class="flag-btn" data-q="q21"></span>
+        <strong>21.</strong> Historically, when people experienced interrupted sleep, they used the waking periods at night for different activities.
+        <div class="radio-grid">
+           <label><input type="radio" name="q21" value="A"> A</label> <label><input type="radio" name="q21" value="B"> B</label> <label><input type="radio" name="q21" value="C"> C</label> <label><input type="radio" name="q21" value="D"> D</label> <label><input type="radio" name="q21" value="E"> E</label>
+        </div>
+      </div>
+       <div class="question-item">
+        <span class="flag-btn" data-q="q22"></span>
+        <strong>22.</strong> Technological changes in Europe made people more likely to sleep through the night.
+        <div class="radio-grid">
+           <label><input type="radio" name="q22" value="A"> A</label> <label><input type="radio" name="q22" value="B"> B</label> <label><input type="radio" name="q22" value="C"> C</label> <label><input type="radio" name="q22" value="D"> D</label> <label><input type="radio" name="q22" value="E"> E</label>
+        </div>
+      </div>
+      <div class="question-item">
+        <span class="flag-btn" data-q="q23"></span>
+        <strong>23.</strong> The belief that humans should have a long continuous sleep can be psychologically harmful.
+        <div class="radio-grid">
+           <label><input type="radio" name="q23" value="A"> A</label> <label><input type="radio" name="q23" value="B"> B</label> <label><input type="radio" name="q23" value="C"> C</label> <label><input type="radio" name="q23" value="D"> D</label> <label><input type="radio" name="q23" value="E"> E</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h4>Questions 24–26</h4>
+      <p>Complete the summary below.<br>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.<br>Write your answers in boxes 24–26 on your answer sheet.</p>
+      
+      <div style="background:#fafafa; padding:15px; border-radius:6px; line-height:2;">
+        <h4 style="text-align:center;">Historical patterns of interrupted sleep</h4>
+        <p>Historical evidence seems to show that humans had common sleep patterns which were quite unlike today’s eight hours of unbroken sleep each night. People habitually went to bed early, soon after 24 <span class="question-item" style="display:inline-block; margin:0; padding:0;"><span class="flag-btn" data-q="q24" style="left:-12px; top:6px;"></span><input type="text" class="gap-input" id="q24" placeholder="24"></span> , slept for a while, then woke up for a few hours of activity or perhaps to consider, for example, the meaning of their 25 <span class="question-item" style="display:inline-block; margin:0; padding:0;"><span class="flag-btn" data-q="q25" style="left:-12px; top:6px;"></span><input type="text" class="gap-input" id="q25" placeholder="25"></span> . There was little else to do at home in the dark, since what little means of lighting they had, such as using candles, was costly. In 16th-century Europe, people tended to stay at home at night because they feared 26 <span class="question-item" style="display:inline-block; margin:0; padding:0;"><span class="flag-btn" data-q="q26" style="left:-12px; top:6px;"></span><input type="text" class="gap-input" id="q26" placeholder="26"></span> on largely unlit city streets. Once urban street lighting improved, nightlife in cities became popular, and recreational spots like coffee houses came to be considered fashionable. Consequently, sleeping patterns also began to change.</p>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="submitAnswers()">提交</button>
+      <button onclick="resetForm()">重置</button>
+      <button onclick="openWrongBook()">本篇错题</button>
+    </div>
+  </section>
+</div>
+
+<div id="selbar">
+  <button id="btnNote">Note</button>
+  <button id="btnHL">Highlight</button>
+  <button id="btnUH" style="display:none;">Clear Highlight</button>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>成绩</h2>
+      <span class="modal-close" onclick="closeModal('resultModal')">×</span>
+    </div>
+    <div id="resultContent"></div>
+    <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="addWrongToBook()">加入错题本</button>
+  </div>
+</div>
+
+<div class="modal" id="wrongBookModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>本篇错题</h2>
+      <span class="modal-close" onclick="closeModal('wrongBookModal')">×</span>
+    </div>
+    <div id="wrongBookContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>重置练习</h2>
+      <span class="modal-close" onclick="closeModal('resetModal')">×</span>
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block; margin-bottom:10px;">
+        <input type="radio" name="resetType" value="answers" checked>
+        只清空答案
+      </label>
+      <label style="display:block;">
+        <input type="radio" name="resetType" value="all">
+        清空答案和标记
+      </label>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="confirmReset()">确定</button>
+  </div>
+</div>
+
+<script>
+const PAPER_ID='P2_SLEEP';
+
+let t=0;
+const timerEl=document.getElementById('timer');
+setInterval(()=>{ t++; timerEl.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }, 1000);
+
+const divider=document.getElementById('divider'), left=document.getElementById('left'), right=document.getElementById('right');
+let dragging=false;
+divider.onmousedown=()=>{ dragging=true; document.body.style.cursor='ew-resize'; };
+window.onmousemove=(e)=>{ if(!dragging)return; const c=document.querySelector('.shell').getBoundingClientRect(); let x=e.clientX-c.left; x=Math.max(280,Math.min(c.width-280,x)); left.style.flex='0 0 '+x+'px'; right.style.flex='1 1 auto'; };
+window.onmouseup=()=>{ dragging=false; document.body.style.cursor=''; };
+
+const selbar=document.getElementById('selbar'), btnHL=document.getElementById('btnHL'), btnUH=document.getElementById('btnUH'), btnNote=document.getElementById('btnNote');
+let lastRange=null, currentHlNode=null;
+
+function posSelbar(r){ selbar.style.display='flex'; const t=window.scrollY+r.top-selbar.offsetHeight-8; const l=window.scrollX+r.left+r.width/2-selbar.offsetWidth/2; selbar.style.top=((t>0)?t:(window.scrollY+r.bottom+8))+'px'; selbar.style.left=Math.max(8,l)+'px'; }
+
+function updSel(){ const s=window.getSelection(); if(!s||s.rangeCount===0||s.isCollapsed){ if(!currentHlNode)selbar.style.display='none'; return; } const r=s.getRangeAt(0); lastRange=r.cloneRange(); currentHlNode=null; btnNote.style.display='block'; btnHL.style.display='block'; btnUH.style.display='none'; posSelbar(r.getBoundingClientRect()); }
+
+left.onmouseup=updSel; right.onmouseup=updSel;
+document.onselectionchange=()=>{ const s=window.getSelection(); if((!s||s.rangeCount===0||s.isCollapsed)&&!currentHlNode)selbar.style.display='none'; };
+document.addEventListener('click',(e)=>{ if(e.target.classList&&(e.target.classList.contains('hl')||e.target.classList.contains('note'))){ currentHlNode=e.target; lastRange=null; btnNote.style.display='none'; btnHL.style.display='none'; btnUH.style.display='block'; posSelbar(e.target.getBoundingClientRect()); const s=window.getSelection(); if(s)s.removeAllRanges(); }}, true);
+
+btnHL.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='hl'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='hl'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnNote.onclick=()=>{ if(currentHlNode||!lastRange||lastRange.collapsed)return; const s=document.createElement('span'); s.className='note'; try{ lastRange.surroundContents(s); }catch(e){ const w=document.createElement('span'); w.className='note'; w.appendChild(lastRange.cloneContents()); lastRange.deleteContents(); lastRange.insertNode(w); } selbar.style.display='none'; saveHighlights(); };
+
+btnUH.onclick=()=>{ if(currentHlNode){ const p=currentHlNode.parentNode; while(currentHlNode.firstChild)p.insertBefore(currentHlNode.firstChild,currentHlNode); p.removeChild(currentHlNode); p.normalize(); currentHlNode=null; selbar.style.display='none'; saveHighlights(); }else if(lastRange){ const sR=lastRange.getBoundingClientRect(); const w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT); const tr=[]; while(w.nextNode()){ const n=w.currentNode; if(n.classList&&(n.classList.contains('hl')||n.classList.contains('note'))){ const r=n.getBoundingClientRect(); if(!(r.right<sR.left||r.left>sR.right||r.bottom<sR.top||r.top>sR.bottom))tr.push(n); }} tr.forEach(el=>{ const p=el.parentNode; while(el.firstChild)p.insertBefore(el.firstChild,el); p.removeChild(el); p.normalize(); }); selbar.style.display='none'; saveHighlights(); }};
+
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.onclick = e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    saveFlags();
+  };
+});
+
+// Answer Key based on Analysis
+const answerKey={
+  q14:"vii", q15:"v", q16:"i", q17:"vi", q18:"iii",
+  q19:"C", q20:"E", q21:"B", q22:"B", q23:"D",
+  q24:"sunset", q25:"dreams", q26:"thieves"
+};
+const textInputs = ['q24','q25','q26'];
+
+let lastResults=[];
+
+function saveAnswers() {
+  const data = {};
+  // Save Radio Buttons
+  Object.keys(answerKey).forEach(q => {
+    if(textInputs.includes(q)) return;
+    const ch = document.querySelector(`input[name="${q}"]:checked`);
+    if(ch) data[q] = ch.value;
+  });
+  // Save Text Inputs
+  textInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) data[id] = el.value;
+  });
+  localStorage.setItem(`${PAPER_ID}_answers`, JSON.stringify(data));
+}
+
+function loadAnswers() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_answers`) || '{}');
+  Object.keys(data).forEach(q => {
+    if(textInputs.includes(q)){
+      const el = document.getElementById(q);
+      if(el) el.value = data[q];
+    } else {
+      const radio = document.querySelector(`input[name="${q}"][value="${data[q]}"]`);
+      if(radio) radio.checked = true;
+    }
+  });
+}
+
+function saveFlags() {
+  const flags = [...document.querySelectorAll('.flag-btn.active')].map(b => b.dataset.q);
+  localStorage.setItem(`${PAPER_ID}_flags`, JSON.stringify(flags));
+}
+
+function loadFlags() {
+  const flags = JSON.parse(localStorage.getItem(`${PAPER_ID}_flags`) || '[]');
+  flags.forEach(q => document.querySelector(`[data-q="${q}"]`)?.classList.add('active'));
+}
+
+function saveHighlights() {
+  const highlights = { left: [], right: [] };
+  document.querySelectorAll('#left .hl, #left .note').forEach((el, idx) => {
+    highlights.left.push({ type: el.classList.contains('hl') ? 'hl' : 'note', text: el.textContent, index: idx });
+  });
+  document.querySelectorAll('#right .hl, #right .note').forEach((el, idx) => {
+    highlights.right.push({ type: el.classList.contains('hl') ? 'hl' : 'note', text: el.textContent, index: idx });
+  });
+  localStorage.setItem(`${PAPER_ID}_highlights`, JSON.stringify(highlights));
+}
+
+function loadHighlights() {
+  const data = JSON.parse(localStorage.getItem(`${PAPER_ID}_highlights`) || '{"left":[],"right":[]}');
+  ['left','right'].forEach(pane => {
+    const container = document.getElementById(pane);
+    if(data[pane] && data[pane].length > 0) {
+      data[pane].forEach(item => {
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+        let node;
+        while(node = walker.nextNode()) {
+          if(node.textContent.includes(item.text)) {
+            const span = document.createElement('span');
+            span.className = item.type;
+            const parent = node.parentNode;
+            const text = node.textContent;
+            const idx = text.indexOf(item.text);
+            if(idx >= 0) {
+              parent.insertBefore(document.createTextNode(text.substring(0, idx)), node);
+              span.textContent = text.substring(idx, idx + item.text.length);
+              parent.insertBefore(span, node);
+              parent.insertBefore(document.createTextNode(text.substring(idx + item.text.length)), node);
+              parent.removeChild(node);
+              break;
+            }
+          }
+        }
+      });
+    }
+  });
+}
+
+document.querySelectorAll('input[type="radio"]').forEach(radio => radio.addEventListener('change', saveAnswers));
+document.querySelectorAll('input[type="text"]').forEach(txt => txt.addEventListener('input', saveAnswers));
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnswers();
+  loadFlags();
+  loadHighlights();
+});
+
+function submitAnswers(){ 
+  const res=[]; let cor=0; 
+  Object.keys(answerKey).forEach(q=>{ 
+    let uA = "";
+    if(textInputs.includes(q)){
+      uA = document.getElementById(q).value.trim();
+    } else {
+      const ch=document.querySelector('input[name="'+q+'"]:checked'); 
+      uA = ch?ch.value:"";
+    }
+    const cA=answerKey[q]; 
+    const iC = uA.toLowerCase() === cA.toLowerCase(); 
+    if(iC) cor++; 
+    res.push({id:q,userAns:uA,correctAns:cA,isCorrect:iC}); 
+  }); 
+  lastResults=res; 
+  const tot=Object.keys(answerKey).length; 
+  const pct=((cor/tot)*100).toFixed(1); 
+  localStorage.setItem(`ielts_score_${PAPER_ID}`, `${cor}/${tot}`);
+  document.getElementById('resultContent').innerHTML=`<div class="result-summary"><div class="result-score">${cor} / ${tot}</div><div style="margin-top:8px;font-size:18px;">${pct}%</div></div>${res.map(r=>`<div class="result-item ${r.isCorrect?'correct':'incorrect'}"><div><strong>${r.id}</strong> ${r.isCorrect?'✓':'✗'}</div><div>你的答案: ${r.userAns||'(未作答)'}</div>
+${!r.isCorrect?`<div>正确答案: ${r.correctAns}</div>`:''}</div>`).join('')}`; 
+document.getElementById('resultModal').classList.add('active'); 
+}
+
+function resetForm(){ 
+document.getElementById('resetModal').classList.add('active'); 
+}
+
+function confirmReset(){ 
+const tp=document.querySelector('input[name="resetType"]:checked').value; 
+document.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false); 
+localStorage.removeItem(`${PAPER_ID}_answers`);
+
+if(tp==='all'){ 
+document.querySelectorAll('.hl').forEach(el=>{ 
+const p=el.parentNode; 
+while(el.firstChild)p.insertBefore(el.firstChild,el); 
+p.removeChild(el); 
+p.normalize(); 
+}); 
+document.querySelectorAll('.note').forEach(el=>{ 
+const p=el.parentNode; 
+while(el.firstChild)p.insertBefore(el.firstChild,el); 
+p.removeChild(el); 
+p.normalize(); 
+}); 
+document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+localStorage.removeItem(`${PAPER_ID}_highlights`);
+localStorage.removeItem(`${PAPER_ID}_flags`);
+} 
+closeModal('resetModal'); 
+}
+
+function addWrongToBook(){ 
+const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+const wr=lastResults.filter(r=>!r.isCorrect); 
+wr.forEach(r=>{ 
+const en={paperId:PAPER_ID,title:'The Myth of the Eight-hour Sleep',questionId:r.id,correctAnswer:r.correctAns,myAnswer:r.userAns||'(未作答)',date:new Date().toISOString().split('T')[0]};
+const ix=wb.findIndex(i=>i.paperId===en.paperId&&i.questionId===en.questionId); 
+if(ix>=0)wb[ix]=en; 
+else wb.push(en); 
+}); 
+localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+alert(`已添加 ${wr.length} 道错题`); 
+closeModal('resultModal'); 
+}
+
+function deleteWrongItem(pId,qId){ 
+if(!confirm('确定删除这道错题？'))return; 
+let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+wb=wb.filter(i=>!(i.paperId===pId&&i.questionId===qId)); 
+localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+openWrongBook(); 
+}
+
+function clearCurrentWrongBook(){ 
+if(!confirm('确定清空本篇所有错题？'))return; 
+let wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+wb=wb.filter(i=>i.paperId!==PAPER_ID); 
+localStorage.setItem('ielts_wrong_book',JSON.stringify(wb)); 
+openWrongBook(); 
+}
+
+function openWrongBook(){ 
+const wb=JSON.parse(localStorage.getItem('ielts_wrong_book')||'[]'); 
+const cu=wb.filter(i=>i.paperId===PAPER_ID); 
+const ct=document.getElementById('wrongBookContent'); 
+if(cu.length===0)ct.innerHTML='<div style="text-align:center;padding:40px;color:#666;">暂无错题</div>'; 
+else ct.innerHTML=`<div class="modal-actions"><button class="btn-danger" onclick="clearCurrentWrongBook()" style="width:100%;">🗑️ 清空本篇错题</button></div>${cu.map(i=>`<div class="wrong-item"><div class="wrong-item-content"><div style="font-weight:600;margin-bottom:8px;">${i.questionId}</div><div style="font-size:13px;color:#666;"><div>✓ 正确: ${i.correctAnswer}</div><div style="color:#d32f2f;">✗ 我的: ${i.myAnswer}</div></div></div><button class="btn-delete" onclick="deleteWrongItem('${i.paperId}','${i.questionId}')">删除</button></div>`).join('')}`;
+document.getElementById('wrongBookModal').classList.add('active'); 
+}
+
+function closeModal(id){ 
+document.getElementById(id).classList.remove('active'); 
+}
+</script>
+</body>
+</html>
